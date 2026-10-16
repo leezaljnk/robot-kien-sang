@@ -16,7 +16,7 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 
 ### Bạn thứ hai – Hướng dẫn cách chơi
 
-> Bây giờ, chúng em xin hướng dẫn cách chơi. Trên màn hình có các món rác, bạn Robot Kiến Sáng và hai thùng rác. Mỗi lần bỏ đúng một món, bạn sẽ nhận được một ngôi sao. Mục tiêu là đạt **10 ngôi sao** để chiến thắng.
+> Bây giờ, chúng em xin hướng dẫn cách chơi. Trên màn hình có các món rác, bạn Robot Kiến Sáng và hai thùng rác. Mỗi lần bỏ đúng một món, bạn sẽ nhận được một ngôi sao. Mục tiêu là đạt **10 ngôi sao MAX_SCORE=10** để chiến thắng.
 >
 > Có hai cách chơi. Ở chế độ **kéo thả**, các bạn kéo món rác rồi thả vào thùng mà mình chọn. Ở chế độ **ra lệnh cho Robot**, các bạn chọn một món rác rồi chọn thùng; Robot sẽ đi nhặt và mang rác tới đó.
 >
@@ -40,6 +40,7 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 
 - Phân loại 15 món rác vào hai thùng: rác hữu cơ và rác tái chế.
 - Các món rác xuất hiện ngẫu nhiên theo chu kỳ đủ 15 loại, không lặp lại trước khi tất cả đã xuất hiện.
+- Bấm cửa sổ bên trái để ra sân trường; dọn 10 loại rác sân trường riêng (5 hữu cơ, 5 tái chế) bằng hình SVG dễ thương, rồi bấm **Về lớp học** để quay lại. Điểm, rác đang chơi và chu kỳ riêng của mỗi cảnh được giữ nguyên khi chuyển cảnh.
 - Đạt **10 sao** để chiến thắng. Rác xuất hiện ngoài vùng thùng rác với khoảng cách an toàn để dễ chọn/nhặt.
 - Chơi bằng cách tự kéo thả rác hoặc chọn rác để Robot Kiến Sáng đi nhặt.
 - Hướng dẫn nằm trên bảng phấn: giữ phím mũi tên / WASD để di chuyển Kiến Sáng, Space / Enter để nhặt hoặc thả rác. Không hiển thị D-pad trên sàn chơi hay mã trang phục dưới nhân vật.

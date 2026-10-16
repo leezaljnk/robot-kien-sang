@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { getTrashSpawnSlots } from '../src/utils/trashSpawn';
 import { drawTrashItems } from '../src/utils/trashCycle';
 import { TRASH_ITEMS } from '../src/data/trashItems';
+import { YARD_TRASH_ITEMS } from '../src/data/yardTrashItems';
 import { VOICE_PROMPTS } from '../src/data/voicePrompts';
 
 test('trash cycle shows every item once before starting a new randomized cycle', () => {
@@ -24,6 +25,30 @@ test('trash cycle shows every item once before starting a new randomized cycle',
   assert.equal(nextBatch.selected.length, 3);
   assert.equal(new Set(nextBatch.selected.map(item => item.id)).size, 3);
   assert.equal(nextBatch.remaining.length, TRASH_ITEMS.length - 3);
+});
+
+test('yard trash has an independent cycle containing both sorting categories', () => {
+  let remaining: typeof YARD_TRASH_ITEMS = [];
+  const seen: string[] = [];
+
+  while (seen.length < YARD_TRASH_ITEMS.length) {
+    const draw = drawTrashItems(YARD_TRASH_ITEMS, remaining, 1, () => 0);
+    seen.push(draw.selected[0].id);
+    remaining = draw.remaining;
+  }
+
+  assert.equal(new Set(seen).size, YARD_TRASH_ITEMS.length);
+  assert.deepEqual(new Set(seen), new Set(YARD_TRASH_ITEMS.map(item => item.id)));
+  assert(YARD_TRASH_ITEMS.some(item => item.category === 'organic'));
+  assert(YARD_TRASH_ITEMS.some(item => item.category === 'recyclable'));
+  assert.equal(YARD_TRASH_ITEMS.length, 10);
+  assert.equal(new Set(YARD_TRASH_ITEMS.map(item => item.id)).size, 10);
+  assert.equal(YARD_TRASH_ITEMS.filter(item => item.category === 'organic').length, 5);
+  assert.equal(YARD_TRASH_ITEMS.filter(item => item.category === 'recyclable').length, 5);
+  assert(YARD_TRASH_ITEMS.every(item => item.iconType.startsWith('yard_')));
+  assert(YARD_TRASH_ITEMS.every(yardItem =>
+    TRASH_ITEMS.every(classroomItem => classroomItem.id !== yardItem.id)
+  ));
 });
 
 test('game victory threshold and recorded victory prompt both use 10 stars', () => {

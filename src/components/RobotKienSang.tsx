@@ -7,6 +7,7 @@ import {
   getCarryCostumeIdsForTrash,
   getPrimaryMascotImage,
 } from '../data/mascotCostumes';
+import { YardTrashGraphic } from './YardTrashGraphic';
 
 interface RobotKienSangProps {
   mood: KienSangMood;
@@ -22,6 +23,7 @@ interface RobotKienSangProps {
   mascotScale?: number;
   facingDirection?: 'left' | 'right';
   carriedItemDef?: TrashItemDef | null;
+  carriedItemVariant?: number;
   onOpenMascotModal?: () => void;
 }
 
@@ -39,6 +41,7 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
   mascotScale = 1.0,
   facingDirection = 'right',
   carriedItemDef = null,
+  carriedItemVariant = 0,
   onOpenMascotModal,
 }) => {
   // Đồng bộ bước đi 12 frame tức thời không có độ trễ state kép
@@ -206,6 +209,12 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
                       alt={carriedItemDef.nameVi}
                       className="w-full h-full object-contain"
                     />
+                  ) : carriedItemDef.id.startsWith('yard_') ? (
+                    <YardTrashGraphic
+                      iconType={carriedItemDef.iconType}
+                      visualVariant={carriedItemVariant}
+                      className="w-full h-full"
+                    />
                   ) : (
                     <span className="text-xl">
                       {carriedItemDef.category === 'organic' ? '🌱' : '♻️'}
@@ -215,12 +224,26 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
               )}
             </div>
           ) : (
-            <div
-              className="w-28 h-36 flex items-center justify-center drop-shadow-md select-none pointer-events-none"
-              dangerouslySetInnerHTML={{
-                __html: getCostumeSvg(currentCostumeId),
-              }}
-            />
+            <div className="relative w-28 h-36 flex items-center justify-center">
+              <div
+                className="flex items-center justify-center drop-shadow-md select-none pointer-events-none"
+                dangerouslySetInnerHTML={{
+                  __html: getCostumeSvg(currentCostumeId),
+                }}
+              />
+              {carriedTrashId && carriedItemDef?.id.startsWith('yard_') && (
+                <div
+                  className="absolute bottom-6 right-1 w-10 h-10 rounded-xl bg-white/95 p-1 shadow-md border-2 border-orange-400 flex items-center justify-center pointer-events-none animate-bounce"
+                  style={{ transform: facingDirection === 'left' ? 'scaleX(-1)' : 'none' }}
+                >
+                  <YardTrashGraphic
+                    iconType={carriedItemDef.iconType}
+                    visualVariant={carriedItemVariant}
+                    className="w-full h-full"
+                  />
+                </div>
+              )}
+            </div>
           )}
         </div>
 

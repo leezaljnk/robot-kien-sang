@@ -25,6 +25,7 @@ export interface ActiveTrashItem {
   isDragging?: boolean;
   isTargeted?: boolean; // Selected in mode 2 (Nhờ Kiến Sáng)
   isReturning?: boolean;
+  visualVariant?: number;
 }
 
 export type GameMode = 'drag' | 'command';

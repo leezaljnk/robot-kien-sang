@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ActiveTrashItem, GameMode, KienSangMood, TrashCategory, TrashItemDef, VoiceClips, CostumeId, CustomCostumesMap, PreloadedOfflineState } from './types';
 import { TRASH_ITEMS } from './data/trashItems';
+import { YARD_TRASH_ITEMS } from './data/yardTrashItems';
 import { ClassroomBackground } from './components/ClassroomBackground';
+import { YardBackground } from './components/YardBackground';
 import { TrashBin } from './components/TrashBin';
 import { TrashItemView } from './components/TrashItemView';
 import { RobotKienSang } from './components/RobotKienSang';
@@ -36,7 +38,7 @@ import {
   removePersistentItem,
 } from './utils/persistentStorage';
 
-const MAX_SCORE = 10;
+const MAX_SCORE = 20;
 const STORAGE_KEY_VOICE = 'kien_sang_voice_clips_v1';
 const STORAGE_KEY_MASCOT = 'kien_sang_custom_mascot_v1';
 const STORAGE_KEY_SCALE = 'kien_sang_mascot_scale_v1';
@@ -45,14 +47,26 @@ const STORAGE_KEY_BIN_RECYCLABLE = 'kien_sang_bin_recyclable_v1';
 const STORAGE_KEY_BIN_SCALE = 'kien_sang_bin_scale_v1';
 const STORAGE_KEY_TRASH_IMAGES = 'kien_sang_trash_images_v1';
 const STORAGE_KEY_MASCOT_COSTUMES = 'kien_sang_costumes_v1';
+type GameScene = 'classroom' | 'yard';
 
 export default function App() {
   const [sharedError, setSharedError] = useState('');
   const [score, setScore] = useState(0);
   const [gameMode, setGameMode] = useState<GameMode>('drag');
   const [activeItems, setActiveItems] = useState<ActiveTrashItem[]>([]);
+  const activeItemsRef = useRef(activeItems);
+  activeItemsRef.current = activeItems;
   const [selectedTrashId, setSelectedTrashId] = useState<string | null>(null);
-  const trashCycleRef = useRef<TrashItemDef[]>([]);
+  const [scene, setScene] = useState<GameScene>('classroom');
+  const sceneRef = useRef<GameScene>('classroom');
+  const sceneItemsRef = useRef<Record<GameScene, ActiveTrashItem[] | null>>({
+    classroom: null,
+    yard: null,
+  });
+  const trashCycleRef = useRef<Record<GameScene, TrashItemDef[]>>({
+    classroom: [],
+    yard: [],
+  });
 
   // Kiến Sáng state
   const [kienMood, setKienMood] = useState<KienSangMood>('idle');
@@ -456,7 +470,8 @@ export default function App() {
 
   const getItemDef = useCallback(
     (defId: string) => {
-      return allTrashItems.find((d) => d.id === defId) || TRASH_ITEMS.find((d) => d.id === defId);
+      return allTrashItems.find((d) => d.id === defId) ||
+        YARD_TRASH_ITEMS.find((d) => d.id === defId);
     },
     [allTrashItems]
   );
@@ -535,12 +550,14 @@ export default function App() {
       return;
     }
 
+    const currentScene = sceneRef.current;
+    const sceneItems = currentScene === 'yard' ? YARD_TRASH_ITEMS : TRASH_ITEMS;
     const { selected: chosenDefs, remaining } = drawTrashItems(
-      TRASH_ITEMS,
-      trashCycleRef.current,
+      sceneItems,
+      trashCycleRef.current[currentScene],
       3
     );
-    trashCycleRef.current = remaining;
+    trashCycleRef.current[currentScene] = remaining;
 
     const newItems: ActiveTrashItem[] = chosenDefs.map((def, idx) => ({
       instanceId: `trash_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
@@ -548,11 +565,43 @@ export default function App() {
       xPercent: slots[idx].x,
       yPercent: slots[idx].y,
       rotation: Math.floor(Math.random() * 30) - 15,
+      visualVariant: currentScene === 'yard' ? Math.floor(Math.random() * 3) : undefined,
     }));
 
+    sceneItemsRef.current[currentScene] = newItems;
     setActiveItems(newItems);
     setSelectedTrashId(null);
   }, []);
+
+  const switchScene = useCallback((nextScene: GameScene) => {
+    const currentScene = sceneRef.current;
+    if (currentScene === nextScene) return;
+    if (carriedItemInstanceId || isMoving || draggingItem) {
+      triggerSpeech('Kiến Sáng đang nhặt rác rồi. Hãy hoàn thành lượt này trước khi đổi cảnh nhé!');
+      return;
+    }
+
+    sceneItemsRef.current[currentScene] = activeItemsRef.current;
+    sceneRef.current = nextScene;
+    setScene(nextScene);
+    setSelectedTrashId(null);
+    setDraggingItem(null);
+    setKienMood('idle');
+
+    const savedItems = sceneItemsRef.current[nextScene];
+    if (savedItems) {
+      setActiveItems(savedItems);
+    } else {
+      setActiveItems([]);
+      window.setTimeout(() => {
+        if (sceneRef.current === nextScene) spawnTrashBatch();
+      }, 0);
+    }
+  }, [carriedItemInstanceId, draggingItem, isMoving, spawnTrashBatch, triggerSpeech]);
+
+  useEffect(() => {
+    sceneItemsRef.current[scene] = activeItems;
+  }, [activeItems, scene]);
 
   // Initialize game on load
   useEffect(() => {
@@ -571,7 +620,8 @@ export default function App() {
   // Restart game
   const handleRestart = () => {
     setScore(0);
-    trashCycleRef.current = [];
+    trashCycleRef.current = { classroom: [], yard: [] };
+    sceneItemsRef.current = { classroom: null, yard: null };
     setKienMood('idle');
     setKienX(50);
     setKienY(68);
@@ -758,9 +808,6 @@ export default function App() {
 
   const kienYRef = useRef(kienY);
   kienYRef.current = kienY;
-
-  const activeItemsRef = useRef(activeItems);
-  activeItemsRef.current = activeItems;
 
   const handleActionPickOrDropRef = useRef(handleActionPickOrDrop);
   handleActionPickOrDropRef.current = handleActionPickOrDrop;
@@ -1310,8 +1357,21 @@ export default function App() {
 
       {/* KHUNG CẢNH LỚP HỌC CHÍNH */}
       <div ref={playAreaRef} className="relative flex-1 w-full h-full overflow-hidden">
-        {/* Nền lớp học Việt Nam */}
-        <ClassroomBackground />
+        {scene === 'classroom' ? (
+          <ClassroomBackground onVisitYard={() => switchScene('yard')} />
+        ) : (
+          <YardBackground onReturnToClassroom={() => switchScene('classroom')} />
+        )}
+        {scene === 'classroom' && (
+          <button
+            type="button"
+            onClick={() => switchScene('yard')}
+            className="absolute left-3 top-3 z-30 rounded-full border-2 border-sky-700 bg-white/95 px-3 py-2 text-xs font-black text-sky-900 shadow-lg sm:hidden"
+            aria-label="Đi ra sân trường"
+          >
+            🌳 Ra sân
+          </button>
+        )}
 
         {/* Nút bấm nhanh / Nhắc nhở mở Xưởng Trang Phục Scratch của Bạn Kiến Sáng */}
         {!sharedAssetsEnabled && <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-2">
@@ -1393,6 +1453,7 @@ export default function App() {
           mascotScale={mascotScale}
           facingDirection={facingDirection}
           carriedItemDef={carriedItemDef}
+          carriedItemVariant={carriedItem?.visualVariant}
           onOpenMascotModal={sharedAssetsEnabled ? undefined : () => setIsCostumesModalOpen(true)}
         />
 

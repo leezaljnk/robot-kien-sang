@@ -1,6 +1,10 @@
 import React from 'react';
 
-export const ClassroomBackground: React.FC = () => {
+interface ClassroomBackgroundProps {
+  onVisitYard: () => void;
+}
+
+export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisitYard }) => {
   return (
     <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
       {/* Tường lớp học lớp 1 - màu vàng kem ấm áp */}
@@ -28,8 +32,15 @@ export const ClassroomBackground: React.FC = () => {
           <div className="text-2xl animate-pulse">🌿🌸</div>
           <span className="text-[10px] font-bold text-sky-800 bg-white/70 px-1 rounded mt-1">Sân trường</span>
         </div>
+        <button
+          type="button"
+          aria-label="Đi ra sân trường"
+          title="Bấm để ra sân trường"
+          onClick={onVisitYard}
+          className="pointer-events-auto absolute inset-0 z-10 cursor-pointer rounded-t-full bg-transparent focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
+        />
         {/* Khung ô cửa sổ */}
-        <div className="absolute inset-0 border-r-2 border-b-2 border-amber-800" style={{ left: '50%', top: '50%' }} />
+        <div className="pointer-events-none absolute inset-0 z-20 border-r-2 border-b-2 border-amber-800" style={{ left: '50%', top: '50%' }} />
       </div>
 
       {/* Cửa sổ bên phải */}
@@ -45,7 +56,7 @@ export const ClassroomBackground: React.FC = () => {
         role="region"
         aria-label="Hướng dẫn chơi trên bảng phấn"
         tabIndex={0}
-        className="absolute top-3 left-1/2 -translate-x-1/2 w-[94%] max-w-4xl h-[52%] max-h-72 bg-[#1E293B] rounded-2xl border-[10px] border-[#78350F] shadow-2xl overflow-y-auto pointer-events-auto flex flex-col"
+        className="absolute top-3 left-1/2 -translate-x-1/2 w-[94%] md:left-[calc(50%+5rem)] md:w-[calc(94%_-_10rem)] max-w-4xl h-[52%] max-h-72 bg-[#1E293B] rounded-2xl border-[10px] border-[#78350F] shadow-2xl overflow-y-auto pointer-events-auto flex flex-col"
       >
         {/* Khung ảnh Bác Hồ & Quốc kỳ ở đỉnh giữa bảng */}
         <div className="relative shrink-0 pt-1 flex items-center justify-center gap-3">
