@@ -7,6 +7,20 @@ interface Bounds {
   height: number;
 }
 
+export function getCommandMoveDuration(
+  startX: number,
+  startY: number,
+  targetX: number,
+  targetY: number,
+  area: { width: number; height: number }
+) {
+  const distance = Math.hypot(
+    (targetX - startX) / 100 * area.width,
+    (targetY - startY) / 100 * area.height
+  );
+  return Math.max(1200, distance / 100 * 1000);
+}
+
 export function getBinApproachTarget(
   area: Bounds,
   bin: Bounds,

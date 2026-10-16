@@ -17,7 +17,7 @@ import { OfflineHtmlModal } from './components/OfflineHtmlModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Shirt } from 'lucide-react';
 import { MASCOT_COSTUMES, getPrimaryMascotImage } from './data/mascotCostumes';
-import { getBinApproachTarget } from './utils/movement';
+import { getBinApproachTarget, getCommandMoveDuration } from './utils/movement';
 import { getTrashSpawnSlots } from './utils/trashSpawn';
 import { voiceIdForText } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
@@ -134,6 +134,8 @@ export default function App() {
   const rightBinRef = useRef<HTMLDivElement>(null);
   const playAreaRef = useRef<HTMLDivElement>(null);
   const speechTimeoutRef = useRef<number | null>(null);
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [gameReady, setGameReady] = useState(false);
 
   const refreshSharedAssets = useCallback(async () => {
     const shared = sharedAssetsToState(await listSharedAssets());
@@ -296,6 +298,9 @@ export default function App() {
         }
       } catch (err) {
         console.warn('Error loading persistent storage:', err);
+        if (isMounted) setSharedError('Không thể tải tùy chỉnh. Đang sử dụng tài nguyên hiện có.');
+      } finally {
+        if (isMounted) setAssetsLoaded(true);
       }
     };
 
@@ -304,6 +309,33 @@ export default function App() {
       isMounted = false;
     };
   }, [refreshSharedAssets]);
+
+  useEffect(() => {
+    if (!assetsLoaded) return;
+    let cancelled = false;
+    const mascotUrl = getPrimaryMascotImage(customCostumes, customMascotUrl);
+    const prepareMascot = async () => {
+      const urls = [...new Set([mascotUrl, ...Object.values(customCostumes)]
+        .filter((url): url is string => Boolean(url)))];
+      const failed = await Promise.all(urls.map(async url => {
+        const image = new Image();
+        image.src = url;
+        try {
+          await image.decode();
+          return false;
+        } catch (err) {
+          console.error('Không tải được ảnh trang phục Kiến Sáng:', url, err);
+          return true;
+        }
+      }));
+      if (!cancelled && failed.some(Boolean)) {
+        setSharedError('Một số ảnh Kiến Sáng không tải được. Hãy kiểm tra kết nối rồi tải lại trang.');
+      }
+      if (!cancelled) setGameReady(true);
+    };
+    void prepareMascot();
+    return () => { cancelled = true; };
+  }, [assetsLoaded, customCostumes, customMascotUrl]);
 
   const handleImportSettings = async (settings: PreloadedOfflineState) => {
     const entries: [string, unknown][] = [
@@ -533,6 +565,7 @@ export default function App() {
 
   // Initialize game on load
   useEffect(() => {
+    if (!gameReady) return;
     let cancelled = false;
     const images = [leftBinRef.current, rightBinRef.current]
       .flatMap(bin => Array.from(bin?.querySelectorAll('img') || []));
@@ -542,7 +575,7 @@ export default function App() {
       if (!cancelled) spawnTrashBatch();
     });
     return () => { cancelled = true; };
-  }, [spawnTrashBatch]);
+  }, [spawnTrashBatch, gameReady]);
 
   // Restart game
   const handleRestart = () => {
@@ -752,7 +785,6 @@ export default function App() {
     (
       targetX: number,
       targetY: number,
-      durationMs: number,
       moodDuringMove: KienSangMood,
       onComplete?: () => void
     ) => {
@@ -761,8 +793,16 @@ export default function App() {
         autopilotRafRef.current = null;
       }
 
+      const area = playAreaRef.current;
+      if (!area) {
+        console.error('Không thể di chuyển Kiến Sáng: chưa xác định được vùng chơi.');
+        return;
+      }
       const startX = kienXRef.current;
       const startY = kienYRef.current;
+      const durationMs = getCommandMoveDuration(
+        startX, startY, targetX, targetY, area.getBoundingClientRect()
+      );
       const startTime = performance.now();
       let lastStepTickTime = performance.now();
 
@@ -928,7 +968,7 @@ export default function App() {
       isTrashItemsModalOpen ||
       isOfflineHtmlModalOpen;
 
-    if (isAnyModalOpen) {
+    if (!gameReady || isAnyModalOpen) {
       stopAllMovement();
       return;
     }
@@ -990,6 +1030,7 @@ export default function App() {
       stopAllMovement();
     };
   }, [
+    gameReady,
     isVoiceModalOpen,
     isScratchModalOpen,
     isVictoryModalOpen,
@@ -1130,14 +1171,11 @@ export default function App() {
 
     // Khoảng cách tới món rác
     const targetItemY = Math.min(98, item.yPercent + 4);
-    const distToItem = Math.hypot(item.xPercent - kienXRef.current, targetItemY - kienYRef.current);
-    const durationToItem = Math.max(750, Math.min(1800, distToItem * 28));
 
     // Phase 1: Kiến Sáng bước đi mượt mà tới vị trí món rác (hoạt họa 12 frame chân nhịp nhàng)
     animateKienTo(
       item.xPercent,
       targetItemY,
-      durationToItem,
       'walking',
       () => {
         // Phase 2: Cúi người nhặt rác lên (Pick up action)
@@ -1174,13 +1212,10 @@ export default function App() {
           );
           const targetBinX = target.x;
           const targetBinY = target.y;
-          const distToBin = Math.hypot(targetBinX - kienXRef.current, targetBinY - kienYRef.current);
-          const durationToBin = Math.max(800, Math.min(1900, distToBin * 28));
 
           animateKienTo(
             targetBinX,
             targetBinY,
-            durationToBin,
             'carrying',
             () => {
               // Phase 4: Bỏ vào thùng rác (động tác thả rác k-6, k-7, k-8)
@@ -1193,7 +1228,7 @@ export default function App() {
                   if (isCorrect) {
                     // Sau khi đúng, bạn Kiến ăn mừng rồi bước mượt mà về vị trí trung tâm lớp
                     setTimeout(() => {
-                      animateKienTo(50, 74, 900, 'walking', () => {
+                      animateKienTo(50, 74, 'walking', () => {
                         setFacingDirection('right');
                         setKienMood('idle');
                       });
@@ -1201,7 +1236,7 @@ export default function App() {
                   } else {
                     // Khi sai, bạn Kiến buồn một chút rồi bước lại vị trí trung tâm lớp để bé chọn lại
                     setTimeout(() => {
-                      animateKienTo(50, 74, 850, 'walking', () => {
+                      animateKienTo(50, 74, 'walking', () => {
                         setFacingDirection('right');
                         setKienMood('idle');
                       });
@@ -1240,8 +1275,14 @@ export default function App() {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="relative w-screen h-screen flex flex-col overflow-hidden bg-slate-900 select-none font-sans"
+        aria-busy={!gameReady}
+        className={`relative w-screen h-screen flex flex-col overflow-hidden bg-slate-900 select-none font-sans ${gameReady ? '' : 'invisible'}`}
       >
+      {!gameReady && (
+        <div role="status" className="visible fixed inset-0 z-50 flex items-center justify-center bg-slate-900 text-lg font-bold text-amber-100">
+          Đang tải trò chơi…
+        </div>
+      )}
       {/* Thanh công cụ trên cùng */}
       <TopBar
         readOnly={sharedAssetsEnabled}
