@@ -24,6 +24,15 @@ interface GardenFlower {
   icon: string;
 }
 
+interface FlyingFriend {
+  id: number;
+  icon: '🦋' | '🐦';
+  left: number;
+  top: number;
+  delay: number;
+  duration: number;
+}
+
 interface SunlitGardenGameProps {
   onReturnToClassroom: () => void;
   customMascotUrl?: string | null;
@@ -42,7 +51,15 @@ const TRASH = [
 const CHALLENGE_GOAL = 10;
 const CATCH_LINE = 78;
 const MAX_MISSES = 10;
-const FLOWER_ICONS = ['🌼', '🌷', '🌻', '🌸', '🌺'];
+const FLOWER_ICONS = ['🌼', '🌷', '🌻', '🌸', '🌺', '🪻', '🌹', '🪷', '💐'];
+const FLYING_FRIENDS: FlyingFriend[] = Array.from({ length: 5 }, (_, id) => ({
+  id,
+  icon: id < 3 ? '🦋' : '🐦',
+  left: 8 + Math.random() * 84,
+  top: 7 + Math.random() * 28,
+  delay: Math.random() * -12,
+  duration: 8 + Math.random() * 9,
+}));
 const BONUSES = [
   { icon: '🌱', name: 'hạt giống' },
   { icon: '💧', name: 'giọt nước' },
@@ -66,6 +83,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   const [flowers, setFlowers] = useState<GardenFlower[]>([]);
   const [misses, setMisses] = useState(0);
   const [antX, setAntX] = useState(50);
+  const [facingDirection, setFacingDirection] = useState<'left' | 'right'>('right');
   const [isMoving, setIsMoving] = useState(false);
   const [mood, setMood] = useState<KienSangMood>('idle');
   const [walkStepTick, setWalkStepTick] = useState(0);
@@ -73,7 +91,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   const [slowMotion, setSlowMotion] = useState(false);
   const pointerDownRef = useRef(false);
   const [treeSizes] = useState(() =>
-    Array.from({ length: 4 }, () => 48 + Math.floor(Math.random() * 44))
+    Array.from({ length: 4 }, () => 112 + Math.floor(Math.random() * 48))
   );
   const areaRef = useRef<HTMLDivElement>(null);
   const trashRef = useRef(trash);
@@ -87,6 +105,8 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   const moodTimeoutRef = useRef<number | null>(null);
   const gameOver = misses >= MAX_MISSES;
   const completed = mode === 'challenge' && caught >= CHALLENGE_GOAL;
+  const butterflyCount = Math.min(caught, 3);
+  const birdCount = Math.min(Math.floor(caught / 3), 2);
 
   trashRef.current = trash;
   antXRef.current = antX;
@@ -97,6 +117,9 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     const next = Math.max(8, Math.min(92, antXRef.current + direction * 4));
     antXRef.current = next;
     setAntX(next);
+    setFacingDirection(direction < 0 ? 'left' : 'right');
+    setWalkStepTick((current) => current + 1);
+    setIsMoving(true);
   }, []);
 
   const startGame = (selectedMode: GardenMode) => {
@@ -115,6 +138,8 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     setMood('idle');
     setAntX(50);
     antXRef.current = 50;
+    setFacingDirection('right');
+    setWalkStepTick(0);
     directionsRef.current.clear();
     setStarted(true);
   };
@@ -123,6 +148,9 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     const bounds = areaRef.current?.getBoundingClientRect();
     if (!bounds) return;
     const next = Math.max(8, Math.min(92, ((clientX - bounds.left) / bounds.width) * 100));
+    if (Math.abs(next - antXRef.current) > 0.1) {
+      setFacingDirection(next < antXRef.current ? 'left' : 'right');
+    }
     antXRef.current = next;
     setAntX(next);
   };
@@ -136,9 +164,11 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') {
         event.preventDefault();
+        if (!directionsRef.current.has(-1)) moveAnt(-1);
         directionsRef.current.add(-1);
       } else if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') {
         event.preventDefault();
+        if (!directionsRef.current.has(1)) moveAnt(1);
         directionsRef.current.add(1);
       }
     };
@@ -167,13 +197,14 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
         const next = Math.max(8, Math.min(92, antXRef.current + direction * (time - previousTime) * 0.035));
         antXRef.current = next;
         setAntX(next);
+        if (direction !== 0) setFacingDirection(direction < 0 ? 'left' : 'right');
       }
       setIsMoving(isAntMoving);
       if (isAntMoving && previousTime > 0) {
         stepElapsed += time - previousTime;
-        if (stepElapsed >= 120) {
+        if (stepElapsed >= 75) {
           setWalkStepTick((current) => current + 1);
-          stepElapsed %= 120;
+          stepElapsed %= 75;
         }
       } else {
         stepElapsed = 0;
@@ -327,20 +358,85 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
         setIsMoving(false);
       }}
     >
+      <style>{`
+        @keyframes garden-fly {
+          0% { transform: translate3d(-18px, 8px, 0) rotate(-8deg); }
+          25% { transform: translate3d(24px, -14px, 0) rotate(7deg); }
+          50% { transform: translate3d(52px, 5px, 0) rotate(-4deg); }
+          75% { transform: translate3d(20px, 17px, 0) rotate(8deg); }
+          100% { transform: translate3d(-18px, 8px, 0) rotate(-8deg); }
+        }
+        @keyframes sun-ray-shimmer {
+          0%, 100% { opacity: .48; transform: scale(.92) rotate(0deg); }
+          50% { opacity: .9; transform: scale(1.08) rotate(8deg); }
+        }
+        @keyframes sun-sparkle {
+          0%, 100% { opacity: .3; transform: scale(.65) rotate(0deg); }
+          50% { opacity: 1; transform: scale(1.2) rotate(35deg); }
+        }
+      `}</style>
       <div className="absolute inset-x-0 top-[54%] h-[46%] bg-gradient-to-b from-lime-300 via-green-400 to-green-600" />
       {[4, 24, 76, 92].map((left, index) => (
         <div
           key={left}
-          className="absolute z-[1]"
-          style={{ left: `${left}%`, top: '40%', fontSize: `${treeSizes[index]}px` }}
+          className="absolute z-[1] leading-none"
+          style={{ left: `${left}%`, bottom: '46%', fontSize: `${treeSizes[index]}px` }}
           aria-hidden="true"
         >
           🌳
         </div>
       ))}
-      <div className="absolute right-[15%] top-[8%] text-5xl" aria-hidden="true">☀️</div>
+      <div className="absolute right-[12%] top-[5%] z-[2] h-28 w-28 sm:right-[16%] sm:top-[4%] sm:h-40 sm:w-40" aria-label="Mặt trời tỏa nắng">
+        <span
+          className="absolute inset-0 rounded-full bg-amber-300/40 blur-xl"
+          style={{ animation: 'sun-ray-shimmer 3s ease-in-out infinite' }}
+        />
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 120 120" aria-hidden="true">
+          <g
+            style={{ transformOrigin: '60px 60px', animation: 'sun-ray-shimmer 5s ease-in-out infinite' }}
+            stroke="#F59E0B"
+            strokeWidth="5"
+            strokeLinecap="round"
+          >
+            {Array.from({ length: 12 }, (_, ray) => (
+              <line key={ray} x1="60" y1="7" x2="60" y2="18" transform={`rotate(${ray * 30} 60 60)`} />
+            ))}
+          </g>
+          <circle cx="60" cy="60" r="37" fill="#FDE047" stroke="#F59E0B" strokeWidth="3" />
+          <circle cx="47" cy="56" r="3" fill="#92400E" />
+          <circle cx="73" cy="56" r="3" fill="#92400E" />
+          <path d="M 47 70 Q 60 82 73 70" fill="none" stroke="#92400E" strokeWidth="3.5" strokeLinecap="round" />
+        </svg>
+        {[[8, 18], [83, 15], [11, 79], [79, 83]].map(([left, top], index) => (
+          <span
+            key={index}
+            className="absolute text-xl text-yellow-100 sm:text-2xl"
+            style={{ left: `${left}%`, top: `${top}%`, animation: `sun-sparkle ${1.2 + index * 0.25}s ease-in-out ${index * 0.2}s infinite` }}
+            aria-hidden="true"
+          >✦</span>
+        ))}
+      </div>
       <div className="absolute left-[17%] top-[8%] text-4xl opacity-80" aria-hidden="true">☁️</div>
       <div className="absolute right-[35%] top-[18%] text-3xl opacity-70" aria-hidden="true">☁️</div>
+      {FLYING_FRIENDS.filter((friend) => friend.icon === '🦋')
+        .slice(0, butterflyCount)
+        .concat(
+          FLYING_FRIENDS.filter((friend) => friend.icon === '🐦').slice(0, birdCount)
+        )
+        .map((friend) => (
+        <span
+          key={friend.id}
+          className="pointer-events-none absolute z-[3] text-2xl sm:text-3xl"
+          style={{
+            left: `${friend.left}%`,
+            top: `${friend.top}%`,
+            animation: `garden-fly ${friend.duration}s ease-in-out ${friend.delay}s infinite`,
+          }}
+          aria-label={friend.icon === '🐦' ? 'Chim đang bay lượn trên trời' : 'Bướm đang bay lượn trên trời'}
+        >
+          {friend.icon}
+        </span>
+      ))}
       <div className="absolute bottom-[14%] left-[3%] z-[2] flex flex-col items-center" aria-label="Bạn kiến đang cổ vũ bên tổ">
         <span className="animate-bounce text-3xl" aria-hidden="true">🐜👏</span>
         <span className="text-3xl" aria-hidden="true">🪹</span>
@@ -402,7 +498,6 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
         {Array.from({ length: MAX_MISSES }, (_, index) => (
           <span key={index} className="mx-0.5">{index < misses ? '🖤' : '❤️'}</span>
         ))}
-        <span className="ml-1 text-xs">Né đá và cành cây!</span>
       </div>}
       {trash.map((piece) => (
         <span
@@ -432,6 +527,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
                 yPercent={100}
                 isMoving={isMoving}
                 walkStepTick={walkStepTick}
+                facingDirection={facingDirection}
                 customMascotUrl={customMascotUrl}
                 customCostumes={customCostumes}
                 mascotScale={mascotScale}
@@ -449,11 +545,14 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
               aria-label="Di chuyển Kiến Sáng sang trái"
               onPointerDown={(event) => {
                 event.stopPropagation();
+                if (!directionsRef.current.has(-1)) moveAnt(-1);
                 directionsRef.current.add(-1);
               }}
               onPointerUp={() => directionsRef.current.delete(-1)}
               onPointerLeave={() => directionsRef.current.delete(-1)}
-              onClick={() => moveAnt(-1)}
+              onClick={(event) => {
+                if (event.detail === 0) moveAnt(-1);
+              }}
               className="h-14 w-16 rounded-2xl border-2 border-emerald-700 bg-white/95 text-3xl font-black text-emerald-900 shadow-lg active:scale-95"
             >
               ←
@@ -463,11 +562,14 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
               aria-label="Di chuyển Kiến Sáng sang phải"
               onPointerDown={(event) => {
                 event.stopPropagation();
+                if (!directionsRef.current.has(1)) moveAnt(1);
                 directionsRef.current.add(1);
               }}
               onPointerUp={() => directionsRef.current.delete(1)}
               onPointerLeave={() => directionsRef.current.delete(1)}
-              onClick={() => moveAnt(1)}
+              onClick={(event) => {
+                if (event.detail === 0) moveAnt(1);
+              }}
               className="h-14 w-16 rounded-2xl border-2 border-emerald-700 bg-white/95 text-3xl font-black text-emerald-900 shadow-lg active:scale-95"
             >
               →
