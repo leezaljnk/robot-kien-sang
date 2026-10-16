@@ -57,7 +57,7 @@ export const ClassroomBackground: React.FC = () => {
         <div className="flex-1 px-4 py-1 text-center flex flex-col justify-between">
           <div>
             <h2 className="text-emerald-300 font-bold tracking-wider text-base sm:text-lg drop-shadow">
-              LỚP 1A • GIỮ GÌN VỆ SINH LỚP HỌC SẠCH ĐẸP
+              LỚP 2A5 FPT SCHOOL • GIỮ GÌN VỆ SINH LỚP HỌC SẠCH ĐẸP
             </h2>
             <p className="text-amber-200 text-xs sm:text-sm font-semibold italic mt-0.5">
               "Tuổi nhỏ làm việc nhỏ – Tùy theo sức của mình"
@@ -84,7 +84,7 @@ export const ClassroomBackground: React.FC = () => {
 
           {/* Khay đựng phấn và khăn lau bảng dưới mép bảng */}
           <div className="flex justify-between items-center px-4 text-xs text-slate-400 border-t border-slate-700/80 pt-0.5">
-            <span className="text-[11px] text-yellow-200 font-medium">🖍️ Phấn trắng Bến Tre</span>
+            <span className="text-[11px] text-yellow-200 font-medium">🖍️ Diệp Anh - Hải Quân - xxx</span>
             <span className="text-[11px] text-cyan-200 font-medium">Bé ơi hãy giúp bạn Kiến Sáng nhé! 🤖</span>
           </div>
         </div>

@@ -43,15 +43,110 @@ Hai giá trị này là cấu hình công khai trong bundle, không phải mật
 
 ### 2. Build và đưa lên GitHub Pages
 
-```bash
-npm run build
+Khuyến nghị dùng **GitHub Actions**: mỗi lần push mã nguồn lên branch `main`, GitHub tự cài dependencies, kiểm tra TypeScript, build và publish toàn bộ `dist/`. Không cần commit `dist/` hoặc tạo branch `gh-pages`. Workflow đã có sẵn tại [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml).
+
+#### 2.1. Tạo repository GitHub
+
+1. Đăng nhập GitHub, chọn **New repository**.
+2. Đặt tên, ví dụ `robot-kien-sang`.
+3. Chọn **Public** để dùng GitHub Pages với tài khoản miễn phí. Không khởi tạo thêm README nếu chuẩn bị đẩy project từ máy.
+4. Chọn **Create repository**.
+
+Trong các ví dụ dưới đây, thay `TEN_GITHUB` và `robot-kien-sang` bằng tài khoản và tên repository thực tế.
+
+#### 2.2. Đưa mã nguồn lên GitHub
+
+Mở PowerShell tại thư mục gốc project. Nếu project chưa có Git, chạy:
+
+```powershell
+git init
+git branch -M main
 ```
 
-Publish **toàn bộ nội dung `dist/`**, không chỉ HTML. Với GitHub Pages có thể dùng branch `gh-pages` chứa nội dung build và chọn branch đó trong Settings → Pages; hoặc dùng workflow Pages để upload artifact `dist`. Không upload `.env.local` vào Git. Bản build đã dùng đường dẫn tương đối, hỗ trợ URL kiểu `https://USER.github.io/REPOSITORY/`.
+Chuẩn bị các file và kiểm tra trước khi commit:
 
-- Gửi người chơi URL `https://USER.github.io/REPOSITORY/index.html`.
-- Mở `https://USER.github.io/REPOSITORY/editor.html` để cập nhật tài nguyên.
-- Không mở `index.html` online bằng `file://`; bản offline độc lập là chế độ khác.
+```powershell
+git add .
+git status
+```
+
+Phải có mã nguồn, `public/`, `package.json`, `package-lock.json` và workflow deploy. **Không được có `.env.local`, secret key hoặc `service_role`.** [`.gitignore`](.gitignore) đã loại trừ file môi trường riêng, dependencies và `dist/`; tuy nhiên file đã được Git theo dõi từ trước không tự được bỏ theo dõi bởi `.gitignore`.
+
+Với repository mới, tiếp tục:
+
+```powershell
+git commit -m "Initial project"
+git remote add origin https://github.com/TEN_GITHUB/robot-kien-sang.git
+git push -u origin main
+```
+
+Git có thể yêu cầu đăng nhập GitHub. Nếu project đã có repository/remote, dùng remote hiện tại hoặc điều chỉnh URL phù hợp, không chạy lại `git remote add origin`.
+
+#### 2.3. Cấu hình Supabase cho GitHub Actions
+
+File `.env.local` trên máy không được gửi lên GitHub. Cần cấu hình riêng cho quá trình build trên GitHub:
+
+1. Vào repository → **Settings → Secrets and variables → Actions**.
+2. Chọn tab **Variables** → **New repository variable**.
+3. Thêm đúng hai biến:
+
+| Name | Value |
+|---|---|
+| `VITE_SUPABASE_URL` | Project URL, ví dụ `https://abcdefgh.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Publishable key hoặc legacy `anon` key của project |
+
+Workflow đọc từ **Variables** (`vars`), không phải tab Secrets. Không dùng secret key hoặc `service_role`: hai biến `VITE_*` này sẽ xuất hiện công khai trong JavaScript của website.
+
+#### 2.4. Bật GitHub Pages
+
+1. Vào repository → **Settings → Pages**.
+2. Trong **Build and deployment → Source**, chọn **GitHub Actions**.
+3. Không chọn **Deploy from a branch** nếu dùng workflow có sẵn.
+
+#### 2.5. Chạy workflow và theo dõi kết quả
+
+Workflow [Deploy GitHub Pages](.github/workflows/deploy-pages.yml) đã có trong project; không cần tạo lại hoặc dán thêm YAML.
+
+1. Vào tab **Actions** → chọn **Deploy GitHub Pages**.
+2. Bấm **Run workflow**, chọn branch `main`, rồi xác nhận. Có thể dùng cách này nếu lần push đầu diễn ra trước khi cấu hình Variables hoặc bật Pages.
+3. Chờ hai job `build` và `deploy` có dấu tích xanh.
+4. Vào **Settings → Pages** hoặc mở environment `github-pages` trong lần chạy để lấy URL website.
+
+Workflow dùng Node.js 22 và `npm ci`, nên `package-lock.json` phải được commit và đồng bộ với `package.json`. Nếu job thất bại, mở step màu đỏ để xem lỗi; nếu báo lockfile không khớp, chạy `npm install` trên máy, commit lockfile đã cập nhật rồi push lại.
+
+Step **Upload complete build** dùng `path: dist`: GitHub upload toàn bộ bản build gồm HTML, JavaScript, CSS, manifest và ảnh. **Không chỉ upload HTML**, vì HTML online cần các file còn lại để chạy.
+
+Bản build dùng đường dẫn tương đối, hỗ trợ URL dạng `https://TEN_GITHUB.github.io/robot-kien-sang/`:
+
+| Mục đích | URL ví dụ |
+|---|---|
+| Chơi game | `https://TEN_GITHUB.github.io/robot-kien-sang/index.html` |
+| Cập nhật ảnh/âm thanh | `https://TEN_GITHUB.github.io/robot-kien-sang/editor.html` |
+
+Chia sẻ URL trang chơi cho người chơi. Trang editor không yêu cầu đăng nhập theo cấu hình hiện tại. Không tải `index.html` về rồi mở bằng `file://` để dùng chế độ online; HTML offline độc lập là chế độ khác.
+
+#### 2.6. Kiểm tra kết nối Supabase
+
+1. Mở URL `editor.html`.
+2. Chọn **Thùng xanh (hữu cơ)** rồi upload một ảnh PNG/JPG/WebP.
+3. Chờ thông báo xuất bản thành công.
+4. Mở trang chơi và nhấn **F5** để nhận ảnh mới.
+5. Trong Supabase SQL Editor, có thể kiểm tra:
+
+```sql
+select * from public.game_assets;
+```
+
+Bảng sẽ có ID vừa upload, ví dụ `images/bins/organic`, và mã revision. File nằm trong **Storage → bucket `kien-sang`**. Ngay sau khi chỉ chạy script setup, kết quả `Success. No rows returned` là bình thường: bảng đã tạo nhưng chưa có tài nguyên nào được xuất bản.
+
+#### 2.7. Các lần cập nhật sau
+
+- **Đổi ảnh/âm thanh dùng chung:** upload qua editor, không cần build hoặc deploy lại. Người chơi nhấn F5.
+- **Đổi mã nguồn hoặc ảnh mặc định trong project:** commit và push lên `main`; workflow tự build/deploy lại.
+- **Đổi Variables Supabase trên GitHub:** chạy lại workflow để cấu hình mới được đưa vào bundle.
+- **Muốn cập nhật mã nguồn trên máy sau khi sửa file trực tiếp trên GitHub:** chạy `git pull` trước khi tiếp tục chỉnh sửa.
+
+Nếu không dùng Actions, có thể build trên máy bằng `npm run build`, đưa **nội dung bên trong `dist/`** vào thư mục gốc branch `gh-pages`, rồi chọn **Settings → Pages → Deploy from a branch → gh-pages → / (root)**. Với cách này cấu hình Supabase lấy từ `.env.local` lúc build; mỗi lần cập nhật mã nguồn phải tự build và đưa lại toàn bộ nội dung mới lên branch đó. Chỉ chọn một phương thức publish để tránh nhầm cấu hình.
 
 ### 3. Cập nhật tài nguyên
 
@@ -177,6 +272,8 @@ Khi chạy ứng dụng bằng máy chủ phát triển, ảnh tải lên đư�
 - Robot và thùng rác: `public/images/` (ví dụ `kien-sang-main.png`, `thung_rac_xanh.png`, `thung_rac_cam.png`).
 - Trang phục robot: `public/images/costumes/`, đặt tên theo ID như `tim_rac_01.png`, `cam_banh_mi_01.png`, `vui_01.png`.
 - Ảnh món rác: `public/images/trash/`, đặt tên theo ID vật phẩm như `vo_hop_sua.png`.
+
+Bộ tìm rác cần đủ `tim_rac_01` đến `tim_rac_12` để hiển thị hoạt ảnh riêng đủ 12 bước. Nếu chưa có ảnh tìm rác nào, khi di chuyển game dùng hoạt ảnh SVG mặc định thay vì giữ một ảnh cảm xúc đứng yên. Có thể bổ sung bộ ảnh vào project rồi build lại, hoặc tải bộ ảnh qua editor online và tải lại trang chơi.
 
 Ảnh PNG/JPG/WebP/SVG đặt sẵn trong các thư mục trên sẽ được chép sang `dist/`. Khi build, Vite tạo `dist/kien-sang-assets.json` để ứng dụng nhận biết và nạp ảnh trang phục, ảnh rác, robot và thùng rác. Đặt tên ảnh trang phục/rác khớp ID trong ứng dụng để ảnh được gắn đúng vị trí. Giao diện hiện có 196 trang phục vector mặc định được tạo từ mã SVG; chỉ cần thêm tệp vào `costumes/` nếu muốn thay một hay nhiều trang phục bằng ảnh riêng.
 

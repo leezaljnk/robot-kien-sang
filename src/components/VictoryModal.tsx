@@ -17,7 +17,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
   onOpenScratchModal,
   onOpenOfflineHtmlModal,
   customMascotUrl,
-  maxScore = 16,
+  maxScore = 10,
 }) => {
   useEffect(() => {
     if (isOpen) {

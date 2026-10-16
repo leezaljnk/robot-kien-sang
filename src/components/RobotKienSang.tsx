@@ -109,6 +109,12 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
     }
   }
 
+  // Without walking images, animate the vector frames rather than a static emotion image.
+  if (isMoving && currentCostumeId.startsWith('tim_rac_') &&
+      !TIM_RAC_IDS.some(id => customCostumes[id])) {
+    customFrameImage = null;
+  }
+
   return (
     <div
       className="absolute z-30 select-none pointer-events-none flex flex-col items-center group will-change-[left,top]"
@@ -163,6 +169,7 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
 
       {/* CONTAINER HIỂN THỊ TRANG PHỤC BẠN KIẾN SÁNG */}
       <div
+        data-robot-sprite
         className="relative flex items-center justify-center will-change-transform"
         style={{ transform: `scale(${mascotScale})` }}
       >

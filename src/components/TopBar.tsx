@@ -84,7 +84,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             </button>
           </div>
           <p className="text-[11px] font-bold text-orange-600">
-            Thử tài Phân loại Rác • Lớp 1
+            Thử tài Phân loại Rác • Lớp 2A5
           </p>
         </div>
       </div>

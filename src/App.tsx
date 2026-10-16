@@ -17,6 +17,7 @@ import { OfflineHtmlModal } from './components/OfflineHtmlModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Camera, Sparkles, FolderUp, Shirt, Keyboard, Gamepad2 } from 'lucide-react';
 import { MASCOT_COSTUMES } from './data/mascotCostumes';
+import { getBinApproachTarget } from './utils/movement';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
 import {
   playPickSfx,
@@ -152,6 +153,7 @@ export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const leftBinRef = useRef<HTMLDivElement>(null);
   const rightBinRef = useRef<HTMLDivElement>(null);
+  const playAreaRef = useRef<HTMLDivElement>(null);
   const speechTimeoutRef = useRef<number | null>(null);
 
   const refreshSharedAssets = useCallback(async () => {
@@ -259,17 +261,14 @@ export default function App() {
           inlinePreloaded?.customMascotUrl ||
           parsedCostumes['tim_rac_01'] ||
           parsedCostumes['k-v-2'] ||
-          parsedCostumes['vui_01'] ||
           serverAssets?.customMascotUrl ||
+          parsedCostumes['vui_01'] ||
           Object.values(parsedCostumes).find(Boolean) ||
           null;
 
         if (effectiveMascot) {
           if (!parsedCostumes['k-v-2']) {
             parsedCostumes['k-v-2'] = effectiveMascot;
-          }
-          if (!parsedCostumes['tim_rac_01']) {
-            parsedCostumes['tim_rac_01'] = effectiveMascot;
           }
           setCustomMascotUrl(effectiveMascot);
         }
@@ -1154,8 +1153,28 @@ export default function App() {
 
         setTimeout(() => {
           // Phase 3: Kiến Sáng ôm rác đi mượt mà tới thùng rác đã chọn (Carry & Walk)
-          const targetBinX = chosenCategory === 'organic' ? 22 : 78;
-          const targetBinY = 76;
+          const area = playAreaRef.current;
+          const bin = chosenCategory === 'organic' ? leftBinRef.current : rightBinRef.current;
+          const binImage = bin?.querySelector('img');
+          const robot = area?.querySelector('[data-robot-sprite]');
+          if (!area || !binImage || !robot) {
+            console.error('Không thể xác định vị trí thùng rác hoặc nhân vật.');
+            triggerSpeech('Chưa xác định được vị trí thùng rác, bạn hãy chọn lại nhé!');
+            setIsMoving(false);
+            setKienMood('idle');
+            setCarriedItemInstanceId(null);
+            setActiveItems(prev => prev.map(it => it.instanceId === item.instanceId
+              ? { ...it, isDragging: false } : it));
+            return;
+          }
+          const target = getBinApproachTarget(
+            area.getBoundingClientRect(),
+            binImage.getBoundingClientRect(),
+            robot.getBoundingClientRect().width,
+            chosenCategory === 'organic'
+          );
+          const targetBinX = target.x;
+          const targetBinY = target.y;
           const distToBin = Math.hypot(targetBinX - kienXRef.current, targetBinY - kienYRef.current);
           const durationToBin = Math.max(800, Math.min(1900, distToBin * 28));
 
@@ -1258,7 +1277,7 @@ export default function App() {
       </div>}
 
       {/* KHUNG CẢNH LỚP HỌC CHÍNH */}
-      <div className="relative flex-1 w-full h-full overflow-hidden">
+      <div ref={playAreaRef} className="relative flex-1 w-full h-full overflow-hidden">
         {/* Nền lớp học Việt Nam */}
         <ClassroomBackground />
 
