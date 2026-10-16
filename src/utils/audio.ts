@@ -143,19 +143,22 @@ export const speakKienSang = (
   customAudioUrl?: string | null,
   onEnded?: () => void
 ) => {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  window.speechSynthesis?.cancel();
   // If custom audio provided
   if (customAudioUrl) {
     try {
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio = null;
-      }
       const audio = new Audio(customAudioUrl);
       currentAudio = audio;
       audio.onended = () => {
         onEnded?.();
       };
-      audio.play().catch(() => {
+      audio.play().catch((err) => {
+        if (currentAudio !== audio || err?.name === 'AbortError') return;
+        console.warn('Không phát được giọng thu âm, chuyển sang đọc văn bản:', err);
         // Fallback to speech synthesis if play is blocked
         speakFallbackTTS(textVi, onEnded);
       });

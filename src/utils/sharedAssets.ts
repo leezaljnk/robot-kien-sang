@@ -1,5 +1,6 @@
 import { MASCOT_COSTUMES } from '../data/mascotCostumes';
 import { TRASH_ITEMS } from '../data/trashItems';
+import { VOICE_PROMPTS } from '../data/voicePrompts';
 import { PreloadedOfflineState } from '../types';
 
 const projectUrl = (import.meta.env?.VITE_SUPABASE_URL || '').replace(/\/$/, '');
@@ -15,9 +16,7 @@ export const ASSET_SLOTS = [
   { id: 'images/bins/recyclable', label: 'Thùng cam (tái chế)', kind: 'image' },
   ...MASCOT_COSTUMES.map(c => ({ id: `images/costumes/${c.id}`, label: `${c.id} — ${c.nameVi}`, kind: 'image' })),
   ...TRASH_ITEMS.map(t => ({ id: `images/trash/${t.id}`, label: `${t.id} — ${t.nameVi}`, kind: 'image' })),
-  { id: 'voice/correct', label: 'Giọng nói: đúng', kind: 'audio' },
-  { id: 'voice/incorrect', label: 'Giọng nói: sai', kind: 'audio' },
-  { id: 'voice/victory', label: 'Giọng nói: chiến thắng', kind: 'audio' },
+  ...VOICE_PROMPTS.map(p => ({ id: `voice/${p.id}`, label: `${p.id} — ${p.text}`, kind: 'audio' })),
 ];
 
 export interface SharedAsset {
@@ -69,7 +68,7 @@ export function sharedAssetsToState(assets: SharedAsset[]): PreloadedOfflineStat
     else if (asset.id.startsWith('voice/')) {
       state.voiceClips ||= { correct: null, incorrect: null, victory: null };
       const key = asset.id.slice(6);
-      if (key === 'correct' || key === 'incorrect' || key === 'victory') state.voiceClips[key] = url;
+      if (VOICE_PROMPTS.some(p => p.id === key)) state.voiceClips[key] = url;
     }
   }
   return state;

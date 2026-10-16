@@ -51,6 +51,9 @@ export async function embedOfflineAssets(
     customOrganicUrl: await embed(state.customOrganicUrl),
     customRecyclableUrl: await embed(state.customRecyclableUrl),
     voiceClips: {
+      ...Object.fromEntries(await Promise.all(
+        Object.entries(state.voiceClips || {}).map(async ([id, url]) => [id, await embed(url)])
+      )),
       correct: await embed(state.voiceClips?.correct),
       incorrect: await embed(state.voiceClips?.incorrect),
       victory: await embed(state.voiceClips?.victory),

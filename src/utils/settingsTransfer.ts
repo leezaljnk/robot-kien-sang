@@ -1,4 +1,5 @@
 import { PreloadedOfflineState } from '../types';
+import { VOICE_PROMPTS } from '../data/voicePrompts';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -49,6 +50,10 @@ export function parseSettingsFile(text: string): PreloadedOfflineState {
     mascotScale: scale(state.mascotScale),
     binScale: scale(state.binScale),
     voiceClips: {
+      ...Object.fromEntries(Object.entries(state.voiceClips).map(([id, clip]) => {
+        if (!VOICE_PROMPTS.some(p => p.id === id)) throw new Error(`ID giọng nói không hợp lệ: ${id}`);
+        return [id, media(clip, 'audio')];
+      })),
       correct: media(state.voiceClips.correct, 'audio'),
       incorrect: media(state.voiceClips.incorrect, 'audio'),
       victory: media(state.voiceClips.victory, 'audio'),

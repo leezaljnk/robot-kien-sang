@@ -77,6 +77,13 @@ function generateOfflineHtml() {
   };
 
   const preloadedState = {
+    voiceClips: Object.fromEntries(
+      fs.existsSync(path.resolve(__dirname, '../public/voice'))
+        ? fs.readdirSync(path.resolve(__dirname, '../public/voice'))
+          .filter(f => f.endsWith('.mp3'))
+          .map(f => [path.basename(f, '.mp3'), `data:audio/mpeg;base64,${fs.readFileSync(path.resolve(__dirname, '../public/voice', f)).toString('base64')}`])
+        : []
+    ),
     customCostumes,
     customTrashImages,
     customMascotUrl:

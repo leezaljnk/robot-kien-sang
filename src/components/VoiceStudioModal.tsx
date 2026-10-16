@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Play, RotateCcw, Check, X, Sparkles, Volume2 } from 'lucide-react';
 import { VoiceClips } from '../types';
+import { VOICE_PROMPTS } from '../data/voicePrompts';
 
 interface VoiceStudioModalProps {
   isOpen: boolean;
@@ -19,29 +20,13 @@ interface PromptItem {
   icon: string;
 }
 
-const PROMPT_ITEMS: PromptItem[] = [
-  {
-    key: 'incorrect',
-    label: 'Khi bé bỏ nhầm thùng',
-    defaultText: 'Ôi nhầm rồi, bạn thử lại nhé!',
-    situation: 'Động viên bé thử lại khi chọn sai thùng rác',
-    icon: '🥺',
-  },
-  {
-    key: 'correct',
-    label: 'Khi bé bỏ đúng thùng',
-    defaultText: 'Hoan hô! Đúng rồi bạn ơi!',
-    situation: 'Kiến Sáng reo mừng khi bé phân loại đúng',
-    icon: '🎉',
-  },
-  {
-    key: 'victory',
-    label: 'Khi đạt đủ 10 sao chiến thắng',
-    defaultText: 'Yeah, 10 sao rồi, lớp mình sạch quá!',
-    situation: 'Kiến Sáng reo vang chúc mừng toàn lớp sạch bóng',
-    icon: '🏆',
-  },
-];
+const PROMPT_ITEMS: PromptItem[] = VOICE_PROMPTS.map(prompt => ({
+  key: prompt.id,
+  label: prompt.id,
+  defaultText: prompt.text,
+  situation: prompt.text,
+  icon: '🎙️',
+}));
 
 export const VoiceStudioModal: React.FC<VoiceStudioModalProps> = ({
   isOpen,
@@ -147,7 +132,7 @@ export const VoiceStudioModal: React.FC<VoiceStudioModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs">
-      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border-4 border-amber-400 overflow-hidden">
+      <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto bg-white rounded-3xl shadow-2xl border-4 border-amber-400">
         {/* Header modal */}
         <div className="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 px-6 py-4 flex items-center justify-between text-white">
           <div className="flex items-center gap-2">
@@ -172,7 +157,7 @@ export const VoiceStudioModal: React.FC<VoiceStudioModalProps> = ({
         {/* Thân modal */}
         <div className="p-6 space-y-5">
           {/* Tabs chọn 3 câu cần thu âm */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
             {PROMPT_ITEMS.map((item) => {
               const hasClip = Boolean(recordedClips[item.key]);
               const isSelected = activeKey === item.key;

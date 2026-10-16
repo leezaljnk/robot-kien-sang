@@ -3,6 +3,20 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
 import { defineConfig, type Plugin } from 'vite';
+import { VOICE_PROMPTS } from './src/data/voicePrompts';
+
+function readProjectVoices(inline = false) {
+  const voices: Record<string, string> = {};
+  for (const prompt of VOICE_PROMPTS) {
+    const file = path.resolve(__dirname, 'public/voice', `${prompt.id}.mp3`);
+    if (fs.existsSync(file)) {
+      voices[prompt.id] = inline
+        ? `data:audio/mpeg;base64,${fs.readFileSync(file).toString('base64')}`
+        : `./voice/${prompt.id}.mp3`;
+    }
+  }
+  return voices;
+}
 
 function mascotUploadPlugin(): Plugin {
   return {
@@ -32,6 +46,7 @@ function mascotUploadPlugin(): Plugin {
           : null;
       };
       const preloadedAssets = {
+        voiceClips: readProjectVoices(),
         customCostumes,
         customTrashImages,
         customMascotUrl:
@@ -306,6 +321,7 @@ function mascotUploadPlugin(): Plugin {
         const customRecyclableUrl = readDataUrlIfExists('thung_rac_cam.png');
 
         return {
+          voiceClips: readProjectVoices(true),
           customCostumes,
           customTrashImages,
           customMascotUrl,

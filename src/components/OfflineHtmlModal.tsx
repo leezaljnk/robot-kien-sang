@@ -60,7 +60,7 @@ export const OfflineHtmlModal: React.FC<OfflineHtmlModalProps> = ({
   );
 
   const hasCustomBins = Boolean(customOrganicUrl || customRecyclableUrl);
-  const hasCustomVoice = Boolean(voiceClips?.correct || voiceClips?.incorrect || voiceClips?.victory);
+  const hasCustomVoice = Object.values(voiceClips).some(Boolean);
 
   if (!isOpen) return null;
 
@@ -152,6 +152,9 @@ export const OfflineHtmlModal: React.FC<OfflineHtmlModalProps> = ({
             : 0.85,
         customTrashImages: mergedTrashImages,
         voiceClips: {
+          ...window.__KIEN_SANG_PRELOADED_STATE__?.voiceClips,
+          ...savedVoice,
+          ...voiceClips,
           correct: voiceClips?.correct || savedVoice?.correct || null,
           incorrect: voiceClips?.incorrect || savedVoice?.incorrect || null,
           victory: voiceClips?.victory || savedVoice?.victory || null,

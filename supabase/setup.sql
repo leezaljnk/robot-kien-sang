@@ -4,7 +4,9 @@ returns boolean language sql immutable set search_path = '' as $$
   select asset_id in (
     'images/mascot/main', 'images/bins/organic', 'images/bins/recyclable',
     'voice/correct', 'voice/incorrect', 'voice/victory'
-  ) or asset_id ~ '^images/costumes/tim_rac_(0[1-9]|1[0-2])$'
+  ) or asset_id ~ '^voice/(welcome|continue_sorting|batch_complete|approach_bin|approach_trash|select_trash|bin_unavailable|mode_drag|mode_command|mascot_updated)$'
+    or asset_id ~ '^voice/(selected|picked)_(vo_hop_sua|vo_hop_giay|giay_cu|vo_chai|ong_nhua|vo_keo|vo_lon|vo_chai_nhua|xuong_ca|dui_ga|vo_dua_hau|banh_mi|la_cay|vo_chuoi|vo_tao)$'
+    or asset_id ~ '^images/costumes/tim_rac_(0[1-9]|1[0-2])$'
     or asset_id ~ '^images/costumes/(vui|buon)_0[12]$'
     or asset_id ~ '^images/costumes/cam_(hopsua|hopgiay|giaycu|vochai|ongnhua|vokeo|volon|vochainhua|xuongca|duiga|voduahau|banh_mi|lacay|vochuoi|votao)_(0[1-9]|1[0-2])$'
     or asset_id ~ '^images/trash/(vo_hop_sua|vo_hop_giay|giay_cu|vo_chai|ong_nhua|vo_keo|vo_lon|vo_chai_nhua|xuong_ca|dui_ga|vo_dua_hau|banh_mi|la_cay|vo_chuoi|vo_tao)$';

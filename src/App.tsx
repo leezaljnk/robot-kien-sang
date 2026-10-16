@@ -18,6 +18,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Camera, Sparkles, FolderUp, Shirt, Keyboard, Gamepad2 } from 'lucide-react';
 import { MASCOT_COSTUMES } from './data/mascotCostumes';
 import { getBinApproachTarget } from './utils/movement';
+import { getTrashSpawnSlots } from './utils/trashSpawn';
+import { voiceIdForText } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
 import {
   playPickSfx,
@@ -33,7 +35,7 @@ import {
   removePersistentItem,
 } from './utils/persistentStorage';
 
-const MAX_SCORE = 16;
+const MAX_SCORE = 10;
 const STORAGE_KEY_VOICE = 'kien_sang_voice_clips_v1';
 const STORAGE_KEY_MASCOT = 'kien_sang_custom_mascot_v1';
 const STORAGE_KEY_SCALE = 'kien_sang_mascot_scale_v1';
@@ -42,26 +44,6 @@ const STORAGE_KEY_BIN_RECYCLABLE = 'kien_sang_bin_recyclable_v1';
 const STORAGE_KEY_BIN_SCALE = 'kien_sang_bin_scale_v1';
 const STORAGE_KEY_TRASH_IMAGES = 'kien_sang_trash_images_v1';
 const STORAGE_KEY_MASCOT_COSTUMES = 'kien_sang_costumes_v1';
-
-// Potential floor spawn coordinates (% width, % height across classroom)
-const SPAWN_SLOTS = [
-  { x: 22, y: 70 },
-  { x: 36, y: 69 },
-  { x: 50, y: 68 },
-  { x: 64, y: 70 },
-  { x: 78, y: 72 },
-  { x: 18, y: 78 },
-  { x: 32, y: 77 },
-  { x: 48, y: 76 },
-  { x: 62, y: 78 },
-  { x: 76, y: 77 },
-  { x: 84, y: 79 },
-  { x: 24, y: 84 },
-  { x: 38, y: 85 },
-  { x: 52, y: 84 },
-  { x: 66, y: 85 },
-  { x: 78, y: 84 },
-];
 
 export default function App() {
   const [sharedError, setSharedError] = useState('');
@@ -134,6 +116,7 @@ export default function App() {
 
   // Child recorded voices
   const [voiceClips, setVoiceClips] = useState<VoiceClips>(() => ({
+    ...preloaded?.voiceClips,
     correct: preloaded?.voiceClips?.correct || null,
     incorrect: preloaded?.voiceClips?.incorrect || null,
     victory: preloaded?.voiceClips?.victory || null,
@@ -166,6 +149,8 @@ export default function App() {
     if (shared.voiceClips) {
       const clips = shared.voiceClips;
       setVoiceClips(prev => ({
+        ...prev,
+        ...Object.fromEntries(Object.entries(clips).filter(([, url]) => url)),
         correct: clips.correct || prev.correct,
         incorrect: clips.incorrect || prev.incorrect,
         victory: clips.victory || prev.victory,
@@ -189,6 +174,7 @@ export default function App() {
           customMascotUrl?: string | null;
           customOrganicUrl?: string | null;
           customRecyclableUrl?: string | null;
+          voiceClips?: VoiceClips;
         } | null = null;
 
         if (typeof window !== 'undefined' && window.location.protocol.startsWith('http')) {
@@ -236,11 +222,12 @@ export default function App() {
         if (!isMounted) return;
 
         const mergedVoice: VoiceClips = {
-          correct: savedVoice?.correct || inlinePreloaded?.voiceClips?.correct || null,
-          incorrect: savedVoice?.incorrect || inlinePreloaded?.voiceClips?.incorrect || null,
-          victory: savedVoice?.victory || inlinePreloaded?.voiceClips?.victory || null,
+          correct: null, incorrect: null, victory: null,
+          ...serverAssets?.voiceClips,
+          ...inlinePreloaded?.voiceClips,
+          ...savedVoice,
         };
-        if (mergedVoice.correct || mergedVoice.incorrect || mergedVoice.victory) {
+        if (Object.values(mergedVoice).some(Boolean)) {
           setVoiceClips(mergedVoice);
         }
 
@@ -492,7 +479,8 @@ export default function App() {
         clearTimeout(speechTimeoutRef.current);
       }
 
-      const clipUrl = customClipKey ? voiceClips[customClipKey] : null;
+      const clipKey = customClipKey || voiceIdForText(text);
+      const clipUrl = clipKey ? voiceClips[clipKey] : null;
       speakKienSang(text, clipUrl);
 
       speechTimeoutRef.current = window.setTimeout(() => {
@@ -507,8 +495,22 @@ export default function App() {
 
   // Spawn a batch of 3 trash items (ngẫu nhiên từ 15 loại rác)
   const spawnTrashBatch = useCallback(() => {
-    // Shuffle slots and pick 3 slots
-    const slots = [...SPAWN_SLOTS].sort(() => Math.random() - 0.5).slice(0, 3);
+    const area = playAreaRef.current;
+    const left = leftBinRef.current;
+    const right = rightBinRef.current;
+    if (!area || !left || !right) {
+      console.error('Không thể đặt rác: chưa xác định được vùng chơi và thùng rác.');
+      return;
+    }
+    const slots = getTrashSpawnSlots(
+      area.getBoundingClientRect(),
+      [left.getBoundingClientRect(), right.getBoundingClientRect()]
+    ).sort(() => Math.random() - 0.5).slice(0, 3);
+    if (slots.length < 3) {
+      console.error('Không đủ vùng trống an toàn để đặt rác.');
+      setKienSpeech('Vùng chơi quá nhỏ. Hãy phóng to cửa sổ hoặc giảm kích thước thùng rác rồi chơi lại nhé!');
+      return;
+    }
 
     // Pick 3 random items with balanced organic & recyclable representation
     const organics = TRASH_ITEMS.filter((item) => item.category === 'organic').sort(
@@ -542,7 +544,15 @@ export default function App() {
 
   // Initialize game on load
   useEffect(() => {
-    spawnTrashBatch();
+    let cancelled = false;
+    const images = [leftBinRef.current, rightBinRef.current]
+      .flatMap(bin => Array.from(bin?.querySelectorAll('img') || []));
+    Promise.all(images.map(image => image.decode().catch(err => {
+      console.warn('Không tải được ảnh thùng rác khi chuẩn bị vùng đặt rác:', err);
+    }))).then(() => {
+      if (!cancelled) spawnTrashBatch();
+    });
+    return () => { cancelled = true; };
   }, [spawnTrashBatch]);
 
   // Restart game
@@ -607,7 +617,7 @@ export default function App() {
 
       setActiveItems((prev) => {
         const remaining = prev.filter((it) => it.instanceId !== instanceId);
-        if (remaining.length === 0) {
+        if (remaining.length === 0 && score + 1 < MAX_SCORE) {
           // Khi đã bỏ đúng hết 3 món rác, tự động xuất hiện tiếp 3 món rác ngẫu nhiên mới!
           setTimeout(() => {
             spawnTrashBatch();
@@ -1261,7 +1271,7 @@ export default function App() {
         }}
         onOpenTrashItemsModal={() => setIsTrashItemsModalOpen(true)}
         onRestart={handleRestart}
-        hasCustomVoice={Boolean(voiceClips.correct || voiceClips.incorrect || voiceClips.victory)}
+        hasCustomVoice={Object.values(voiceClips).some(Boolean)}
         customMascotUrl={customMascotUrl}
         hasCustomBins={Boolean(customOrganicUrl || customRecyclableUrl)}
         customTrashCount={Object.keys(customTrashImages).filter((k) => !!customTrashImages[k]).length}

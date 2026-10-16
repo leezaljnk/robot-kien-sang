@@ -64,6 +64,7 @@ export type KienSangMood =
 export type CustomCostumesMap = Partial<Record<string, string | null>>;
 
 export interface VoiceClips {
+  [id: string]: string | null;
   correct: string | null;     // Audio blob URL or null
   incorrect: string | null;
   victory: string | null;
@@ -85,4 +86,3 @@ declare global {
     __KIEN_SANG_PRELOADED_STATE__?: PreloadedOfflineState;
   }
 }
-
