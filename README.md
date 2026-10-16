@@ -2,11 +2,47 @@
 
 Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân loại rác hữu cơ và rác tái chế cùng Robot Kiến Sáng. Giao diện được xây dựng bằng React, TypeScript và Vite.
 
+## Bài thuyết trình giới thiệu dự án
+
+**Thời lượng gợi ý:** khoảng 3–4 phút. Ba bạn có thể thay tên mình vào phần lời dẫn bên dưới. Khi thuyết trình, một bạn có thể vừa nói vừa trình chiếu trò chơi.
+
+### Bạn thứ nhất – Giới thiệu dự án
+
+> Kính chào thầy cô và các bạn! Chúng em là ba bạn học sinh lớp 2A5, Trường Tiểu học và THCS FPT Cầu Giấy. Hôm nay, chúng em xin giới thiệu dự án **“Robot Kiến Sáng – Thử tài Phân loại Rác”**.
+>
+> Chúng em làm trò chơi này để giúp các em nhỏ, đặc biệt là các bạn lớp 1, tập phân loại rác theo cách vui vẻ và dễ nhớ. Trong trò chơi, bạn Robot Kiến Sáng cùng các bạn dọn lớp học và đưa rác vào đúng thùng.
+>
+> Trò chơi có hai nhóm rác. Rác hữu cơ như lá cây, vỏ chuối và thức ăn thừa được bỏ vào **Thùng Xanh**. Rác tái chế như giấy cũ, vỏ hộp giấy và vỏ chai được bỏ vào **Thùng Cam**. Trò chơi hiện có 15 món rác để các bạn thử sức.
+
+### Bạn thứ hai – Hướng dẫn cách chơi
+
+> Bây giờ, chúng em xin hướng dẫn cách chơi. Trên màn hình có các món rác, bạn Robot Kiến Sáng và hai thùng rác. Mỗi lần bỏ đúng một món, bạn sẽ nhận được một ngôi sao. Mục tiêu là đạt **10 ngôi sao** để chiến thắng.
+>
+> Có hai cách chơi. Ở chế độ **kéo thả**, các bạn kéo món rác rồi thả vào thùng mà mình chọn. Ở chế độ **ra lệnh cho Robot**, các bạn chọn một món rác rồi chọn thùng; Robot sẽ đi nhặt và mang rác tới đó.
+>
+> Nếu chọn đúng, Robot vui mừng và tặng một ngôi sao. Nếu chọn nhầm, Robot sẽ nhắc các bạn thử lại. Đừng lo nhé, mình có thể suy nghĩ và chọn lại!
+
+### Bạn thứ ba – Lợi ích và kết thúc
+
+> Qua trò chơi, chúng em mong các bạn nhỏ nhớ rằng rác cần được phân loại, chứ không nên bỏ lẫn tất cả vào cùng một thùng. Các bạn cũng được luyện quan sát, suy nghĩ trước khi lựa chọn và sử dụng máy tính để học tập.
+>
+> Điều quan trọng nhất là những việc nhỏ mỗi ngày cũng có thể giúp lớp học sạch hơn và góp phần bảo vệ môi trường. Sau khi chơi, chúng ta có thể thực hành phân loại rác đúng cách ở lớp và ở nhà, theo hướng dẫn của thầy cô và gia đình.
+>
+> Dự án của chúng em vẫn có thể được bổ sung thêm hình ảnh và nội dung để trò chơi ngày càng phong phú hơn. Cảm ơn thầy cô và các bạn đã lắng nghe! Các bạn có muốn cùng Robot Kiến Sáng thử phân loại rác không ạ?
+
+### Gợi ý trình chiếu
+
+1. Bạn thứ nhất giới thiệu tên dự án và mở màn hình trò chơi.
+2. Bạn thứ hai làm thử một lượt: chọn một món rác, đưa vào thùng và chỉ cho mọi người xem sao hoặc lời nhắc của Robot.
+3. Bạn thứ ba nói về điều đã học được, rồi mời cả lớp cùng chơi.
+
 ## Tính năng
 
-- Phân loại 16 món rác vào hai thùng: rác hữu cơ và rác tái chế.
+- Phân loại 15 món rác vào hai thùng: rác hữu cơ và rác tái chế.
 - Đạt **10 sao** để chiến thắng. Rác xuất hiện ngoài vùng thùng rác với khoảng cách an toàn để dễ chọn/nhặt.
 - Chơi bằng cách tự kéo thả rác hoặc chọn rác để Robot Kiến Sáng đi nhặt.
+- Hướng dẫn nằm trên bảng phấn: giữ phím mũi tên / WASD để di chuyển Kiến Sáng, Space / Enter để nhặt hoặc thả rác. Không hiển thị D-pad trên sàn chơi hay mã trang phục dưới nhân vật.
+- Khi thiếu ảnh bước đi, Kiến dùng ảnh dự phòng trong nhóm `tim_rac_01`–`tim_rac_12` hoặc ảnh nhân vật chính; không lấy ảnh cầm rác (như `cam_banh_mi_*`) làm ảnh di chuyển tìm rác.
 - Tùy chỉnh hình ảnh robot, trang phục, thùng rác và hình ảnh các món rác.
 - Thu âm giọng nói cho phản hồi đúng, sai và chiến thắng.
 - Lưu các tùy chỉnh trong trình duyệt và nạp ảnh đã lưu trong project khi chạy bản build.

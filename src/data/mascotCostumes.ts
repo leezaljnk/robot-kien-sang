@@ -8,6 +8,8 @@
  * 4. Nhóm buồn: buon_01, buon_02
  */
 
+import type { CustomCostumesMap } from '../types';
+
 export interface CostumeDef {
   id: string;
   nameVi: string;
@@ -25,6 +27,21 @@ export const TIM_RAC_IDS: string[] = Array.from({ length: 12 }, (_, i) => {
   const num = String(i + 1).padStart(2, '0');
   return `tim_rac_${num}`;
 });
+
+export function getPrimaryMascotImage(
+  costumes: CustomCostumesMap,
+  ...baseImages: (string | null | undefined)[]
+): string | null {
+  const walkingImage = TIM_RAC_IDS.map(id => costumes[id]).find(Boolean);
+  if (walkingImage) return walkingImage;
+
+  // Older saves may have copied a carrying/emotion frame into the base mascot slot.
+  const actionImages = new Set(Object.entries(costumes)
+    .filter(([id, image]) => image && /^(cam_|vui_|buon_)/.test(id))
+    .map(([, image]) => image));
+  return [...baseImages, costumes['k-v-2']]
+    .find(image => image && !actionImages.has(image)) || null;
+}
 
 // Cấu hình 15 nhóm rác
 export interface CarryTrashGroupConfig {

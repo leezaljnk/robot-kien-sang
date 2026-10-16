@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { CustomCostumesMap, KienSangMood, TrashItemDef } from '../types';
-import { Volume2, Sparkles, Shirt } from 'lucide-react';
+import { Volume2, Shirt } from 'lucide-react';
 import {
   getCostumeSvg,
   TIM_RAC_IDS,
   getCarryCostumeIdsForTrash,
+  getPrimaryMascotImage,
 } from '../data/mascotCostumes';
 
 interface RobotKienSangProps {
@@ -15,7 +16,7 @@ interface RobotKienSangProps {
   yPercent?: number;
   onReplaySpeech?: () => void;
   isMoving?: boolean;
-  walkStepTick?: number; // Nhận nhịp bước gõ từ bàn phím / D-Pad
+  walkStepTick?: number;
   customMascotUrl?: string | null;
   customCostumes?: CustomCostumesMap;
   mascotScale?: number;
@@ -83,13 +84,7 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
     currentCostumeId = TIM_RAC_IDS[stepIndex % 12] || 'tim_rac_01';
   }
 
-  // Tìm bất kỳ ảnh custom nào người dùng đã tải lên để làm ảnh dự phòng thông minh
-  const uploadedKeys = Object.keys(customCostumes || {}).filter((k) => !!customCostumes[k]);
-  const primaryCustomMascot =
-    customCostumes['tim_rac_01'] ||
-    customCostumes['k-v-2'] ||
-    customMascotUrl ||
-    (uploadedKeys.length > 0 ? customCostumes[uploadedKeys[0]] : null);
+  const primaryCustomMascot = getPrimaryMascotImage(customCostumes, customMascotUrl);
 
   // Nguồn ảnh: Ảnh custom tải lên hoặc Vector SVG
   let customFrameImage: string | null = customCostumes[currentCostumeId] || null;
@@ -229,12 +224,6 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
           )}
         </div>
 
-        {/* Huy hiệu hiển thị mã trang phục đang kích hoạt */}
-        {(isMoving || stepIndex > 0) && (
-          <div className="absolute -bottom-4 bg-orange-600 text-yellow-200 text-[10px] font-black px-2 py-0.5 rounded-full shadow border border-orange-400 whitespace-nowrap">
-            {currentCostumeId} ({stepIndex + 1}/12)
-          </div>
-        )}
       </div>
     </div>
   );

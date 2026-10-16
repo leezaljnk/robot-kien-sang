@@ -41,9 +41,14 @@ export const ClassroomBackground: React.FC = () => {
       </div>
 
       {/* KHUNG BẢNG ĐEN LỚP HỌC Ở GIỮA */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[94%] max-w-4xl h-[46%] max-h-64 bg-[#1E293B] rounded-2xl border-[10px] border-[#78350F] shadow-2xl overflow-hidden flex flex-col">
+      <div
+        role="region"
+        aria-label="Hướng dẫn chơi trên bảng phấn"
+        tabIndex={0}
+        className="absolute top-3 left-1/2 -translate-x-1/2 w-[94%] max-w-4xl h-[52%] max-h-72 bg-[#1E293B] rounded-2xl border-[10px] border-[#78350F] shadow-2xl overflow-y-auto pointer-events-auto flex flex-col"
+      >
         {/* Khung ảnh Bác Hồ & Quốc kỳ ở đỉnh giữa bảng */}
-        <div className="relative pt-1 flex items-center justify-center gap-3">
+        <div className="relative shrink-0 pt-1 flex items-center justify-center gap-3">
           <div className="flex items-center gap-1.5 bg-red-700/90 px-3 py-0.5 rounded border border-amber-400 shadow-sm">
             <span className="text-xs">⭐</span>
             <span className="text-[11px] font-bold text-amber-200 uppercase tracking-wide">
@@ -54,7 +59,7 @@ export const ClassroomBackground: React.FC = () => {
         </div>
 
         {/* Nội dung trên bảng phấn lớp 1 */}
-        <div className="flex-1 px-4 py-1 text-center flex flex-col justify-between">
+        <div className="flex-1 shrink-0 px-4 py-1 text-center flex flex-col justify-between gap-1.5">
           <div>
             <h2 className="text-emerald-300 font-bold tracking-wider text-base sm:text-lg drop-shadow">
               LỚP 2A5 FPT SCHOOL • GIỮ GÌN VỆ SINH LỚP HỌC SẠCH ĐẸP
@@ -80,6 +85,13 @@ export const ClassroomBackground: React.FC = () => {
                 <p className="text-[10px] sm:text-xs text-slate-300">Hộp sữa, chai nhựa, lon, giấy</p>
               </div>
             </div>
+            <p className="col-span-2 border-t border-slate-600 pt-1 text-[10px] sm:text-xs leading-snug text-amber-100">
+              <span className="font-bold text-amber-200">Cách chơi: </span>
+              Kéo rác vào thùng hoặc chọn rác rồi chọn thùng để nhờ Kiến Sáng.
+              <br />
+              <span className="font-bold text-amber-200">Bàn phím: </span>
+              Giữ phím mũi tên ⬆️⬇️➡️⬅️️ để di chuyển; Space / Enter để nhặt hoặc thả rác.
+            </p>
           </div>
 
           {/* Khay đựng phấn và khăn lau bảng dưới mép bảng */}

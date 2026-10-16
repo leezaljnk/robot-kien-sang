@@ -17,6 +17,7 @@ import { CustomCostumesMap, VoiceClips, PreloadedOfflineState } from '../types';
 import { getPersistentItem } from '../utils/persistentStorage';
 import { embedOfflineAssets } from '../utils/offlineAssets';
 import { SettingsTransfer } from './SettingsTransfer';
+import { getPrimaryMascotImage } from '../data/mascotCostumes';
 
 interface OfflineHtmlModalProps {
   isOpen: boolean;
@@ -115,15 +116,12 @@ export const OfflineHtmlModal: React.FC<OfflineHtmlModalProps> = ({
         ...(customTrashImages || {}),
       };
 
-      const finalMascotUrl =
-        customMascotUrl ||
-        savedMascot ||
-        mergedCostumes['tim_rac_01'] ||
-        mergedCostumes['k-v-2'] ||
-        mergedCostumes['vui_01'] ||
-        Object.values(mergedCostumes).find(Boolean) ||
-        window.__KIEN_SANG_PRELOADED_STATE__?.customMascotUrl ||
-        null;
+      const finalMascotUrl = getPrimaryMascotImage(
+        mergedCostumes,
+        customMascotUrl,
+        savedMascot,
+        window.__KIEN_SANG_PRELOADED_STATE__?.customMascotUrl
+      );
 
       const finalPayload: PreloadedOfflineState = {
         customCostumes: mergedCostumes,

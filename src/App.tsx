@@ -15,8 +15,8 @@ import { TrashBinModal } from './components/TrashBinModal';
 import { TrashItemUploadModal } from './components/TrashItemUploadModal';
 import { OfflineHtmlModal } from './components/OfflineHtmlModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Camera, Sparkles, FolderUp, Shirt, Keyboard, Gamepad2 } from 'lucide-react';
-import { MASCOT_COSTUMES } from './data/mascotCostumes';
+import { Shirt } from 'lucide-react';
+import { MASCOT_COSTUMES, getPrimaryMascotImage } from './data/mascotCostumes';
 import { getBinApproachTarget } from './utils/movement';
 import { getTrashSpawnSlots } from './utils/trashSpawn';
 import { voiceIdForText } from './data/voicePrompts';
@@ -83,11 +83,7 @@ export default function App() {
     () => preloaded?.customCostumes || {}
   );
   const [customMascotUrl, setCustomMascotUrl] = useState<string | null>(
-    () =>
-      preloaded?.customMascotUrl ||
-      preloaded?.customCostumes?.['tim_rac_01'] ||
-      preloaded?.customCostumes?.['k-v-2'] ||
-      null
+    () => getPrimaryMascotImage(preloaded?.customCostumes || {}, preloaded?.customMascotUrl)
   );
   const [mascotScale, setMascotScale] = useState<number>(
     () => (typeof preloaded?.mascotScale === 'number' ? preloaded.mascotScale : 1.0)
@@ -243,15 +239,12 @@ export default function App() {
           ...(savedCostumes || {}),
         };
 
-        const effectiveMascot =
-          savedMascot ||
-          inlinePreloaded?.customMascotUrl ||
-          parsedCostumes['tim_rac_01'] ||
-          parsedCostumes['k-v-2'] ||
-          serverAssets?.customMascotUrl ||
-          parsedCostumes['vui_01'] ||
-          Object.values(parsedCostumes).find(Boolean) ||
-          null;
+        const effectiveMascot = getPrimaryMascotImage(
+          parsedCostumes,
+          savedMascot,
+          inlinePreloaded?.customMascotUrl,
+          serverAssets?.customMascotUrl
+        );
 
         if (effectiveMascot) {
           if (!parsedCostumes['k-v-2']) {
@@ -352,11 +345,7 @@ export default function App() {
     setCustomCostumes(costumes);
     await setPersistentItem(STORAGE_KEY_MASCOT_COSTUMES, costumes);
 
-    const primaryMascot =
-      costumes['tim_rac_01'] ||
-      costumes['k-v-2'] ||
-      costumes['vui_01'] ||
-      Object.values(costumes).find(Boolean);
+    const primaryMascot = getPrimaryMascotImage(costumes);
 
     if (primaryMascot) {
       setCustomMascotUrl(primaryMascot);
@@ -1423,72 +1412,6 @@ export default function App() {
           );
         })}
 
-        {/* BỘ ĐIỀU KHIỂN BƯỚC ĐI (D-PAD) MÀN HÌNH & HƯỚNG DẪN BÀN PHÍM */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-25 flex flex-col items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl border-2 border-orange-400/80 shadow-2xl">
-          <div className="flex items-center gap-1.5 text-[11px] font-black text-amber-300">
-            <Gamepad2 className="w-3.5 h-3.5 text-orange-400" />
-            <span>Điều khiển 10 bước đi (Lặp lại khi bấm giữ phím):</span>
-          </div>
-
-          <div className="flex items-center gap-1 sm:gap-2">
-            {/* Nút sang trái */}
-            <button
-              onPointerDown={() => startMovingDir('left')}
-              onPointerUp={() => stopMovingDir('left')}
-              onPointerLeave={() => stopMovingDir('left')}
-              onPointerCancel={() => stopMovingDir('left')}
-              className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white font-black text-xs flex items-center gap-1 shadow-md active:scale-95 transition cursor-pointer select-none"
-              title="Nhấn & Giữ để bước sang trái (Phím ⬅️ hoặc A)"
-            >
-              <span>⬅️ Trái</span>
-            </button>
-
-            {/* Cặp nút Lên / Xuống */}
-            <div className="flex gap-1">
-              <button
-                onPointerDown={() => startMovingDir('up')}
-                onPointerUp={() => stopMovingDir('up')}
-                onPointerLeave={() => stopMovingDir('up')}
-                onPointerCancel={() => stopMovingDir('up')}
-                className="px-2 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white font-black text-xs shadow-md active:scale-95 transition cursor-pointer select-none"
-                title="Nhấn & Giữ để bước lên trên (Phím ⬆️ hoặc W)"
-              >
-                ⬆️
-              </button>
-              <button
-                onPointerDown={() => startMovingDir('down')}
-                onPointerUp={() => stopMovingDir('down')}
-                onPointerLeave={() => stopMovingDir('down')}
-                onPointerCancel={() => stopMovingDir('down')}
-                className="px-2 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white font-black text-xs shadow-md active:scale-95 transition cursor-pointer select-none"
-                title="Nhấn & Giữ để bước xuống dưới (Phím ⬇️ hoặc S)"
-              >
-                ⬇️
-              </button>
-            </div>
-
-            {/* Nút sang phải */}
-            <button
-              onPointerDown={() => startMovingDir('right')}
-              onPointerUp={() => stopMovingDir('right')}
-              onPointerLeave={() => stopMovingDir('right')}
-              onPointerCancel={() => stopMovingDir('right')}
-              className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white font-black text-xs flex items-center gap-1 shadow-md active:scale-95 transition cursor-pointer select-none"
-              title="Nhấn & Giữ để bước sang phải (Phím ➡️ hoặc D)"
-            >
-              <span>Phải ➡️</span>
-            </button>
-
-            {/* Nút Nhặt / Thả Rác */}
-            <button
-              onClick={handleActionPickOrDrop}
-              className="ml-1 sm:ml-2 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-md active:scale-95 transition cursor-pointer select-none"
-              title="Nhặt món rác gần nhất hoặc Thả rác vào thùng (Phím Space / Enter)"
-            >
-              <span>{carriedItemInstanceId ? '🗑️ Thả rác' : '🖐️ Nhặt rác'}</span>
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* MODAL CẬP NHẬT ẢNH CHO 2 THÙNG RÁC */}
