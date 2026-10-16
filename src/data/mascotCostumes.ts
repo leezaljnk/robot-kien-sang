@@ -56,7 +56,7 @@ export const CARRY_TRASH_GROUPS: CarryTrashGroupConfig[] = [
   // 8 rác vô cơ
   { trashId: 'vo_hop_sua', nameVi: 'Vỏ hộp sữa', prefix: 'cam_hopsua', color: '#3B82F6', category: 'recyclable' },
   { trashId: 'vo_hop_giay', nameVi: 'Vỏ hộp giấy', prefix: 'cam_hopgiay', color: '#D97706', category: 'recyclable' },
-  { trashId: 'giay_cu', nameVi: 'Giấy cũ', prefix: 'cam_giaycu', color: '#8B5CF6', category: 'recyclable' },
+  { trashId: 'giay_cu', nameVi: 'Giầy cũ', prefix: 'cam_giaycu', color: '#8B5CF6', category: 'recyclable' },
   { trashId: 'vo_chai', nameVi: 'Vỏ chai', prefix: 'cam_vochai', color: '#0D9488', category: 'recyclable' },
   { trashId: 'ong_nhua', nameVi: 'Ống nhựa', prefix: 'cam_ongnhua', color: '#06B6D4', category: 'recyclable' },
   { trashId: 'vo_keo', nameVi: 'Vỏ kẹo', prefix: 'cam_vokeo', color: '#A855F7', category: 'recyclable' },

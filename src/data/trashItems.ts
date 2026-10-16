@@ -27,7 +27,7 @@ export const TRASH_ITEMS: TrashItemDef[] = [
   },
   {
     id: 'giay_cu',
-    nameVi: 'Giấy cũ',
+    nameVi: 'Giầy cũ',
     category: 'recyclable',
     categoryNameVi: 'Rác vô cơ / Tái chế',
     iconType: 'paper',

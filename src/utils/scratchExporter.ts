@@ -747,7 +747,7 @@ const CARD_GIAY_CU_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="100" he
     <line x1="-7" y1="4" x2="3" y2="4" stroke="#C4B5FD" stroke-width="1.8"/>
   </g>
   <rect x="8" y="58" width="84" height="18" rx="9" fill="#0F172A"/>
-  <text x="50" y="70.5" font-family="sans-serif" font-size="7.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Giấy cũ báo cũ</text>
+  <text x="50" y="70.5" font-family="sans-serif" font-size="7.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Giầy cũ</text>
 </svg>`;
 
 const CARD_CHAI_THUY_TINH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="85" viewBox="0 0 100 85">
@@ -3717,7 +3717,7 @@ export async function exportScratchProject(
       { id: 'chai', cat: 'TaiChe', spriteName: 'Chai Nước Suối (Tái Chế)', costume: 'cam_vochainhua_01', nameVi: 'Chai Nước Suối' },
       { id: 'xuongca', cat: 'HuuCo', spriteName: 'Xương Cá (Hữu Cơ)', costume: 'cam_xuongca_01', nameVi: 'Xương Cá' },
       { id: 'hopgiay', cat: 'TaiChe', spriteName: 'Vỏ Hộp Giấy (Tái Chế)', costume: 'cam_hopgiay_01', nameVi: 'Vỏ Hộp Giấy' },
-      { id: 'giaycu', cat: 'TaiChe', spriteName: 'Giấy Cũ (Tái Chế)', costume: 'cam_giaycu_01', nameVi: 'Giấy Cũ' },
+      { id: 'giaycu', cat: 'TaiChe', spriteName: 'Giầy Cũ (Tái Chế)', costume: 'cam_giaycu_01', nameVi: 'Giầy Cũ' },
       { id: 'duiga', cat: 'HuuCo', spriteName: 'Đùi Gà (Hữu Cơ)', costume: 'cam_duiga_01', nameVi: 'Đùi Gà' },
       { id: 'chaithuytinh', cat: 'TaiChe', spriteName: 'Vỏ Chai Thủy Tinh (Tái Chế)', costume: 'cam_vochai_01', nameVi: 'Vỏ Chai Thủy Tinh' },
       { id: 'ongnhua', cat: 'TaiChe', spriteName: 'Ống Hút Nhựa (Tái Chế)', costume: 'cam_ongnhua_01', nameVi: 'Ống Hút Nhựa' },
@@ -5160,10 +5160,10 @@ export async function exportScratchProject(
         layerOrder: 12,
       },
 
-      // 14. THẺ MÓN RÁC 9 (Đợt 3): GIẤY CŨ (Tái chế)
+      // 14. THẺ MÓN RÁC 9 (Đợt 3): Giầy CŨ (Tái chế)
       {
         isStage: false,
-        name: 'Giấy Cũ (Tái Chế)',
+        name: 'Giầy Cũ (Tái Chế)',
         variables: {},
         lists: {},
         broadcasts: {},

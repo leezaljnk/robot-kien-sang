@@ -660,7 +660,7 @@ export const MascotCostumesModal: React.FC<MascotCostumesModalProps> = ({
                   <option value="vo_keo">🍬 Vỏ kẹo (cam_vokeo_01..12)</option>
                   <option value="ong_nhua">🥤 Ống nhựa (cam_ongnhua_01..12)</option>
                   <option value="vo_chai">🍾 Vỏ chai thủy tinh (cam_vochai_01..12)</option>
-                  <option value="giay_cu">📄 Giấy cũ (cam_giaycu_01..12)</option>
+                  <option value="giay_cu">📄 Giầy cũ (cam_giaycu_01..12)</option>
                   <option value="vo_hop_giay">📦 Vỏ hộp giấy (cam_hopgiay_01..12)</option>
                   <option value="all">Tất cả 15 loại (180 slot)</option>
                 </select>

@@ -246,7 +246,7 @@ Mỗi món cần hai câu, thay `[tên món]` bằng cột đầu tiên:
 |---|---|---|
 | Vỏ hộp sữa | `selected_vo_hop_sua.mp3` | `picked_vo_hop_sua.mp3` |
 | Vỏ hộp giấy | `selected_vo_hop_giay.mp3` | `picked_vo_hop_giay.mp3` |
-| Giấy cũ | `selected_giay_cu.mp3` | `picked_giay_cu.mp3` |
+| Giầy cũ | `selected_giay_cu.mp3` | `picked_giay_cu.mp3` |
 | Vỏ chai thủy tinh | `selected_vo_chai.mp3` | `picked_vo_chai.mp3` |
 | Ống nhựa (ống hút) | `selected_ong_nhua.mp3` | `picked_ong_nhua.mp3` |
 | Vỏ kẹo (túi nilon) | `selected_vo_keo.mp3` | `picked_vo_keo.mp3` |

@@ -88,7 +88,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
               "Yeah, {maxScore} sao rồi, lớp mình sạch quá!" 🌟
             </p>
             <p className="text-xs text-slate-600 mt-1 font-medium">
-              Bạn Kiến Sáng và cả lớp 1A xin gửi lời cảm ơn tới bạn nhỏ vì đã giữ gìn vệ sinh lớp học thật tuyệt vời!
+              Bạn Kiến Sáng và cả lớp 2A5 xin gửi lời cảm ơn tới bạn nhỏ vì đã giữ gìn vệ sinh lớp học thật tuyệt vời!
             </p>
           </div>
         </div>
@@ -101,23 +101,6 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
           >
             <RotateCcw className="w-4 h-4" />
             Chơi Lại Màn Mới
-          </button>
-
-          {onOpenOfflineHtmlModal && (
-            <button
-              onClick={onOpenOfflineHtmlModal}
-              className="flex items-center justify-center gap-2 py-3 px-5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black shadow-lg transition active:scale-95 text-xs sm:text-sm cursor-pointer"
-            >
-              <Globe className="w-4 h-4 text-cyan-200" />
-              Xuất HTML Offline
-            </button>
-          )}
-
-          <button
-            onClick={onOpenScratchModal}
-            className="flex items-center justify-center gap-2 py-3 px-5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-lg transition active:scale-95 text-xs sm:text-sm cursor-pointer"
-          >
-            Tải File Scratch (.sb3)
           </button>
         </div>
       </div>
