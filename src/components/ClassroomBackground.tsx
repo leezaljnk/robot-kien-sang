@@ -84,7 +84,7 @@ export const ClassroomBackground: React.FC = () => {
 
           {/* Khay đựng phấn và khăn lau bảng dưới mép bảng */}
           <div className="flex justify-between items-center px-4 text-xs text-slate-400 border-t border-slate-700/80 pt-0.5">
-            <span className="text-[11px] text-yellow-200 font-medium">🖍️ Diệp Anh - Hải Quân - xxx</span>
+            <span className="text-[11px] text-yellow-200 font-medium">🖍️ Diệp Anh - Hải Quân - Phúc Hưng</span>
             <span className="text-[11px] text-cyan-200 font-medium">Bé ơi hãy giúp bạn Kiến Sáng nhé! 🤖</span>
           </div>
         </div>
