@@ -1,0 +1,8 @@
+{
+  "name": "UTRAL - Remix Kiến Sáng – Thử tài Phân loại Rác",
+  "description": "Trò chơi giáo dục bảo vệ môi trường cho học sinh lớp 1 với bạn Robot Kiến Sáng, phân loại rác tái chế và rác hữu cơ trong lớp học, lồng tiếng của bé và xuất file Scratch (.sb3).",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
