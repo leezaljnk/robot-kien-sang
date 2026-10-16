@@ -18,7 +18,7 @@ export function getCommandMoveDuration(
     (targetX - startX) / 100 * area.width,
     (targetY - startY) / 100 * area.height
   );
-  return Math.max(1200, distance / 100 * 1000);
+  return Math.max(600, distance / 200 * 1000);
 }
 
 export function getBinApproachTarget(
