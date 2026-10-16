@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ActiveTrashItem, GameMode, KienSangMood, TrashCategory, VoiceClips, CostumeId, CustomCostumesMap, PreloadedOfflineState } from './types';
+import { ActiveTrashItem, GameMode, KienSangMood, TrashCategory, TrashItemDef, VoiceClips, CostumeId, CustomCostumesMap, PreloadedOfflineState } from './types';
 import { TRASH_ITEMS } from './data/trashItems';
 import { ClassroomBackground } from './components/ClassroomBackground';
 import { TrashBin } from './components/TrashBin';
@@ -19,6 +19,7 @@ import { Shirt } from 'lucide-react';
 import { MASCOT_COSTUMES, getPrimaryMascotImage } from './data/mascotCostumes';
 import { getBinApproachTarget, getCommandMoveDuration } from './utils/movement';
 import { getTrashSpawnSlots } from './utils/trashSpawn';
+import { drawTrashItems } from './utils/trashCycle';
 import { voiceIdForText } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
 import {
@@ -51,6 +52,7 @@ export default function App() {
   const [gameMode, setGameMode] = useState<GameMode>('drag');
   const [activeItems, setActiveItems] = useState<ActiveTrashItem[]>([]);
   const [selectedTrashId, setSelectedTrashId] = useState<string | null>(null);
+  const trashCycleRef = useRef<TrashItemDef[]>([]);
 
   // Kiến Sáng state
   const [kienMood, setKienMood] = useState<KienSangMood>('idle');
@@ -533,23 +535,12 @@ export default function App() {
       return;
     }
 
-    // Pick 3 random items with balanced organic & recyclable representation
-    const organics = TRASH_ITEMS.filter((item) => item.category === 'organic').sort(
-      () => Math.random() - 0.5
+    const { selected: chosenDefs, remaining } = drawTrashItems(
+      TRASH_ITEMS,
+      trashCycleRef.current,
+      3
     );
-    const recyclables = TRASH_ITEMS.filter((item) => item.category === 'recyclable').sort(
-      () => Math.random() - 0.5
-    );
-
-    // 1 organic + 1 recyclable + 1 random from remainder
-    const pick1 = organics[0];
-    const pick2 = recyclables[0];
-    const remainingPool = [...organics.slice(1), ...recyclables.slice(1)].sort(
-      () => Math.random() - 0.5
-    );
-    const pick3 = remainingPool[0];
-
-    const chosenDefs = [pick1, pick2, pick3].sort(() => Math.random() - 0.5);
+    trashCycleRef.current = remaining;
 
     const newItems: ActiveTrashItem[] = chosenDefs.map((def, idx) => ({
       instanceId: `trash_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
@@ -580,6 +571,7 @@ export default function App() {
   // Restart game
   const handleRestart = () => {
     setScore(0);
+    trashCycleRef.current = [];
     setKienMood('idle');
     setKienX(50);
     setKienY(68);

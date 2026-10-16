@@ -2,7 +2,29 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { getTrashSpawnSlots } from '../src/utils/trashSpawn';
+import { drawTrashItems } from '../src/utils/trashCycle';
+import { TRASH_ITEMS } from '../src/data/trashItems';
 import { VOICE_PROMPTS } from '../src/data/voicePrompts';
+
+test('trash cycle shows every item once before starting a new randomized cycle', () => {
+  let remaining: typeof TRASH_ITEMS = [];
+  const firstCycle: string[] = [];
+
+  for (let batch = 0; batch < TRASH_ITEMS.length / 3; batch++) {
+    const draw = drawTrashItems(TRASH_ITEMS, remaining, 3, () => 0);
+    firstCycle.push(...draw.selected.map(item => item.id));
+    remaining = draw.remaining;
+  }
+
+  assert.equal(firstCycle.length, TRASH_ITEMS.length);
+  assert.deepEqual(new Set(firstCycle), new Set(TRASH_ITEMS.map(item => item.id)));
+  assert.equal(remaining.length, 0);
+
+  const nextBatch = drawTrashItems(TRASH_ITEMS, remaining, 3, () => 0);
+  assert.equal(nextBatch.selected.length, 3);
+  assert.equal(new Set(nextBatch.selected.map(item => item.id)).size, 3);
+  assert.equal(nextBatch.remaining.length, TRASH_ITEMS.length - 3);
+});
 
 test('game victory threshold and recorded victory prompt both use 10 stars', () => {
   const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');

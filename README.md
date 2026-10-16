@@ -39,6 +39,7 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 ## Tính năng
 
 - Phân loại 15 món rác vào hai thùng: rác hữu cơ và rác tái chế.
+- Các món rác xuất hiện ngẫu nhiên theo chu kỳ đủ 15 loại, không lặp lại trước khi tất cả đã xuất hiện.
 - Đạt **10 sao** để chiến thắng. Rác xuất hiện ngoài vùng thùng rác với khoảng cách an toàn để dễ chọn/nhặt.
 - Chơi bằng cách tự kéo thả rác hoặc chọn rác để Robot Kiến Sáng đi nhặt.
 - Hướng dẫn nằm trên bảng phấn: giữ phím mũi tên / WASD để di chuyển Kiến Sáng, Space / Enter để nhặt hoặc thả rác. Không hiển thị D-pad trên sàn chơi hay mã trang phục dưới nhân vật.
