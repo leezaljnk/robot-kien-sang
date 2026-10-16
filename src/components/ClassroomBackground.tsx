@@ -2,9 +2,10 @@ import React from 'react';
 
 interface ClassroomBackgroundProps {
   onVisitYard: () => void;
+  onVisitGarden: () => void;
 }
 
-export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisitYard }) => {
+export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisitYard, onVisitGarden }) => {
   return (
     <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
       {/* Tường lớp học lớp 1 - màu vàng kem ấm áp */}
@@ -49,6 +50,23 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
           <div className="text-2xl">☀️🌳</div>
           <span className="text-[10px] font-bold text-sky-800 bg-white/70 px-1 rounded mt-1">Nắng ấm</span>
         </div>
+        <button
+          type="button"
+          aria-label="Đến khu vườn Nắng Ấm"
+          title="Bấm để cùng Kiến Sáng dọn rác trong khu vườn"
+          onClick={onVisitGarden}
+          className="pointer-events-auto absolute inset-0 z-10 cursor-pointer rounded-t-full bg-transparent focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
+        />
+      </div>
+
+      <div className="absolute right-3 top-3 z-30 md:hidden">
+        <button
+          type="button"
+          onClick={onVisitGarden}
+          className="pointer-events-auto rounded-full border-2 border-amber-700 bg-white/95 px-3 py-2 text-xs font-black text-amber-900 shadow-lg"
+        >
+          ☀️ Khu vườn
+        </button>
       </div>
 
       {/* KHUNG BẢNG ĐEN LỚP HỌC Ở GIỮA */}

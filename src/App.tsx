@@ -4,6 +4,7 @@ import { TRASH_ITEMS } from './data/trashItems';
 import { YARD_TRASH_ITEMS } from './data/yardTrashItems';
 import { ClassroomBackground } from './components/ClassroomBackground';
 import { YardBackground } from './components/YardBackground';
+import { SunlitGardenGame } from './components/SunlitGardenGame';
 import { TrashBin } from './components/TrashBin';
 import { TrashItemView } from './components/TrashItemView';
 import { RobotKienSang } from './components/RobotKienSang';
@@ -58,6 +59,7 @@ export default function App() {
   activeItemsRef.current = activeItems;
   const [selectedTrashId, setSelectedTrashId] = useState<string | null>(null);
   const [scene, setScene] = useState<GameScene>('classroom');
+  const [isGardenOpen, setIsGardenOpen] = useState(false);
   const sceneRef = useRef<GameScene>('classroom');
   const sceneItemsRef = useRef<Record<GameScene, ActiveTrashItem[] | null>>({
     classroom: null,
@@ -1007,7 +1009,7 @@ export default function App() {
       isTrashItemsModalOpen ||
       isOfflineHtmlModalOpen;
 
-    if (!gameReady || isAnyModalOpen) {
+    if (!gameReady || isAnyModalOpen || isGardenOpen) {
       stopAllMovement();
       return;
     }
@@ -1078,6 +1080,7 @@ export default function App() {
     isTrashBinModalOpen,
     isTrashItemsModalOpen,
     isOfflineHtmlModalOpen,
+    isGardenOpen,
     startMovingDir,
     stopMovingDir,
     stopAllMovement,
@@ -1323,7 +1326,7 @@ export default function App() {
         </div>
       )}
       {/* Thanh công cụ trên cùng */}
-      <TopBar
+      {!isGardenOpen && <TopBar
         readOnly={sharedAssetsEnabled}
         score={score}
         maxScore={MAX_SCORE}
@@ -1347,7 +1350,7 @@ export default function App() {
         totalTrashCount={TRASH_ITEMS.length}
         customCostumesCount={Object.keys(customCostumes).filter((k) => !!customCostumes[k as CostumeId]).length}
         totalCostumesCount={MASCOT_COSTUMES.length}
-      />
+      />}
       {sharedError && <div role="alert" className="bg-red-50 text-red-800 text-xs p-2 z-50">
         Không tải được tài nguyên dùng chung; đang giữ ảnh hiện có. {sharedError}
         <button className="ml-2 underline" onClick={() => {
@@ -1357,8 +1360,19 @@ export default function App() {
 
       {/* KHUNG CẢNH LỚP HỌC CHÍNH */}
       <div ref={playAreaRef} className="relative flex-1 w-full h-full overflow-hidden">
+        {isGardenOpen ? (
+          <SunlitGardenGame
+            onReturnToClassroom={() => setIsGardenOpen(false)}
+            customMascotUrl={customMascotUrl}
+            customCostumes={customCostumes}
+            mascotScale={mascotScale}
+          />
+        ) : <>
         {scene === 'classroom' ? (
-          <ClassroomBackground onVisitYard={() => switchScene('yard')} />
+          <ClassroomBackground
+            onVisitYard={() => switchScene('yard')}
+            onVisitGarden={() => setIsGardenOpen(true)}
+          />
         ) : (
           <YardBackground onReturnToClassroom={() => switchScene('classroom')} />
         )}
@@ -1505,7 +1519,7 @@ export default function App() {
             />
           );
         })}
-
+        </>}
       </div>
 
       {/* MODAL CẬP NHẬT ẢNH CHO 2 THÙNG RÁC */}
