@@ -317,7 +317,7 @@ export const TrashItemView: React.FC<TrashItemViewProps> = ({
         transform: `rotate(${item?.rotation ?? 0}deg) ${isSelected ? 'scale(1.22)' : isDragging ? 'scale(1.15)' : 'scale(1)'}`,
         touchAction: 'none',
       }}
-      className={`group absolute cursor-grab active:cursor-grabbing select-none flex flex-col items-center justify-center p-1.5 rounded-2xl transition-[transform,filter] duration-200 ${
+      className={`mobile-game-trash-item group absolute cursor-grab active:cursor-grabbing select-none flex flex-col items-center justify-center p-1.5 rounded-2xl transition-[transform,filter] duration-200 ${
         isSelected
           ? 'drop-shadow-[0_0_16px_rgba(250,204,21,0.9)] animate-pulse'
           : isDragging

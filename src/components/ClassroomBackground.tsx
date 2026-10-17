@@ -75,7 +75,7 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
         aria-label="Hướng dẫn chơi trên bảng phấn"
         tabIndex={0}
         data-trash-blocker
-        className="absolute top-3 left-1/2 -translate-x-1/2 w-[94%] md:left-[calc(50%+5rem)] md:w-[calc(94%_-_10rem)] max-w-4xl h-[52%] max-h-72 bg-[#1E293B] rounded-2xl border-[10px] border-[#78350F] shadow-2xl overflow-y-auto pointer-events-auto flex flex-col"
+        className="mobile-classroom-board absolute top-3 left-1/2 -translate-x-1/2 w-[94%] md:left-[calc(50%+5rem)] md:w-[calc(94%_-_10rem)] max-w-4xl h-[52%] max-h-72 bg-[#1E293B] rounded-2xl border-[10px] border-[#78350F] shadow-2xl overflow-y-auto pointer-events-auto flex flex-col"
       >
         {/* Khung ảnh Bác Hồ & Quốc kỳ ở đỉnh giữa bảng */}
         <div className="relative shrink-0 pt-1 flex items-center justify-center gap-3">
@@ -117,7 +117,10 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
             </div>
             <p className="col-span-2 border-t border-slate-600 pt-1 text-[10px] sm:text-xs leading-snug text-amber-100">
               <span className="font-bold text-amber-200">Cách chơi: </span>
-              Kéo rác vào thùng hoặc chọn rác rồi chọn thùng để nhờ Kiến Sáng.
+              Chạm kéo rác vào thùng hoặc chọn rác rồi chọn thùng để nhờ Kiến Sáng.
+              <br />
+              <span className="font-bold text-amber-200">Điện thoại: </span>
+              Ở chế độ Nhờ Kiến Sáng, dùng các nút mũi tên và nút ✋ để nhặt / thả rác.
               <br />
               <span className="font-bold text-amber-200">Bàn phím: </span>
               Giữ phím mũi tên ⬆️⬇️➡️⬅️️ để di chuyển; Space / Enter để nhặt hoặc thả rác.
@@ -133,10 +136,10 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
       </div>
 
       {/* Dãy bàn ghế học sinh tiểu học gợi cảm giác lớp học */}
-      <div data-trash-blocker className="absolute bottom-[28%] left-1/2 -translate-x-1/2 w-[85%] max-w-3xl flex justify-around opacity-60">
-        <div className="w-28 h-8 bg-amber-700 rounded-md border-2 border-amber-900 shadow-sm" />
-        <div className="w-28 h-8 bg-amber-700 rounded-md border-2 border-amber-900 shadow-sm hidden sm:block" />
-        <div className="w-28 h-8 bg-amber-700 rounded-md border-2 border-amber-900 shadow-sm" />
+      <div className="mobile-classroom-desks absolute bottom-[28%] left-1/2 -translate-x-1/2 w-[85%] max-w-3xl flex justify-around opacity-60">
+        <div data-trash-blocker className="w-28 h-8 bg-amber-700 rounded-md border-2 border-amber-900 shadow-sm" />
+        <div data-trash-blocker className="w-28 h-8 bg-amber-700 rounded-md border-2 border-amber-900 shadow-sm hidden sm:block" />
+        <div data-trash-blocker className="w-28 h-8 bg-amber-700 rounded-md border-2 border-amber-900 shadow-sm" />
       </div>
     </div>
   );

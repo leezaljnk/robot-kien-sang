@@ -14,11 +14,12 @@ export function getTrashSpawnSlots(
   const width = area.right - area.left;
   const height = area.bottom - area.top;
   const slots: { x: number; y: number }[] = [];
-  const halfWidth = 90;
-  const halfHeight = 55;
-  const clearance = 24;
-  const stepX = 128;
-  const stepY = 48;
+  const isCompact = width < 700 || height < 500;
+  const halfWidth = isCompact ? 34 : 90;
+  const halfHeight = isCompact ? 30 : 55;
+  const clearance = isCompact ? 8 : 24;
+  const stepX = isCompact ? 76 : 128;
+  const stepY = isCompact ? 28 : 48;
   const blockers = [...bins, ...obstacles];
   const candidateXs = new Set<number>();
   const candidateYs = new Set<number>();
@@ -68,8 +69,9 @@ export function getNonOverlappingTrashSpawnSlots(
 ) {
   const width = area.right - area.left;
   const height = area.bottom - area.top;
-  const minHorizontalDistance = 118;
-  const minVerticalDistance = 104;
+  const isCompact = width < 700 || height < 500;
+  const minHorizontalDistance = isCompact ? 68 : 118;
+  const minVerticalDistance = isCompact ? 62 : 104;
   const candidates = [...slots];
 
   for (let index = candidates.length - 1; index > 0; index--) {
@@ -77,20 +79,31 @@ export function getNonOverlappingTrashSpawnSlots(
     [candidates[index], candidates[swapIndex]] = [candidates[swapIndex], candidates[index]];
   }
 
-  const findSelection = (startIndex: number, selected: { x: number; y: number }[]): { x: number; y: number }[] | null => {
-    if (selected.length === count) return selected;
-    for (let index = startIndex; index < candidates.length; index++) {
-      const candidate = candidates[index];
-      const isClear = [...occupied, ...selected].every(point =>
-        Math.abs(candidate.x - point.x) / 100 * width >= minHorizontalDistance ||
-        Math.abs(candidate.y - point.y) / 100 * height >= minVerticalDistance
-      );
-      if (!isClear) continue;
-      const result = findSelection(index + 1, [...selected, candidate]);
-      if (result) return result;
-    }
-    return null;
-  };
+  const rows = new Map<number, { x: number; y: number }[]>();
+  for (const candidate of candidates) {
+    const row = Math.floor(candidate.y / 100 * height / 56);
+    const rowSlots = rows.get(row) || [];
+    rowSlots.push(candidate);
+    rows.set(row, rowSlots);
+  }
 
-  return findSelection(0, []) || [];
+  const selected: { x: number; y: number }[] = [];
+  while (selected.length < count) {
+    let addedInRound = false;
+    for (const rowSlots of rows.values()) {
+      const slotIndex = rowSlots.findIndex(candidate =>
+        [...occupied, ...selected].every(point =>
+          Math.abs(candidate.x - point.x) / 100 * width >= minHorizontalDistance ||
+          Math.abs(candidate.y - point.y) / 100 * height >= minVerticalDistance
+        )
+      );
+      if (slotIndex === -1) continue;
+      selected.push(rowSlots.splice(slotIndex, 1)[0]);
+      addedInRound = true;
+      if (selected.length === count) return selected;
+    }
+    if (!addedInRound) break;
+  }
+
+  return selected;
 }

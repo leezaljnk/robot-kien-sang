@@ -98,7 +98,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               ? 'bg-white text-orange-600 shadow-md ring-1 ring-orange-200'
               : 'text-slate-600 hover:text-slate-900'
           }`}
-          title="Bé nhấn giữ chuột hoặc ngón tay kéo thả rác vào thùng"
+          title="Bé chạm và kéo rác vào thùng, hoặc nhấn giữ chuột để kéo"
         >
           <Hand className="w-3.5 h-3.5" />
           <span>Bé tự kéo thả</span>
@@ -111,7 +111,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               ? 'bg-white text-orange-600 shadow-md ring-1 ring-orange-200'
               : 'text-slate-600 hover:text-slate-900'
           }`}
-          title="Bé click chọn rác rồi click thùng, Kiến Sáng sẽ chạy lại nhặt"
+          title="Bé chạm hoặc bấm chọn rác rồi chạm hoặc bấm thùng, Kiến Sáng sẽ chạy lại nhặt"
         >
           <Bot className="w-3.5 h-3.5" />
           <span>Nhờ Kiến Sáng</span>

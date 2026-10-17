@@ -10,6 +10,7 @@ import {
 import { YardTrashGraphic } from './YardTrashGraphic';
 
 interface RobotKienSangProps {
+  className?: string;
   mood: KienSangMood;
   carriedTrashId?: string | null;
   speechText?: string;
@@ -28,6 +29,7 @@ interface RobotKienSangProps {
 }
 
 export const RobotKienSang: React.FC<RobotKienSangProps> = ({
+  className,
   mood,
   carriedTrashId = null,
   speechText = 'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!',
@@ -115,7 +117,7 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
 
   return (
     <div
-      className="absolute z-30 select-none pointer-events-none flex flex-col items-center group will-change-[left,top]"
+      className={`absolute z-30 select-none pointer-events-none flex flex-col items-center group will-change-[left,top] ${className || ''}`}
       style={{
         left: `${xPercent}%`,
         top: `${yPercent}%`,

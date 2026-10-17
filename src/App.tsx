@@ -159,7 +159,23 @@ export default function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [gameReady, setGameReady] = useState(false);
   const [hasStartedGame, setHasStartedGame] = useState(false);
+  const [isMobilePortrait, setIsMobilePortrait] = useState(false);
+  const [dismissPortraitPrompt, setDismissPortraitPrompt] = useState(false);
   const welcomeSoundPlayedRef = useRef(false);
+
+  useEffect(() => {
+    const portraitQuery = window.matchMedia(
+      '(max-width: 767px) and (orientation: portrait) and (pointer: coarse)'
+    );
+    const updateOrientation = () => {
+      setIsMobilePortrait(portraitQuery.matches);
+      if (!portraitQuery.matches) setDismissPortraitPrompt(false);
+    };
+
+    updateOrientation();
+    portraitQuery.addEventListener('change', updateOrientation);
+    return () => portraitQuery.removeEventListener('change', updateOrientation);
+  }, []);
 
   useEffect(() => {
     if (!gameReady || welcomeSoundPlayedRef.current) return;
@@ -730,6 +746,11 @@ export default function App() {
     draggingItemRef.current = null;
     triggerSpeech('Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!');
     spawnTrashBatch();
+  };
+
+  const handleStartGame = () => {
+    triggerSpeech('Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!');
+    setHasStartedGame(true);
   };
 
   // Check victory condition
@@ -1409,9 +1430,9 @@ export default function App() {
     setDraggingItem(null);
     draggingItemRef.current = null;
     if (mode === 'drag') {
-      triggerSpeech('Chế độ: Bé tự nhấn giữ chuột kéo rác thả vào thùng nhé!');
+      triggerSpeech('Chế độ: Bé chạm và kéo rác vào thùng, hoặc nhấn giữ chuột để kéo nhé!');
     } else {
-      triggerSpeech('Chế độ: Bé bấm chọn rác, rồi bấm chọn thùng để tớ chạy lại nhặt nhé!');
+      triggerSpeech('Chế độ: Bé chạm chọn rác rồi chạm thùng để tớ chạy lại nhặt nhé!');
     }
   };
 
@@ -1423,7 +1444,7 @@ export default function App() {
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         aria-busy={!gameReady}
-        className={`relative w-screen h-screen flex flex-col overflow-hidden bg-slate-900 select-none font-sans ${gameReady ? '' : 'invisible'}`}
+        className={`mobile-game-root relative w-screen h-screen flex flex-col overflow-hidden bg-slate-900 select-none font-sans ${gameReady ? '' : 'invisible'}`}
       >
       {!hasStartedGame && (
         <div
@@ -1468,7 +1489,7 @@ export default function App() {
                 <button
                   type="button"
                   disabled={!gameReady}
-                  onClick={() => setHasStartedGame(true)}
+                  onClick={handleStartGame}
                   className="w-full rounded-2xl bg-amber-400 px-6 py-3.5 text-base font-black text-emerald-950 shadow-lg shadow-amber-950/30 transition hover:scale-[1.02] hover:bg-amber-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-white disabled:cursor-wait disabled:bg-white/25 disabled:text-white/75 disabled:shadow-none disabled:hover:scale-100 sm:text-lg"
                 >
                   {gameReady ? 'Bắt đầu chơi! 🚀' : 'Đang chuẩn bị trò chơi…'}
@@ -1575,7 +1596,7 @@ export default function App() {
         {/* THÙNG RÁC GÓC TRÁI: RÁC HỮU CƠ / THỨC ĂN & CÂY CỎ (MÀU XANH LÁ) */}
         <div
           ref={leftBinRef}
-          className="absolute left-3 sm:left-8 bottom-3 sm:bottom-6 z-20"
+          className="mobile-game-bin absolute left-3 sm:left-8 bottom-3 sm:bottom-6 z-20"
         >
           <TrashBin
             category="organic"
@@ -1600,7 +1621,7 @@ export default function App() {
         {/* THÙNG RÁC GÓC PHẢI: RÁC TÁI CHẾ / HỘP SỮA & CHAI NHỰA (MÀU CAM/XANH DƯƠNG) */}
         <div
           ref={rightBinRef}
-          className="absolute right-3 sm:right-8 bottom-3 sm:bottom-6 z-20"
+          className="mobile-game-bin absolute right-3 sm:right-8 bottom-3 sm:bottom-6 z-20"
         >
           <TrashBin
             category="recyclable"
@@ -1624,6 +1645,7 @@ export default function App() {
 
         {/* BẠN KIẾN SÁNG NHÂN VẬT CHÍNH (HOẠT HÌNH SCRATCH: TIM_RAC, CAM_RAC, VUI, BUON) */}
         <RobotKienSang
+          className="mobile-game-mascot"
           mood={kienMood}
           carriedTrashId={carriedItemDef?.id || null}
           speechText=""
@@ -1640,6 +1662,53 @@ export default function App() {
           carriedItemVariant={carriedItem?.visualVariant}
           onOpenMascotModal={sharedAssetsEnabled ? undefined : () => setIsCostumesModalOpen(true)}
         />
+
+        {hasStartedGame && scene === 'classroom' && gameMode === 'command' && (
+          <div className="mobile-classroom-controls" role="group" aria-label="Điều khiển Kiến Sáng">
+            {([
+              { direction: 'up', label: 'Di chuyển Kiến Sáng lên', icon: '↑', grid: 'col-start-2 row-start-1' },
+              { direction: 'left', label: 'Di chuyển Kiến Sáng sang trái', icon: '←', grid: 'col-start-1 row-start-2' },
+              { direction: 'right', label: 'Di chuyển Kiến Sáng sang phải', icon: '→', grid: 'col-start-3 row-start-2' },
+              { direction: 'down', label: 'Di chuyển Kiến Sáng xuống', icon: '↓', grid: 'col-start-2 row-start-3' },
+            ] as const).map(({ direction, label, icon, grid }) => (
+              <button
+                key={direction}
+                type="button"
+                aria-label={label}
+                className={`mobile-classroom-control ${grid}`}
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  startMovingDir(direction);
+                }}
+                onPointerUp={() => stopMovingDir(direction)}
+                onPointerCancel={() => stopMovingDir(direction)}
+                onLostPointerCapture={() => stopMovingDir(direction)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return;
+                  event.preventDefault();
+                  if (!event.repeat) startMovingDir(direction);
+                }}
+                onKeyUp={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    stopMovingDir(direction);
+                  }
+                }}
+                onBlur={() => stopMovingDir(direction)}
+              >
+                {icon}
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-label="Nhặt hoặc thả rác"
+              className="mobile-classroom-control mobile-classroom-action col-start-2 row-start-2"
+              onClick={() => handleActionPickOrDropRef.current()}
+            >
+              ✋
+            </button>
+          </div>
+        )}
 
         {/* CÁC MÓN RÁC TRÊN SÀN (5 MÓN MỖI LẦN) */}
         {activeItems.map((item) => {
@@ -1694,6 +1763,32 @@ export default function App() {
         })}
         </>}
       </div>
+
+      {hasStartedGame && isMobilePortrait && !dismissPortraitPrompt && (
+        <div
+          className="mobile-orientation-prompt fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-6 text-center text-white"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mobile-orientation-title"
+        >
+          <div className="max-w-sm rounded-3xl border-2 border-white/25 bg-emerald-950 p-7 shadow-2xl">
+            <div className="mb-3 text-5xl" aria-hidden="true">📱 ↻</div>
+            <h2 id="mobile-orientation-title" className="text-2xl font-black text-amber-300">
+              Xoay ngang để chơi thoải mái hơn
+            </h2>
+            <p className="mt-3 font-semibold leading-relaxed text-emerald-50">
+              Màn hình ngang giúp sân chơi rộng hơn và các nút điều khiển dễ bấm hơn.
+            </p>
+            <button
+              type="button"
+              onClick={() => setDismissPortraitPrompt(true)}
+              className="mt-6 rounded-2xl bg-amber-400 px-5 py-3 font-black text-emerald-950 shadow-lg focus-visible:outline focus-visible:outline-4 focus-visible:outline-white"
+            >
+              Tiếp tục chơi theo chiều dọc
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MODAL CẬP NHẬT ẢNH CHO 2 THÙNG RÁC */}
       <TrashBinModal

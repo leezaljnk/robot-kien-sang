@@ -1,1 +1,140 @@
 @import "tailwindcss";
+
+.mobile-classroom-controls {
+  display: none;
+}
+
+.mobile-game-root {
+  height: 100vh;
+  height: 100dvh;
+}
+
+@media (pointer: coarse) {
+  .mobile-classroom-board {
+    height: 38%;
+    max-height: 150px;
+  }
+
+  .mobile-classroom-desks {
+    display: none;
+  }
+
+  .mobile-game-root [data-trash-play-area] {
+    height: 52%;
+  }
+
+  .mobile-game-bin {
+    scale: 0.78;
+  }
+
+  .mobile-game-mascot [data-robot-sprite] {
+    scale: 0.82;
+    transform-origin: bottom center;
+  }
+
+  .mobile-game-trash-item {
+    scale: 0.68;
+  }
+
+  .mobile-classroom-controls {
+    position: absolute;
+    z-index: 45;
+    left: 50%;
+    bottom: 0.4rem;
+    display: grid;
+    grid-template: repeat(3, 2.65rem) / repeat(3, 2.65rem);
+    gap: 0.1rem;
+    padding: 0.25rem;
+    transform: translateX(-50%);
+    border: 1px solid rgb(255 255 255 / 75%);
+    border-radius: 1.25rem;
+    background: rgb(15 23 42 / 52%);
+    box-shadow: 0 4px 14px rgb(15 23 42 / 30%);
+    touch-action: none;
+  }
+
+  .mobile-classroom-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.65rem;
+    height: 2.65rem;
+    border: 2px solid #047857;
+    border-radius: 0.85rem;
+    background: rgb(255 255 255 / 96%);
+    color: #064e3b;
+    font-size: 1.5rem;
+    font-weight: 900;
+    box-shadow: 0 2px 5px rgb(15 23 42 / 22%);
+    touch-action: none;
+    user-select: none;
+  }
+
+  .mobile-classroom-control:active {
+    transform: scale(0.94);
+    background: #d1fae5;
+  }
+
+  .mobile-classroom-action {
+    border-color: #c2410c;
+    background: #ffedd5;
+    font-size: 1.2rem;
+  }
+}
+
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 560px) {
+  .mobile-game-root > header {
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .mobile-game-root > header > div:first-child {
+    gap: 0.4rem;
+  }
+
+  .mobile-game-root > header > div:first-child > button {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .mobile-game-root > header h1 {
+    font-size: 0.85rem;
+  }
+
+  .mobile-game-root > header > div:nth-child(2) button {
+    gap: 0.2rem;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.625rem;
+  }
+
+  .mobile-game-root > header > div:nth-child(3) {
+    gap: 0.35rem;
+    padding: 0.25rem 0.45rem;
+  }
+
+  .mobile-game-root > header > div:nth-child(4) > button:not(:last-child) {
+    display: none;
+  }
+
+  .mobile-game-bin {
+    scale: 0.68;
+  }
+
+  .mobile-game-mascot [data-robot-sprite] {
+    scale: 0.72;
+  }
+
+  .mobile-game-trash-item {
+    scale: 0.78;
+  }
+
+  .mobile-classroom-controls {
+    grid-template: repeat(3, 2.3rem) / repeat(3, 2.3rem);
+  }
+
+  .mobile-classroom-control {
+    width: 2.3rem;
+    height: 2.3rem;
+  }
+}

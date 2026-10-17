@@ -59,7 +59,7 @@ test('game victory threshold and recorded victory prompt both use 10 stars', () 
   assert.equal(VOICE_PROMPTS.find(p => p.id === 'victory')?.text, 'Yeah, 10 sao rồi, lớp mình sạch quá!');
 });
 
-test('at least three spawn slots clear both bin hit areas including labels and 24px padding', () => {
+test('spawn slots clear bin hit areas using compact or desktop item spacing', () => {
   for (const width of [375, 768, 1366]) {
     for (const scale of [0.85, 1.5]) {
       const area = { left: 0, top: 70, right: width, bottom: 670 };
@@ -69,12 +69,18 @@ test('at least three spawn slots clear both bin hit areas including labels and 2
       ];
       const slots = getTrashSpawnSlots(area, bins);
       assert(slots.length >= 3, `${width}px scale ${scale}: ${slots.length}`);
+      const compact = width < 700;
+      const halfWidth = compact ? 34 : 90;
+      const halfHeight = compact ? 30 : 55;
+      const clearance = compact ? 8 : 24;
       for (const slot of slots) {
         const x = slot.x / 100 * width;
         const y = 70 + slot.y / 100 * 600;
         for (const bin of bins) {
-          assert(x + 114 < bin.left || x - 114 > bin.right ||
-            y + 79 < bin.top || y - 79 > bin.bottom);
+          assert(x + halfWidth + clearance < bin.left ||
+            x - halfWidth - clearance > bin.right ||
+            y + halfHeight + clearance < bin.top ||
+            y - halfHeight - clearance > bin.bottom);
         }
       }
     }
@@ -89,16 +95,64 @@ test('five trash items spawn at distinct, non-overlapping positions', () => {
       { left: 1366 - 8 - 120 * scale, right: 1358, top: 720 - 160 * scale, bottom: 720 },
     ];
     const playArea = { left: 0, top: 468, right: 1366, bottom: 720 };
-    const desk = { left: 0, top: 518, right: 1366, bottom: 550 };
-    const candidates = getTrashSpawnSlots(area, bins, playArea, [desk]);
+    const desks = [
+      { left: 240, top: 486, right: 352, bottom: 518 },
+      { left: 627, top: 486, right: 739, bottom: 518 },
+      { left: 1014, top: 486, right: 1126, bottom: 518 },
+    ];
+    const candidates = getTrashSpawnSlots(area, bins, playArea, desks);
     const positions = getNonOverlappingTrashSpawnSlots(candidates, area, 5, [], () => 0);
 
     assert.equal(positions.length, 5, `scale ${scale}: ${positions.length} positions`);
+    const rowCounts = new Map<number, number>();
+    positions.forEach(position => {
+      const row = Math.floor(position.y / 100 * area.bottom / 56);
+      rowCounts.set(row, (rowCounts.get(row) || 0) + 1);
+    });
+    assert(rowCounts.size > 1,
+      'trash should be scattered across multiple rows');
     for (let first = 0; first < positions.length; first++) {
       for (let second = first + 1; second < positions.length; second++) {
         const horizontalDistance = Math.abs(positions[first].x - positions[second].x) / 100 * area.right;
         const verticalDistance = Math.abs(positions[first].y - positions[second].y) / 100 * area.bottom;
         assert(horizontalDistance >= 118 || verticalDistance >= 104);
+      }
+    }
+  }
+});
+
+test('five trash items fit in compact phone portrait and landscape play areas', () => {
+  for (const area of [
+    { left: 0, top: 0, right: 390, bottom: 800 },
+    { left: 0, top: 0, right: 844, bottom: 330 },
+  ]) {
+    const floor = {
+      left: 0,
+      top: area.bottom * 0.48,
+      right: area.right,
+      bottom: area.bottom,
+    };
+    const bins = [
+      { left: 12, right: 90, top: area.bottom - 130, bottom: area.bottom },
+      { left: area.right - 90, right: area.right - 12, top: area.bottom - 130, bottom: area.bottom },
+    ];
+    const board = {
+      left: area.right * 0.03,
+      right: area.right * 0.97,
+      top: 3,
+      bottom: 150,
+    };
+    const candidates = getTrashSpawnSlots(area, bins, floor, [board]);
+    const positions = getNonOverlappingTrashSpawnSlots(candidates, area, 5, [], () => 0);
+
+    assert.equal(positions.length, 5, `${area.right}x${area.bottom}`);
+    for (let first = 0; first < positions.length; first++) {
+      for (let second = first + 1; second < positions.length; second++) {
+        const horizontalDistance =
+          Math.abs(positions[first].x - positions[second].x) / 100 * area.right;
+        const verticalDistance =
+          Math.abs(positions[first].y - positions[second].y) / 100 * area.bottom;
+        assert(horizontalDistance >= 68 || verticalDistance >= 62);
       }
     }
   }

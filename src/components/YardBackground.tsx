@@ -6,6 +6,16 @@ interface YardBackgroundProps {
 
 export const YardBackground: React.FC<YardBackgroundProps> = ({ onReturnToClassroom }) => (
   <div className="absolute inset-0 overflow-hidden bg-sky-200 pointer-events-none select-none">
+    <style>{`
+      @keyframes flag-wave {
+        0%, 100% { transform: skewY(0deg) scaleX(1); }
+        50% { transform: skewY(-2deg) scaleX(.98); }
+      }
+      @keyframes sunshine {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(5deg); }
+      }
+    `}</style>
     <div className="absolute inset-x-0 top-0 h-[42%] bg-gradient-to-b from-sky-300 via-sky-200 to-emerald-100" />
     <div data-trash-blocker className="absolute inset-x-0 top-[29%] h-[18%] bg-gradient-to-b from-amber-100 to-orange-100 border-y-4 border-amber-700">
       <div className="absolute inset-x-0 top-2 flex justify-center gap-2 text-2xl opacity-90" aria-hidden="true">
@@ -14,21 +24,50 @@ export const YardBackground: React.FC<YardBackgroundProps> = ({ onReturnToClassr
     </div>
     <div data-trash-play-area className="absolute inset-x-0 bottom-0 top-[42%] bg-gradient-to-b from-lime-300 via-green-400 to-green-600" />
 
-    <div className="absolute top-[5%] left-[12%] text-4xl sm:text-5xl opacity-90" aria-hidden="true">☁️</div>
-    <div className="absolute top-[10%] right-[15%] text-3xl sm:text-4xl opacity-90" aria-hidden="true">☁️</div>
-    <div className="absolute top-[6%] right-[34%] text-3xl" aria-hidden="true">☀️</div>
+    <div className="absolute left-[10%] top-[2%] text-7xl opacity-90 drop-shadow-sm sm:text-8xl" aria-hidden="true">☁️</div>
+    <div className="absolute right-[12%] top-[7%] text-6xl opacity-90 drop-shadow-sm sm:text-7xl" aria-hidden="true">☁️</div>
+    <div className="absolute right-[34%] top-[1%] h-24 w-24 sm:h-32 sm:w-32" style={{ animation: 'sunshine 6s ease-in-out infinite' }} aria-label="Mặt trời tỏa nắng">
+      <span className="absolute inset-2 rounded-full bg-amber-300/50 blur-xl" aria-hidden="true" />
+      <svg className="relative h-full w-full drop-shadow-lg" viewBox="0 0 120 120" role="img" aria-label="Mặt trời rạng rỡ">
+        <g stroke="#F59E0B" strokeWidth="7" strokeLinecap="round">
+          {Array.from({ length: 12 }, (_, ray) => (
+            <line key={ray} x1="60" y1="6" x2="60" y2="19" transform={`rotate(${ray * 30} 60 60)`} />
+          ))}
+        </g>
+        <circle cx="60" cy="60" r="37" fill="#FDE047" stroke="#F59E0B" strokeWidth="3" />
+        <circle cx="47" cy="56" r="3" fill="#92400E" />
+        <circle cx="73" cy="56" r="3" fill="#92400E" />
+        <path d="M 46 69 Q 60 83 74 69" fill="none" stroke="#92400E" strokeWidth="4" strokeLinecap="round" />
+      </svg>
+    </div>
 
     <div className="absolute left-[8%] top-[38%] text-5xl sm:text-7xl drop-shadow-md" aria-hidden="true">🌳</div>
     <div className="absolute right-[7%] top-[37%] text-5xl sm:text-7xl drop-shadow-md" aria-hidden="true">🌳</div>
     <div className="absolute left-[20%] top-[50%] text-3xl sm:text-4xl" aria-hidden="true">🌼</div>
     <div className="absolute right-[19%] top-[53%] text-3xl sm:text-4xl" aria-hidden="true">🌷</div>
 
-    <div className="absolute left-1/2 top-[12%] -translate-x-1/2 h-[22%] w-16" aria-hidden="true">
-      <svg className="h-full w-full drop-shadow-sm" viewBox="0 0 64 120" role="img" aria-label="Lá cờ đỏ sao vàng Việt Nam">
+    <div className="absolute left-1/2 top-[10%] h-[29%] w-24 -translate-x-1/2 sm:w-28" aria-hidden="true">
+      <svg className="h-full w-full overflow-visible drop-shadow-md" viewBox="0 0 100 160" role="img" aria-label="Lá cờ đỏ sao vàng Việt Nam">
         <title>Lá cờ đỏ sao vàng Việt Nam</title>
-        <path d="M 9 3 V 117" stroke="#64748B" strokeWidth="5" strokeLinecap="round" />
-        <path d="M 12 8 H 61 V 42 H 12 Z" fill="#DA251D" stroke="#9F1D18" strokeWidth="1.5" />
-        <path d="M 36.5 12 L 41 24 H 54 L 43.5 31.5 L 47.5 43 L 36.5 35.5 L 25.5 43 L 29.5 31.5 L 19 24 H 32 Z" fill="#FFFF00" />
+        <defs>
+          <linearGradient id="flag-red" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stopColor="#F43F3F" />
+            <stop offset="1" stopColor="#C81E1E" />
+          </linearGradient>
+          <linearGradient id="flag-shine" x1="0" x2="1">
+            <stop offset="0" stopColor="#fff" stopOpacity=".28" />
+            <stop offset=".48" stopColor="#fff" stopOpacity=".02" />
+            <stop offset="1" stopColor="#7F1D1D" stopOpacity=".18" />
+          </linearGradient>
+        </defs>
+        <path d="M 19 6 V 143" stroke="#64748B" strokeWidth="6" strokeLinecap="round" />
+        <path d="M 19 145 Q 19 140 13 139 H 25 Q 20 141 20 145 Z" fill="#475569" />
+        <circle cx="19" cy="5" r="5" fill="#FBBF24" stroke="#B45309" strokeWidth="1.5" />
+        <g style={{ transformOrigin: '20px 40px', animation: 'flag-wave 3s ease-in-out infinite' }}>
+          <path d="M 23 13 Q 50 7 83 15 L 80 58 Q 52 51 23 60 Z" fill="url(#flag-red)" stroke="#991B1B" strokeWidth="1.5" />
+          <path d="M 23 13 Q 50 7 83 15 L 80 58 Q 52 51 23 60 Z" fill="url(#flag-shine)" />
+          <path d="M 52 20 L 57 32 L 70 33 L 60 41 L 63 53 L 52 46 L 41 53 L 44 41 L 34 33 L 47 32 Z" fill="#FDE047" stroke="#F59E0B" strokeWidth="1" />
+        </g>
       </svg>
     </div>
 
@@ -39,10 +78,8 @@ export const YardBackground: React.FC<YardBackgroundProps> = ({ onReturnToClassr
       <div className="absolute left-1 top-1/2 h-1/3 w-[22%] -translate-y-1/2 rounded-r-full border-2 border-l-0 border-white/70" />
       <div className="absolute right-1 top-1/2 h-1/3 w-[22%] -translate-y-1/2 rounded-l-full border-2 border-r-0 border-white/70" />
       <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/85 px-3 py-1 text-[10px] font-black text-orange-900 shadow sm:text-xs">
-        🏀 SÂN BÓNG RỔ
+        SÂN THỂ DỤC
       </span>
-      <span className="absolute -left-3 top-1/2 -translate-y-1/2 text-2xl sm:text-3xl">🏀</span>
-      <span className="absolute -right-3 top-1/2 -translate-y-1/2 text-2xl sm:text-3xl">🏀</span>
     </div>
 
     <button
