@@ -15,8 +15,8 @@ export function getTrashSpawnSlots(
   const height = area.bottom - area.top;
   const slots: { x: number; y: number }[] = [];
   const isCompact = width < 700 || height < 500;
-  const halfWidth = isCompact ? 34 : 90;
-  const halfHeight = isCompact ? 30 : 55;
+  const halfWidth = isCompact ? 46 : 90;
+  const halfHeight = isCompact ? 38 : 55;
   const clearance = isCompact ? 8 : 24;
   const stepX = isCompact ? 76 : 128;
   const stepY = isCompact ? 28 : 48;
@@ -70,8 +70,8 @@ export function getNonOverlappingTrashSpawnSlots(
   const width = area.right - area.left;
   const height = area.bottom - area.top;
   const isCompact = width < 700 || height < 500;
-  const minHorizontalDistance = isCompact ? 68 : 118;
-  const minVerticalDistance = isCompact ? 62 : 104;
+  const minHorizontalDistance = isCompact ? 92 : 118;
+  const minVerticalDistance = isCompact ? 78 : 104;
   const candidates = [...slots];
 
   for (let index = candidates.length - 1; index > 0; index--) {

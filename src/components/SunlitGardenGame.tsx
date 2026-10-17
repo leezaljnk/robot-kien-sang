@@ -52,6 +52,7 @@ const TRASH = [
 const CHALLENGE_GOAL = 10;
 const CATCH_LINE = 78;
 const MAX_MISSES = 5;
+const MAX_ACTIVE_FALLING_ITEMS = 8;
 const FLOWER_ICONS = ['🌼', '🌷', '🌻', '🌸', '🌺', '🪻', '🌹', '🪷', '💐', '💮', '🏵️'];
 const FLYING_FRIENDS: FlyingFriend[] = Array.from({ length: 5 }, (_, id) => ({
   id,
@@ -237,7 +238,13 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   useEffect(() => {
     if (!started || completed || gameOver) return;
 
-    const spawn = window.setInterval(() => {
+    let spawnInterval: number | null = null;
+    let animationFrame: number | null = null;
+    let previousTime = 0;
+
+    const spawnPiece = () => {
+      if (document.visibilityState !== 'visible' ||
+          trashRef.current.length >= MAX_ACTIVE_FALLING_ITEMS) return;
       const roll = Math.random();
       const isHazard = roll < 0.3;
       const isBonus = roll >= 0.9;
@@ -258,10 +265,13 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       };
       trashRef.current = [...trashRef.current, next];
       setTrash(trashRef.current);
-    }, mode === 'challenge' ? 1650 : 2100);
+    };
 
-    let previousTime = performance.now();
     const animate = () => {
+      if (document.visibilityState !== 'visible') {
+        animationFrame = null;
+        return;
+      }
       const now = performance.now();
       const deltaSeconds = Math.min((now - previousTime) / 1000, 0.05);
       previousTime = now;
@@ -337,18 +347,57 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       }
       animationFrame = window.requestAnimationFrame(animate);
     };
-    let animationFrame = window.requestAnimationFrame(animate);
+
+    const startSimulation = () => {
+      if (document.visibilityState !== 'visible') return;
+      previousTime = performance.now();
+      if (spawnInterval === null) {
+        spawnInterval = window.setInterval(spawnPiece, mode === 'challenge' ? 1650 : 2100);
+      }
+      if (animationFrame === null) {
+        animationFrame = window.requestAnimationFrame(animate);
+      }
+    };
+
+    const stopSimulation = (clearFallingItems: boolean) => {
+      if (spawnInterval !== null) {
+        window.clearInterval(spawnInterval);
+        spawnInterval = null;
+      }
+      if (animationFrame !== null) {
+        window.cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+      }
+      if (clearFallingItems) {
+        trashRef.current = [];
+        setTrash([]);
+      }
+      directionsRef.current.clear();
+      pointerTargetXRef.current = null;
+      setPointerDown(false);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        startSimulation();
+      } else {
+        stopSimulation(true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    startSimulation();
 
     return () => {
-      window.clearInterval(spawn);
-      window.cancelAnimationFrame(animationFrame);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      stopSimulation(false);
     };
   }, [completed, gameOver, mode, started]);
 
   return (
     <div
       ref={areaRef}
-      className="absolute inset-0 z-40 touch-none select-none overflow-hidden bg-gradient-to-b from-sky-300 via-amber-50 to-lime-300"
+      className="sunlit-garden-game absolute inset-0 z-40 touch-none select-none overflow-hidden bg-gradient-to-b from-sky-300 via-amber-50 to-lime-300"
       onPointerDown={(event) => {
         if (started && !(event.target as HTMLElement).closest('button')) {
           directionsRef.current.clear();
@@ -389,14 +438,14 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       {[4, 24, 76, 92].map((left, index) => (
         <div
           key={left}
-          className="absolute z-[1] leading-none"
+          className="garden-scenery-tree absolute z-[1] leading-none"
           style={{ left: `${left}%`, bottom: '46%', fontSize: `${treeSizes[index]}px` }}
           aria-hidden="true"
         >
           🌳
         </div>
       ))}
-      <div className="absolute right-[12%] top-[5%] z-[2] h-28 w-28 sm:right-[16%] sm:top-[4%] sm:h-40 sm:w-40" aria-label="Mặt trời tỏa nắng">
+      <div className="garden-sun absolute right-[12%] top-[5%] z-[2] h-28 w-28 sm:right-[16%] sm:top-[4%] sm:h-40 sm:w-40" aria-label="Mặt trời tỏa nắng">
         <span
           className="absolute inset-0 rounded-full bg-amber-300/40 blur-xl"
           style={{ animation: 'sun-ray-shimmer 3s ease-in-out infinite' }}
@@ -457,15 +506,15 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       <button
         type="button"
         onClick={onReturnToClassroom}
-        className="absolute left-3 top-3 z-30 rounded-full border-2 border-emerald-700 bg-white/95 px-4 py-2 text-sm font-black text-emerald-900 shadow-lg hover:bg-emerald-50 focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
+        className="garden-return-button absolute left-3 top-3 z-30 rounded-full border-2 border-emerald-700 bg-white/95 px-4 py-2 text-sm font-black text-emerald-900 shadow-lg hover:bg-emerald-50 focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
       >
         ← Về lớp học
       </button>
-      <div className="absolute right-3 top-3 z-20 rounded-full bg-emerald-800/90 px-4 py-2 text-sm font-black text-white shadow">
+      <div className="garden-title absolute right-3 top-3 z-20 rounded-full bg-emerald-800/90 px-4 py-2 text-sm font-black text-white shadow">
         KHU VƯỜN NẮNG ẤM
       </div>
 
-      <div className="absolute left-1/2 top-16 z-20 flex -translate-x-1/2 flex-col items-center gap-2 rounded-2xl border-2 border-white/80 bg-white/90 px-4 py-3 text-center shadow-lg">
+      <div className="garden-hud absolute left-1/2 top-16 z-20 flex -translate-x-1/2 flex-col items-center gap-2 rounded-2xl border-2 border-white/80 bg-white/90 px-4 py-3 text-center shadow-lg">
         <p className="text-sm font-black text-emerald-900 sm:text-base">
           {mode === 'challenge' ? `Thử thách: ${Math.min(caught, CHALLENGE_GOAL)}/${CHALLENGE_GOAL} món rác` : 'Cùng Kiến Sáng giữ vườn sạch nhé!'}
         </p>
@@ -513,7 +562,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
         <span
           key={piece.id}
           title={piece.name}
-          className={`absolute z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 text-3xl shadow-md sm:h-14 sm:w-14 sm:text-4xl ${piece.isHazard ? 'border-red-500 bg-red-100/95' : piece.isBonus ? 'border-yellow-400 bg-yellow-100/95' : 'border-white/90 bg-white/90'}`}
+          className={`garden-falling-item absolute z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 text-3xl shadow-md sm:h-14 sm:w-14 sm:text-4xl ${piece.isHazard ? 'border-red-500 bg-red-100/95' : piece.isBonus ? 'border-yellow-400 bg-yellow-100/95' : 'border-white/90 bg-white/90'}`}
           style={{
             left: `${piece.x}%`,
             top: `${piece.y}%`,
@@ -529,7 +578,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       {started && (
         <>
           <div className="pointer-events-none absolute bottom-[6%] left-0 right-0 flex justify-center">
-            <div className="relative h-24 w-full">
+            <div className="garden-mascot relative h-24 w-full">
               <RobotKienSang
                 mood={mood}
                 speechText=""
@@ -549,7 +598,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
             style={{ left: `${Math.min(90, antX + 5)}%`, bottom: '8%' }}
             aria-label="Giỏ đựng rác của Kiến Sáng"
           >🧺</span>
-          <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 gap-4">
+          <div className="garden-controls absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 gap-4">
             <button
               type="button"
               aria-label="Di chuyển Kiến Sáng sang trái"
@@ -606,18 +655,18 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       )}
 
       {!started && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-sky-900/20 p-4">
-          <div className="w-full max-w-lg rounded-3xl border-4 border-white bg-amber-50 p-6 text-center shadow-2xl sm:p-8">
+        <div className="garden-start-overlay absolute inset-0 z-30 flex items-center justify-center bg-sky-900/20 p-4">
+          <div className="garden-start-card w-full max-w-lg rounded-3xl border-4 border-white bg-amber-50 p-6 text-center shadow-2xl sm:p-8">
             <div className="mb-2 text-5xl" aria-hidden="true">🐜🌼</div>
             <h1 className="text-2xl font-black text-emerald-900 sm:text-3xl">Kiến Sáng bảo vệ khu vườn</h1>
             <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-700 sm:text-base">
               Dùng phím mũi tên, các nút điều khiển hoặc kéo chuột/chạm và di chuyển Kiến Sáng sang trái/phải để đón rác.
             </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="garden-start-actions mt-6 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => startGame('free')}
-                className="rounded-2xl border-2 border-emerald-700 bg-emerald-600 px-4 py-4 text-left text-white shadow-md transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
+                className="garden-start-button rounded-2xl border-2 border-emerald-700 bg-emerald-600 px-4 py-4 text-left text-white shadow-md transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
               >
                 <span className="block text-lg font-black">🌱 Chơi tự do</span>
                 <span className="mt-1 block text-sm font-semibold">Đón rác và ngắm vườn xanh lên</span>
@@ -625,7 +674,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
               <button
                 type="button"
                 onClick={() => startGame('challenge')}
-                className="rounded-2xl border-2 border-orange-700 bg-orange-500 px-4 py-4 text-left text-white shadow-md transition hover:bg-orange-600 focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
+                className="garden-start-button rounded-2xl border-2 border-orange-700 bg-orange-500 px-4 py-4 text-left text-white shadow-md transition hover:bg-orange-600 focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
               >
                 <span className="block text-lg font-black">🌟 Thử thách dọn vườn</span>
                 <span className="mt-1 block text-sm font-semibold">Đón đủ {CHALLENGE_GOAL} món rác để nhận huy hiệu</span>

@@ -70,8 +70,8 @@ test('spawn slots clear bin hit areas using compact or desktop item spacing', ()
       const slots = getTrashSpawnSlots(area, bins);
       assert(slots.length >= 3, `${width}px scale ${scale}: ${slots.length}`);
       const compact = width < 700;
-      const halfWidth = compact ? 34 : 90;
-      const halfHeight = compact ? 30 : 55;
+      const halfWidth = compact ? 46 : 90;
+      const halfHeight = compact ? 38 : 55;
       const clearance = compact ? 8 : 24;
       for (const slot of slots) {
         const x = slot.x / 100 * width;
@@ -136,11 +136,15 @@ test('five trash items fit in compact phone portrait and landscape play areas', 
       { left: 12, right: 90, top: area.bottom - 130, bottom: area.bottom },
       { left: area.right - 90, right: area.right - 12, top: area.bottom - 130, bottom: area.bottom },
     ];
+    const boardHeight = Math.min(area.bottom * 0.58, 225);
+    const boardWidth = area.right >= 768 && area.right <= 1200
+      ? area.right - 352
+      : area.right * 0.94;
     const board = {
-      left: area.right * 0.03,
-      right: area.right * 0.97,
+      left: (area.right - boardWidth) / 2,
+      right: (area.right + boardWidth) / 2,
       top: 3,
-      bottom: 150,
+      bottom: 12 + boardHeight,
     };
     const candidates = getTrashSpawnSlots(area, bins, floor, [board]);
     const positions = getNonOverlappingTrashSpawnSlots(candidates, area, 5, [], () => 0);
@@ -152,7 +156,7 @@ test('five trash items fit in compact phone portrait and landscape play areas', 
           Math.abs(positions[first].x - positions[second].x) / 100 * area.right;
         const verticalDistance =
           Math.abs(positions[first].y - positions[second].y) / 100 * area.bottom;
-        assert(horizontalDistance >= 68 || verticalDistance >= 62);
+        assert(horizontalDistance >= 92 || verticalDistance >= 78);
       }
     }
   }

@@ -27,7 +27,7 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
       </div>
 
       {/* Cửa sổ lớp học bên góc trái */}
-      <div className="absolute top-6 left-6 hidden md:block w-36 h-48 bg-sky-100 rounded-t-full border-4 border-amber-800 shadow-md overflow-hidden opacity-90">
+      <div className="classroom-window absolute top-6 left-6 hidden md:block w-36 h-48 bg-sky-100 rounded-t-full border-4 border-amber-800 shadow-md overflow-hidden opacity-90">
         <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-sky-100 flex flex-col justify-end items-center pb-2">
           {/* Cành phượng đỏ mùa hè ngoài sân trường */}
           <div className="text-2xl animate-pulse">🌿🌸</div>
@@ -45,7 +45,7 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
       </div>
 
       {/* Cửa sổ bên phải */}
-      <div className="absolute top-6 right-6 hidden md:block w-36 h-48 bg-sky-100 rounded-t-full border-4 border-amber-800 shadow-md overflow-hidden opacity-90">
+      <div className="classroom-window absolute top-6 right-6 hidden md:block w-36 h-48 bg-sky-100 rounded-t-full border-4 border-amber-800 shadow-md overflow-hidden opacity-90">
         <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-amber-50 flex flex-col justify-end items-center pb-2">
           <div className="text-2xl">☀️🌳</div>
           <span className="text-[10px] font-bold text-sky-800 bg-white/70 px-1 rounded mt-1">Nắng ấm</span>
@@ -75,7 +75,7 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
         aria-label="Hướng dẫn chơi trên bảng phấn"
         tabIndex={0}
         data-trash-blocker
-        className="mobile-classroom-board absolute top-3 left-1/2 -translate-x-1/2 w-[94%] md:left-[calc(50%+5rem)] md:w-[calc(94%_-_10rem)] max-w-4xl h-[52%] max-h-72 bg-[#1E293B] rounded-2xl border-[10px] border-[#78350F] shadow-2xl overflow-y-auto pointer-events-auto flex flex-col"
+        className="mobile-classroom-board absolute top-3 left-1/2 -translate-x-1/2 w-[94%] max-w-4xl h-[52%] max-h-72 bg-[#1E293B] rounded-2xl border-[10px] border-[#78350F] shadow-2xl overflow-y-auto pointer-events-auto flex flex-col"
       >
         {/* Khung ảnh Bác Hồ & Quốc kỳ ở đỉnh giữa bảng */}
         <div className="relative shrink-0 pt-1 flex items-center justify-center gap-3">

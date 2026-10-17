@@ -11,8 +11,10 @@
 
 @media (pointer: coarse) {
   .mobile-classroom-board {
-    height: 38%;
-    max-height: 150px;
+    left: 50%;
+    width: 94%;
+    height: 58%;
+    max-height: 225px;
   }
 
   .mobile-classroom-desks {
@@ -33,7 +35,7 @@
   }
 
   .mobile-game-trash-item {
-    scale: 0.68;
+    scale: 0.94;
   }
 
   .mobile-classroom-controls {
@@ -126,7 +128,7 @@
   }
 
   .mobile-game-trash-item {
-    scale: 0.78;
+    scale: 1;
   }
 
   .mobile-classroom-controls {
@@ -136,5 +138,170 @@
   .mobile-classroom-control {
     width: 2.3rem;
     height: 2.3rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1200px) {
+  .mobile-classroom-board {
+    left: 50%;
+    width: calc(100% - 22rem);
+    height: 58%;
+    max-height: 225px;
+  }
+
+  .mobile-game-trash-item {
+    scale: 0.92;
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-classroom-board {
+    width: 94%;
+  }
+}
+
+@media (pointer: coarse) and (max-width: 900px) {
+  .garden-return-button,
+  .garden-title {
+    top: max(0.5rem, env(safe-area-inset-top));
+    padding: 0.45rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .garden-hud {
+    top: 3.25rem;
+    width: min(20rem, calc(100% - 1.5rem));
+    gap: 0.2rem;
+    padding: 0.5rem 0.75rem;
+    border-width: 1px;
+  }
+
+  .garden-sun {
+    width: 5.5rem;
+    height: 5.5rem;
+  }
+
+  .garden-scenery-tree {
+    transform: scale(0.68);
+    transform-origin: bottom center;
+  }
+
+  .garden-falling-item {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.75rem;
+  }
+
+  .garden-controls {
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    gap: 0.65rem;
+  }
+
+  .garden-controls button {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.9rem;
+    font-size: 1.6rem;
+  }
+
+  .garden-mascot [data-robot-sprite] {
+    scale: 0.78;
+    transform-origin: bottom center;
+  }
+
+  .garden-start-overlay {
+    padding: 0.75rem;
+  }
+
+  .garden-start-card {
+    width: min(34rem, 100%);
+    max-height: calc(100dvh - 1.5rem);
+    overflow-y: auto;
+    border-width: 2px;
+    border-radius: 1.25rem;
+    padding: 1rem;
+  }
+
+  .garden-start-card > div:first-child {
+    margin-bottom: 0.25rem;
+    font-size: 2rem;
+  }
+
+  .garden-start-card h1 {
+    font-size: 1.35rem;
+    line-height: 1.2;
+  }
+
+  .garden-start-card > p {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.35;
+  }
+
+  .garden-start-actions {
+    margin-top: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .garden-start-button {
+    min-height: 3rem;
+    border-radius: 0.9rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .garden-start-button > span:first-child {
+    font-size: 0.95rem;
+  }
+
+  .garden-start-button > span:last-child {
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+}
+
+@media (pointer: coarse) and (max-width: 900px) and (orientation: landscape) and (max-height: 560px) {
+  .garden-hud {
+    top: 3rem;
+    width: min(18rem, calc(100% - 13rem));
+    padding: 0.35rem 0.6rem;
+  }
+
+  .garden-hud > p:first-child {
+    font-size: 0.8rem;
+  }
+
+  .garden-hud > p:nth-child(2) {
+    font-size: 0.7rem;
+  }
+
+  .garden-start-card {
+    width: min(35rem, calc(100% - 1rem));
+    padding: 0.75rem 1rem;
+  }
+
+  .garden-start-card > div:first-child {
+    display: none;
+  }
+
+  .garden-start-card h1 {
+    font-size: 1.15rem;
+  }
+
+  .garden-start-card > p {
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+  }
+
+  .garden-start-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 0.6rem;
+  }
+
+  .garden-start-button {
+    min-height: 2.75rem;
+  }
+
+  .garden-start-button > span:last-child {
+    display: none;
   }
 }
