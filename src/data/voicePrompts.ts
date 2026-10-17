@@ -6,7 +6,7 @@ export const VOICE_PROMPTS = [
   { id: 'victory', text: 'Yeah, 10 sao rồi, lớp mình sạch quá!' },
   { id: 'welcome', text: 'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!' },
   { id: 'continue_sorting', text: 'Bé tiếp tục phân loại rác nhé!' },
-  { id: 'batch_complete', text: 'Hoan hô! Đã dọn sạch 3 món rác! Cùng tiếp tục với 3 món rác mới nhé!' },
+  { id: 'batch_complete', text: 'Hoan hô! Đã dọn sạch 5 món rác! Cùng tiếp tục với 5 món rác mới nhé!' },
   { id: 'approach_bin', text: 'Kiến Sáng hãy đi lại gần Thùng Xanh (bên trái) hoặc Thùng Cam (bên phải) rồi nhấn Phím Cách nhé!' },
   { id: 'approach_trash', text: 'Hãy dùng phím mũi tên ⬅️ ➡️ đi lại gần món rác trên sàn rồi nhấn Phím Cách để nhặt nhé!' },
   { id: 'select_trash', text: 'Bé hãy bấm chọn một món rác trên sàn trước nhé!' },

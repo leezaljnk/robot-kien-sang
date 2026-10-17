@@ -7,12 +7,12 @@ interface YardBackgroundProps {
 export const YardBackground: React.FC<YardBackgroundProps> = ({ onReturnToClassroom }) => (
   <div className="absolute inset-0 overflow-hidden bg-sky-200 pointer-events-none select-none">
     <div className="absolute inset-x-0 top-0 h-[42%] bg-gradient-to-b from-sky-300 via-sky-200 to-emerald-100" />
-    <div className="absolute inset-x-0 top-[29%] h-[18%] bg-gradient-to-b from-amber-100 to-orange-100 border-y-4 border-amber-700">
+    <div data-trash-blocker className="absolute inset-x-0 top-[29%] h-[18%] bg-gradient-to-b from-amber-100 to-orange-100 border-y-4 border-amber-700">
       <div className="absolute inset-x-0 top-2 flex justify-center gap-2 text-2xl opacity-90" aria-hidden="true">
         <span>🪟</span><span>🪟</span><span>🪟</span><span>🪟</span><span>🪟</span>
       </div>
     </div>
-    <div className="absolute inset-x-0 bottom-0 top-[42%] bg-gradient-to-b from-lime-300 via-green-400 to-green-600" />
+    <div data-trash-play-area className="absolute inset-x-0 bottom-0 top-[42%] bg-gradient-to-b from-lime-300 via-green-400 to-green-600" />
 
     <div className="absolute top-[5%] left-[12%] text-4xl sm:text-5xl opacity-90" aria-hidden="true">☁️</div>
     <div className="absolute top-[10%] right-[15%] text-3xl sm:text-4xl opacity-90" aria-hidden="true">☁️</div>

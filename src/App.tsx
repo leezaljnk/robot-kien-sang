@@ -21,7 +21,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Shirt } from 'lucide-react';
 import { MASCOT_COSTUMES, getPrimaryMascotImage } from './data/mascotCostumes';
 import { getBinApproachTarget, getCommandMoveDuration } from './utils/movement';
-import { getTrashSpawnSlots } from './utils/trashSpawn';
+import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from './utils/trashSpawn';
 import { drawTrashItems } from './utils/trashCycle';
 import { voiceIdForText } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
@@ -40,6 +40,7 @@ import {
 } from './utils/persistentStorage';
 
 const MAX_SCORE = 20;
+const TRASH_BATCH_SIZE = 5;
 const STORAGE_KEY_VOICE = 'kien_sang_voice_clips_v1';
 const STORAGE_KEY_MASCOT = 'kien_sang_custom_mascot_v1';
 const STORAGE_KEY_SCALE = 'kien_sang_mascot_scale_v1';
@@ -146,6 +147,7 @@ export default function App() {
     startX: number;
     startY: number;
   } | null>(null);
+  const draggingItemRef = useRef<typeof draggingItem>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const leftBinRef = useRef<HTMLDivElement>(null);
@@ -533,7 +535,7 @@ export default function App() {
     [voiceClips, score]
   );
 
-  // Spawn a batch of 3 trash items (ngẫu nhiên từ 15 loại rác)
+  // Spawn five non-overlapping trash items.
   const spawnTrashBatch = useCallback(() => {
     const area = playAreaRef.current;
     const left = leftBinRef.current;
@@ -542,11 +544,33 @@ export default function App() {
       console.error('Không thể đặt rác: chưa xác định được vùng chơi và thùng rác.');
       return;
     }
-    const slots = getTrashSpawnSlots(
-      area.getBoundingClientRect(),
-      [left.getBoundingClientRect(), right.getBoundingClientRect()]
-    ).sort(() => Math.random() - 0.5).slice(0, 3);
-    if (slots.length < 3) {
+    const getCurrentSpawnSlots = (playArea: HTMLDivElement) => {
+      const playableElement = playArea.querySelector<HTMLElement>('[data-trash-play-area]');
+      if (!playableElement) {
+        console.error('Không thể đặt rác: chưa xác định được vùng sàn của cảnh.');
+        return { bounds: null, slots: [] };
+      }
+      const bounds = playArea.getBoundingClientRect();
+      const playableBounds = playableElement.getBoundingClientRect();
+      const obstacles = Array.from(playArea.querySelectorAll<HTMLElement>('[data-trash-blocker]'))
+        .map(element => element.getBoundingClientRect())
+        .filter(rect => rect.width > 0 && rect.height > 0);
+      const bins = [leftBinRef.current, rightBinRef.current]
+        .filter((bin): bin is HTMLDivElement => Boolean(bin))
+        .map(bin => bin.getBoundingClientRect());
+      return {
+        bounds,
+        slots: getTrashSpawnSlots(bounds, bins, playableBounds, obstacles),
+      };
+    };
+    const { bounds: areaBounds, slots: availableSlots } = getCurrentSpawnSlots(area);
+    if (!areaBounds) return;
+    const slots = getNonOverlappingTrashSpawnSlots(
+      availableSlots,
+      areaBounds,
+      TRASH_BATCH_SIZE
+    );
+    if (slots.length < TRASH_BATCH_SIZE) {
       console.error('Không đủ vùng trống an toàn để đặt rác.');
       setKienSpeech('Vùng chơi quá nhỏ. Hãy phóng to cửa sổ hoặc giảm kích thước thùng rác rồi chơi lại nhé!');
       return;
@@ -557,7 +581,7 @@ export default function App() {
     const { selected: chosenDefs, remaining } = drawTrashItems(
       sceneItems,
       trashCycleRef.current[currentScene],
-      3
+      TRASH_BATCH_SIZE
     );
     trashCycleRef.current[currentScene] = remaining;
 
@@ -571,8 +595,70 @@ export default function App() {
     }));
 
     sceneItemsRef.current[currentScene] = newItems;
+    activeItemsRef.current = newItems;
     setActiveItems(newItems);
     setSelectedTrashId(null);
+
+    const scheduleYardTrashRelocation = (instanceId: string) => {
+      window.setTimeout(() => {
+        const reschedule = () => scheduleYardTrashRelocation(instanceId);
+        if (sceneRef.current !== 'yard') {
+          reschedule();
+          return;
+        }
+
+        const currentItems = activeItemsRef.current;
+        const item = currentItems.find(current => current.instanceId === instanceId);
+        if (!item) return;
+        if (item.isDragging || draggingItemRef.current?.id === instanceId) {
+          reschedule();
+          return;
+        }
+
+        const currentArea = playAreaRef.current;
+        if (!currentArea) {
+          console.error('Không thể di chuyển rác trong sân: chưa xác định được vùng chơi.');
+          reschedule();
+          return;
+        }
+        if (!currentArea.querySelector('[data-trash-play-area]')) {
+          reschedule();
+          return;
+        }
+        const { bounds, slots } = getCurrentSpawnSlots(currentArea);
+        if (!bounds) {
+          reschedule();
+          return;
+        }
+        const occupied = currentItems
+          .map(current => ({ x: current.xPercent, y: current.yPercent }));
+        const [destination] = getNonOverlappingTrashSpawnSlots(slots, bounds, 1, occupied);
+        if (!destination) {
+          console.error('Không tìm được vị trí trống an toàn để gió thổi rác sang.');
+          reschedule();
+          return;
+        }
+
+        const updatedItems = currentItems.map(current =>
+          current.instanceId === instanceId
+            ? {
+                ...current,
+                xPercent: destination.x,
+                yPercent: destination.y,
+                rotation: Math.floor(Math.random() * 30) - 15,
+              }
+            : current
+        );
+        activeItemsRef.current = updatedItems;
+        sceneItemsRef.current.yard = updatedItems;
+        setActiveItems(updatedItems);
+        reschedule();
+      }, 4000);
+    };
+
+    if (currentScene === 'yard') {
+      newItems.forEach(item => scheduleYardTrashRelocation(item.instanceId));
+    }
   }, []);
 
   const switchScene = useCallback((nextScene: GameScene) => {
@@ -588,6 +674,7 @@ export default function App() {
     setScene(nextScene);
     setSelectedTrashId(null);
     setDraggingItem(null);
+    draggingItemRef.current = null;
     setKienMood('idle');
 
     const savedItems = sceneItemsRef.current[nextScene];
@@ -630,6 +717,7 @@ export default function App() {
     setIsVictoryModalOpen(false);
     setSelectedTrashId(null);
     setDraggingItem(null);
+    draggingItemRef.current = null;
     triggerSpeech('Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!');
     spawnTrashBatch();
   };
@@ -684,10 +772,10 @@ export default function App() {
       setActiveItems((prev) => {
         const remaining = prev.filter((it) => it.instanceId !== instanceId);
         if (remaining.length === 0 && score + 1 < MAX_SCORE) {
-          // Khi đã bỏ đúng hết 3 món rác, tự động xuất hiện tiếp 3 món rác ngẫu nhiên mới!
+          // Khi đã bỏ đúng hết 5 món rác, tự động xuất hiện tiếp 5 món rác ngẫu nhiên mới!
           setTimeout(() => {
             spawnTrashBatch();
-            triggerSpeech('Hoan hô! Đã dọn sạch 3 món rác! Cùng tiếp tục với 3 món rác mới nhé!');
+            triggerSpeech('Hoan hô! Đã dọn sạch 5 món rác! Cùng tiếp tục với 5 món rác mới nhé!');
           }, 800);
         }
         return remaining;
@@ -1103,7 +1191,7 @@ export default function App() {
     const containerRect = containerRef.current?.getBoundingClientRect();
     if (!containerRect) return;
 
-    setDraggingItem({
+    const nextDraggingItem = {
       id: item.instanceId,
       origX: item.xPercent,
       origY: item.yPercent,
@@ -1111,7 +1199,9 @@ export default function App() {
       curY: e.clientY,
       startX: e.clientX,
       startY: e.clientY,
-    });
+    };
+    draggingItemRef.current = nextDraggingItem;
+    setDraggingItem(nextDraggingItem);
   };
 
   // Pointer move handler on container
@@ -1151,6 +1241,7 @@ export default function App() {
 
     const currentDragging = draggingItem;
     setDraggingItem(null);
+    draggingItemRef.current = null;
 
     const leftRect = leftBinRef.current?.getBoundingClientRect();
     const rightRect = rightBinRef.current?.getBoundingClientRect();
@@ -1227,7 +1318,9 @@ export default function App() {
 
         // Tạm ẩn món rác khỏi sàn khi Kiến Sáng ôm trên tay
         setActiveItems((prev) =>
-          prev.map((it) => (it.instanceId === item.instanceId ? { ...it, isDragging: true } : it))
+          prev.map((it) =>
+            it.instanceId === item.instanceId ? { ...it, isDragging: true } : it
+          )
         );
 
         setTimeout(() => {
@@ -1303,6 +1396,7 @@ export default function App() {
     setGameMode(mode);
     setSelectedTrashId(null);
     setDraggingItem(null);
+    draggingItemRef.current = null;
     if (mode === 'drag') {
       triggerSpeech('Chế độ: Bé tự nhấn giữ chuột kéo rác thả vào thùng nhé!');
     } else {
@@ -1456,7 +1550,7 @@ export default function App() {
         <RobotKienSang
           mood={kienMood}
           carriedTrashId={carriedItemDef?.id || null}
-          speechText={kienSpeech}
+          speechText=""
           xPercent={kienX}
           yPercent={kienY}
           onReplaySpeech={() => triggerSpeech(kienSpeech)}
@@ -1471,7 +1565,7 @@ export default function App() {
           onOpenMascotModal={sharedAssetsEnabled ? undefined : () => setIsCostumesModalOpen(true)}
         />
 
-        {/* CÁC MÓN RÁC TRÊN SÀN LỚP HỌC (3 MÓN MỖI LẦN: HỮU CƠ & VÔ CƠ) */}
+        {/* CÁC MÓN RÁC TRÊN SÀN (5 MÓN MỖI LẦN) */}
         {activeItems.map((item) => {
           const def = getItemDef(item.defId);
           if (!def) return null;
@@ -1495,6 +1589,9 @@ export default function App() {
               pointerEvents: 'none',
               zIndex: 100,
             };
+          }
+          if (scene === 'yard' && !isCurrentDragging) {
+            itemStyle.transition = 'left 900ms ease-in-out, top 900ms ease-in-out, transform 900ms ease-in-out';
           }
 
           if (item.isDragging && !isCurrentDragging) {

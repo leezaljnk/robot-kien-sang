@@ -15,7 +15,7 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
       </div>
 
       {/* Sàn lớp học - gạch men sạch sáng bóng */}
-      <div className="absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-b from-[#E2E8F0] via-[#CBD5E1] to-[#94A3B8]">
+      <div data-trash-play-area className="absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-b from-[#E2E8F0] via-[#CBD5E1] to-[#94A3B8]">
         {/* Kẻ ô gạch hoa lớp học */}
         <div
           className="absolute inset-0 opacity-25"
@@ -74,6 +74,7 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
         role="region"
         aria-label="Hướng dẫn chơi trên bảng phấn"
         tabIndex={0}
+        data-trash-blocker
         className="absolute top-3 left-1/2 -translate-x-1/2 w-[94%] md:left-[calc(50%+5rem)] md:w-[calc(94%_-_10rem)] max-w-4xl h-[52%] max-h-72 bg-[#1E293B] rounded-2xl border-[10px] border-[#78350F] shadow-2xl overflow-y-auto pointer-events-auto flex flex-col"
       >
         {/* Khung ảnh Bác Hồ & Quốc kỳ ở đỉnh giữa bảng */}
@@ -132,7 +133,7 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
       </div>
 
       {/* Dãy bàn ghế học sinh tiểu học gợi cảm giác lớp học */}
-      <div className="absolute bottom-[28%] left-1/2 -translate-x-1/2 w-[85%] max-w-3xl flex justify-around opacity-60">
+      <div data-trash-blocker className="absolute bottom-[28%] left-1/2 -translate-x-1/2 w-[85%] max-w-3xl flex justify-around opacity-60">
         <div className="w-28 h-8 bg-amber-700 rounded-md border-2 border-amber-900 shadow-sm" />
         <div className="w-28 h-8 bg-amber-700 rounded-md border-2 border-amber-900 shadow-sm hidden sm:block" />
         <div className="w-28 h-8 bg-amber-700 rounded-md border-2 border-amber-900 shadow-sm" />

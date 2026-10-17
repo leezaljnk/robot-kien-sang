@@ -39,8 +39,11 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 ## Tính năng
 
 - Phân loại 15 món rác vào hai thùng: rác hữu cơ và rác tái chế.
-- Các món rác xuất hiện ngẫu nhiên theo chu kỳ đủ 15 loại, không lặp lại trước khi tất cả đã xuất hiện.
+- Mỗi lượt có 5 món rác xuất hiện ở các vị trí riêng biệt; rác được chọn theo chu kỳ và không lặp lại trước khi tất cả đã xuất hiện.
 - Bấm cửa sổ bên trái để ra sân trường; dọn 10 loại rác sân trường riêng (5 hữu cơ, 5 tái chế) bằng hình SVG dễ thương, rồi bấm **Về lớp học** để quay lại. Điểm, rác đang chơi và chu kỳ riêng của mỗi cảnh được giữ nguyên khi chuyển cảnh.
+- Ở sân trường, cứ mỗi 4 giây rác chưa được nhặt sẽ được gió thổi sang một vị trí trống khác; rác đang được cầm hoặc kéo sẽ không bị di chuyển. Rác trong lớp chỉ xuất hiện trên sàn, còn rác sân trường chỉ xuất hiện trên bãi cỏ, tránh bảng đen, tường và bầu trời.
+- Trong Khu Vườn nắng ấm, có thể dùng phím mũi tên hoặc bấm vào vị trí muốn đến để Kiến Sáng di chuyển mượt mà; mỗi món rác nhặt được giúp vườn nở thêm những bông hoa cao với nhiều hình dáng.
+- Ở lớp học và sân trường, lời thoại của Kiến Sáng được phát bằng âm thanh mà không hiện bong bóng chữ.
 - Đạt **10 sao** để chiến thắng. Rác xuất hiện ngoài vùng thùng rác với khoảng cách an toàn để dễ chọn/nhặt.
 - Chơi bằng cách tự kéo thả rác hoặc chọn rác để Robot Kiến Sáng đi nhặt.
 - Hướng dẫn nằm trên bảng phấn: giữ phím mũi tên / WASD để di chuyển Kiến Sáng, Space / Enter để nhặt hoặc thả rác. Không hiển thị D-pad trên sàn chơi hay mã trang phục dưới nhân vật.
@@ -228,7 +231,7 @@ Nếu đã thu `victory.mp3` với câu “16 sao”, hãy thu/thay lại câu �
 | `victory.mp3` | Yeah, 10 sao rồi, lớp mình sạch quá! |
 | `welcome.mp3` | Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé! |
 | `continue_sorting.mp3` | Bé tiếp tục phân loại rác nhé! |
-| `batch_complete.mp3` | Hoan hô! Đã dọn sạch 3 món rác! Cùng tiếp tục với 3 món rác mới nhé! |
+| `batch_complete.mp3` | Hoan hô! Đã dọn sạch 5 món rác! Cùng tiếp tục với 5 món rác mới nhé! |
 | `approach_bin.mp3` | Kiến Sáng hãy đi lại gần Thùng Xanh (bên trái) hoặc Thùng Cam (bên phải) rồi nhấn Phím Cách nhé! |
 | `approach_trash.mp3` | Hãy dùng phím mũi tên trái, phải đi lại gần món rác trên sàn rồi nhấn Phím Cách để nhặt nhé! |
 | `select_trash.mp3` | Bé hãy bấm chọn một món rác trên sàn trước nhé! |

@@ -21,6 +21,7 @@ interface GardenFlower {
   id: number;
   x: number;
   height: number;
+  size: number;
   icon: string;
 }
 
@@ -50,8 +51,8 @@ const TRASH = [
 
 const CHALLENGE_GOAL = 10;
 const CATCH_LINE = 78;
-const MAX_MISSES = 10;
-const FLOWER_ICONS = ['🌼', '🌷', '🌻', '🌸', '🌺', '🪻', '🌹', '🪷', '💐'];
+const MAX_MISSES = 5;
+const FLOWER_ICONS = ['🌼', '🌷', '🌻', '🌸', '🌺', '🪻', '🌹', '🪷', '💐', '💮', '🏵️'];
 const FLYING_FRIENDS: FlyingFriend[] = Array.from({ length: 5 }, (_, id) => ({
   id,
   icon: id < 3 ? '🦋' : '🐦',
@@ -89,7 +90,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   const [walkStepTick, setWalkStepTick] = useState(0);
   const [pointerDown, setPointerDown] = useState(false);
   const [slowMotion, setSlowMotion] = useState(false);
-  const pointerDownRef = useRef(false);
+  const pointerTargetXRef = useRef<number | null>(null);
   const [treeSizes] = useState(() =>
     Array.from({ length: 4 }, () => 112 + Math.floor(Math.random() * 48))
   );
@@ -114,11 +115,9 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   missesRef.current = misses;
 
   const moveAnt = useCallback((direction: -1 | 1) => {
-    const next = Math.max(8, Math.min(92, antXRef.current + direction * 4));
-    antXRef.current = next;
-    setAntX(next);
+    const next = Math.max(8, Math.min(92, antXRef.current + direction * 10));
+    pointerTargetXRef.current = next;
     setFacingDirection(direction < 0 ? 'left' : 'right');
-    setWalkStepTick((current) => current + 1);
     setIsMoving(true);
   }, []);
 
@@ -138,6 +137,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     setMood('idle');
     setAntX(50);
     antXRef.current = 50;
+    pointerTargetXRef.current = null;
     setFacingDirection('right');
     setWalkStepTick(0);
     directionsRef.current.clear();
@@ -151,8 +151,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     if (Math.abs(next - antXRef.current) > 0.1) {
       setFacingDirection(next < antXRef.current ? 'left' : 'right');
     }
-    antXRef.current = next;
-    setAntX(next);
+    pointerTargetXRef.current = next;
   };
 
   useEffect(() => {
@@ -164,11 +163,11 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') {
         event.preventDefault();
-        if (!directionsRef.current.has(-1)) moveAnt(-1);
+        pointerTargetXRef.current = null;
         directionsRef.current.add(-1);
       } else if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') {
         event.preventDefault();
-        if (!directionsRef.current.has(1)) moveAnt(1);
+        pointerTargetXRef.current = null;
         directionsRef.current.add(1);
       }
     };
@@ -178,7 +177,8 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     };
     const handleWindowBlur = () => {
       directionsRef.current.clear();
-      pointerDownRef.current = false;
+      setPointerDown(false);
+      pointerTargetXRef.current = null;
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -189,16 +189,28 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     let stepElapsed = 0;
     const moveFrame = (time: number) => {
       const hasKeyboardMovement = directionsRef.current.size > 0;
-      const isAntMoving = hasKeyboardMovement || pointerDownRef.current;
-      if (previousTime > 0 && hasKeyboardMovement) {
+      const elapsedMs = previousTime > 0 ? time - previousTime : 0;
+      let nextX = antXRef.current;
+      if (elapsedMs > 0 && hasKeyboardMovement) {
         const direction = directionsRef.current.has(-1) && directionsRef.current.has(1)
           ? 0
           : directionsRef.current.has(-1) ? -1 : 1;
-        const next = Math.max(8, Math.min(92, antXRef.current + direction * (time - previousTime) * 0.035));
-        antXRef.current = next;
-        setAntX(next);
+        nextX = Math.max(8, Math.min(92, antXRef.current + direction * elapsedMs * 0.018));
         if (direction !== 0) setFacingDirection(direction < 0 ? 'left' : 'right');
+      } else if (elapsedMs > 0 && pointerTargetXRef.current !== null) {
+        const delta = pointerTargetXRef.current - antXRef.current;
+        const distance = Math.min(Math.abs(delta), elapsedMs * 0.018);
+        nextX = antXRef.current + Math.sign(delta) * distance;
+        if (distance === Math.abs(delta)) {
+          pointerTargetXRef.current = null;
+        }
       }
+      if (nextX !== antXRef.current) {
+        antXRef.current = nextX;
+        setAntX(nextX);
+      }
+      const isAntMoving = hasKeyboardMovement ||
+        (pointerTargetXRef.current !== null && Math.abs(pointerTargetXRef.current - antXRef.current) > 0.15);
       setIsMoving(isAntMoving);
       if (isAntMoving && previousTime > 0) {
         stepElapsed += time - previousTime;
@@ -279,7 +291,8 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
         const newFlowers = Array.from({ length: caughtNow * 4 }, () => ({
           id: nextFlowerId.current++,
           x: 5 + Math.random() * 90,
-          height: 22 + Math.floor(Math.random() * 42),
+          height: 48 + Math.floor(Math.random() * 58),
+          size: 24 + Math.floor(Math.random() * 16),
           icon: FLOWER_ICONS[Math.floor(Math.random() * FLOWER_ICONS.length)],
         }));
         setFlowers((current) => [...current, ...newFlowers].slice(-80));
@@ -304,7 +317,8 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
           ...Array.from({ length: bonusesNow * 4 }, () => ({
             id: nextFlowerId.current++,
             x: 5 + Math.random() * 90,
-            height: 22 + Math.floor(Math.random() * 42),
+            height: 48 + Math.floor(Math.random() * 58),
+            size: 24 + Math.floor(Math.random() * 16),
             icon: FLOWER_ICONS[Math.floor(Math.random() * FLOWER_ICONS.length)],
           })),
         ].slice(-80));
@@ -337,8 +351,8 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       className="absolute inset-0 z-40 touch-none select-none overflow-hidden bg-gradient-to-b from-sky-300 via-amber-50 to-lime-300"
       onPointerDown={(event) => {
         if (started && !(event.target as HTMLElement).closest('button')) {
+          directionsRef.current.clear();
           setPointerDown(true);
-          pointerDownRef.current = true;
           event.currentTarget.setPointerCapture(event.pointerId);
           moveAntToPointer(event.clientX);
           setIsMoving(true);
@@ -349,13 +363,9 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       }}
       onPointerUp={() => {
         setPointerDown(false);
-        pointerDownRef.current = false;
-        setIsMoving(false);
       }}
       onPointerCancel={() => {
         setPointerDown(false);
-        pointerDownRef.current = false;
-        setIsMoving(false);
       }}
     >
       <style>{`
@@ -488,7 +498,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
           style={{ left: `${flower.x}%`, bottom: '12%', height: `${flower.height}px` }}
           aria-label="Hoa đã nở"
         >
-          <span className="text-xl leading-none sm:text-2xl">{flower.icon}</span>
+          <span className="leading-none" style={{ fontSize: `${flower.size}px` }}>{flower.icon}</span>
           <span className="h-full w-1 rounded-full bg-green-800" />
           <span className="absolute bottom-1/4 h-1.5 w-3 -translate-x-1 rounded-full bg-green-700" />
           <span className="absolute bottom-1/2 h-1.5 w-3 translate-x-1 rounded-full bg-green-700" />
@@ -545,7 +555,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
               aria-label="Di chuyển Kiến Sáng sang trái"
               onPointerDown={(event) => {
                 event.stopPropagation();
-                if (!directionsRef.current.has(-1)) moveAnt(-1);
+                pointerTargetXRef.current = null;
                 directionsRef.current.add(-1);
               }}
               onPointerUp={() => directionsRef.current.delete(-1)}
@@ -562,7 +572,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
               aria-label="Di chuyển Kiến Sáng sang phải"
               onPointerDown={(event) => {
                 event.stopPropagation();
-                if (!directionsRef.current.has(1)) moveAnt(1);
+                pointerTargetXRef.current = null;
                 directionsRef.current.add(1);
               }}
               onPointerUp={() => directionsRef.current.delete(1)}

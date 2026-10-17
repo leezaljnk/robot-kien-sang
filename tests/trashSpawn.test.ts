@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { getTrashSpawnSlots } from '../src/utils/trashSpawn';
+import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from '../src/utils/trashSpawn';
 import { drawTrashItems } from '../src/utils/trashCycle';
 import { TRASH_ITEMS } from '../src/data/trashItems';
 import { YARD_TRASH_ITEMS } from '../src/data/yardTrashItems';
@@ -78,5 +78,76 @@ test('at least three spawn slots clear both bin hit areas including labels and 2
         }
       }
     }
+  }
+});
+
+test('five trash items spawn at distinct, non-overlapping positions', () => {
+  for (const scale of [0.85, 1.5]) {
+    const area = { left: 0, top: 0, right: 1366, bottom: 720 };
+    const bins = [
+      { left: 8, right: 8 + 120 * scale, top: 720 - 160 * scale, bottom: 720 },
+      { left: 1366 - 8 - 120 * scale, right: 1358, top: 720 - 160 * scale, bottom: 720 },
+    ];
+    const playArea = { left: 0, top: 468, right: 1366, bottom: 720 };
+    const desk = { left: 0, top: 518, right: 1366, bottom: 550 };
+    const candidates = getTrashSpawnSlots(area, bins, playArea, [desk]);
+    const positions = getNonOverlappingTrashSpawnSlots(candidates, area, 5, [], () => 0);
+
+    assert.equal(positions.length, 5, `scale ${scale}: ${positions.length} positions`);
+    for (let first = 0; first < positions.length; first++) {
+      for (let second = first + 1; second < positions.length; second++) {
+        const horizontalDistance = Math.abs(positions[first].x - positions[second].x) / 100 * area.right;
+        const verticalDistance = Math.abs(positions[first].y - positions[second].y) / 100 * area.bottom;
+        assert(horizontalDistance >= 118 || verticalDistance >= 104);
+      }
+    }
+  }
+});
+
+test('trash spawn slots stay inside the floor and clear marked walls and objects', () => {
+  const area = { left: 0, top: 0, right: 1366, bottom: 720 };
+  const floor = { left: 0, top: 468, right: 1366, bottom: 720 };
+  const board = { left: 250, top: 0, right: 1116, bottom: 380 };
+  const bins = [
+    { left: 8, right: 110, top: 560, bottom: 720 },
+    { left: 1248, right: 1358, top: 560, bottom: 720 },
+  ];
+  const slots = getTrashSpawnSlots(area, bins, floor, [board]);
+
+  assert(slots.length > 0);
+  for (const slot of slots) {
+    const x = area.left + slot.x / 100 * (area.right - area.left);
+    const y = area.top + slot.y / 100 * (area.bottom - area.top);
+    assert(y - 79 >= floor.top && y + 79 <= floor.bottom);
+    assert(x + 114 < board.left || x - 114 > board.right ||
+      y + 79 < board.top || y - 79 > board.bottom);
+  }
+});
+
+test('yard spawn slots are below the wall and remain on the grass', () => {
+  const area = { left: 0, top: 0, right: 1366, bottom: 720 };
+  const grass = { left: 0, top: 302, right: 1366, bottom: 720 };
+  const wall = { left: 0, top: 209, right: 1366, bottom: 338 };
+  const bins = [
+    { left: 8, right: 110, top: 560, bottom: 720 },
+    { left: 1256, right: 1358, top: 560, bottom: 720 },
+  ];
+  const slots = getTrashSpawnSlots(area, bins, grass, [wall]);
+  const batch = getNonOverlappingTrashSpawnSlots(slots, area, 5);
+
+  assert.equal(batch.length, 5);
+  const relocated = getNonOverlappingTrashSpawnSlots(slots, area, 1, batch);
+  assert.equal(relocated.length, 1);
+  assert(batch.every(position =>
+    Math.abs(relocated[0].x - position.x) / 100 * area.right >= 118 ||
+    Math.abs(relocated[0].y - position.y) / 100 * area.bottom >= 104
+  ));
+  for (const slot of batch) {
+    const x = area.left + slot.x / 100 * (area.right - area.left);
+    const y = area.top + slot.y / 100 * (area.bottom - area.top);
+    assert(y - 79 >= grass.top && y + 79 <= grass.bottom);
+    assert(y - 79 > wall.bottom || y + 79 < wall.top);
+    assert(x + 114 < wall.left || x - 114 > wall.right ||
+      y + 79 < wall.top || y - 79 > wall.bottom);
   }
 });
