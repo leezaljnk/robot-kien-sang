@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import fscLogoUrl from './assets/logo-fsc.webp?inline';
+import teamLogoUrl from './assets/team-logo-fpt.webp?inline';
 import { ActiveTrashItem, GameMode, KienSangMood, TrashCategory, TrashItemDef, VoiceClips, CostumeId, CustomCostumesMap, PreloadedOfflineState } from './types';
 import { TRASH_ITEMS } from './data/trashItems';
 import { YARD_TRASH_ITEMS } from './data/yardTrashItems';
@@ -156,6 +158,14 @@ export default function App() {
   const speechTimeoutRef = useRef<number | null>(null);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [gameReady, setGameReady] = useState(false);
+  const [hasStartedGame, setHasStartedGame] = useState(false);
+  const welcomeSoundPlayedRef = useRef(false);
+
+  useEffect(() => {
+    if (!gameReady || welcomeSoundPlayedRef.current) return;
+    welcomeSoundPlayedRef.current = true;
+    playSuccessSfx();
+  }, [gameReady]);
 
   const refreshSharedAssets = useCallback(async () => {
     const shared = sharedAssetsToState(await listSharedAssets());
@@ -1097,7 +1107,7 @@ export default function App() {
       isTrashItemsModalOpen ||
       isOfflineHtmlModalOpen;
 
-    if (!gameReady || isAnyModalOpen || isGardenOpen) {
+    if (!gameReady || !hasStartedGame || isAnyModalOpen || isGardenOpen) {
       stopAllMovement();
       return;
     }
@@ -1160,6 +1170,7 @@ export default function App() {
     };
   }, [
     gameReady,
+    hasStartedGame,
     isVoiceModalOpen,
     isScratchModalOpen,
     isVictoryModalOpen,
@@ -1414,9 +1425,74 @@ export default function App() {
         aria-busy={!gameReady}
         className={`relative w-screen h-screen flex flex-col overflow-hidden bg-slate-900 select-none font-sans ${gameReady ? '' : 'invisible'}`}
       >
-      {!gameReady && (
-        <div role="status" className="visible fixed inset-0 z-50 flex items-center justify-center bg-slate-900 text-lg font-bold text-amber-100">
-          Đang tải trò chơi…
+      {!hasStartedGame && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="welcome-title"
+          aria-describedby="welcome-description"
+          className="visible fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-gradient-to-br from-sky-950 via-emerald-950 to-teal-900 p-4 text-white sm:items-center sm:p-8"
+        >
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+            <span className="absolute -left-20 top-10 text-8xl opacity-20 sm:text-9xl">🍃</span>
+            <span className="absolute right-[8%] top-[12%] text-6xl opacity-25 sm:text-8xl">✨</span>
+            <span className="absolute bottom-[8%] left-[12%] text-6xl opacity-20 sm:text-8xl">🌼</span>
+            <span className="absolute bottom-[12%] right-[10%] text-7xl opacity-20 sm:text-9xl">♻️</span>
+          </div>
+          <section className="relative my-auto grid w-full max-w-6xl items-center gap-6 rounded-[2rem] border border-white/25 bg-white/10 p-5 shadow-2xl backdrop-blur-xl sm:gap-10 sm:p-9 lg:grid-cols-[1fr_1.15fr] lg:p-12">
+            <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+              <span className="rounded-full border border-amber-200/50 bg-amber-100/15 px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-amber-100 sm:text-sm">
+                Dự án học tập · FPT Cầu Giấy
+              </span>
+              <img
+                src={fscLogoUrl}
+                alt="FPT Schools"
+                className="mt-4 h-auto w-36 rounded-xl bg-white px-3 py-2 shadow-lg sm:w-44 lg:mt-5"
+              />
+              <h1 id="welcome-title" className="mt-5 text-3xl font-black leading-tight text-white drop-shadow sm:text-4xl lg:text-5xl">
+                Xin chào!
+                <span className="mt-1 block text-amber-300">Cùng Kiến Sáng giữ môi trường sạch đẹp</span>
+              </h1>
+              <p id="welcome-description" className="mt-4 max-w-xl text-sm leading-relaxed text-emerald-50 sm:text-base">
+                Chào mừng bạn đến với dự án <strong className="text-white">Robot Kiến Sáng – Thử tài Phân loại Rác</strong>.
+                Cùng Kiến Sáng phân loại rác và chăm sóc lớp học, sân trường xanh – sạch – đẹp nhé!
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start">
+                {['Diệp Anh', 'Hải Quân', 'Phúc Hưng'].map((member) => (
+                  <span key={member} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white sm:text-sm">
+                    {member}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-7 w-full max-w-sm">
+                <button
+                  type="button"
+                  disabled={!gameReady}
+                  onClick={() => setHasStartedGame(true)}
+                  className="w-full rounded-2xl bg-amber-400 px-6 py-3.5 text-base font-black text-emerald-950 shadow-lg shadow-amber-950/30 transition hover:scale-[1.02] hover:bg-amber-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-white disabled:cursor-wait disabled:bg-white/25 disabled:text-white/75 disabled:shadow-none disabled:hover:scale-100 sm:text-lg"
+                >
+                  {gameReady ? 'Bắt đầu chơi! 🚀' : 'Đang chuẩn bị trò chơi…'}
+                </button>
+                <div role="status" aria-live="polite" className="mt-3 flex min-h-6 items-center justify-center gap-2 text-xs font-semibold text-emerald-100 sm:text-sm">
+                  {!gameReady && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/35 border-t-amber-300" aria-hidden="true" />}
+                  {gameReady
+                    ? 'Trò chơi đã sẵn sàng. Bấm nút để cùng khám phá!'
+                    : sharedError || 'Đang tải hình ảnh và chuẩn bị khu vui chơi…'}
+                </div>
+              </div>
+            </div>
+            <div className="relative mx-auto flex w-full max-w-xl items-center justify-center">
+              <div className="absolute inset-8 rounded-full bg-amber-300/20 blur-3xl" aria-hidden="true" />
+              <img
+                src={teamLogoUrl}
+                alt="Ba thành viên nhóm dự án FPT Schools"
+                className="relative max-h-[34vh] w-full rounded-3xl object-contain drop-shadow-[0_24px_36px_rgba(0,0,0,0.35)] sm:max-h-[42vh] lg:max-h-[68vh]"
+              />
+              <span className="absolute -bottom-2 right-2 rounded-full border border-white/30 bg-emerald-950/75 px-3 py-1.5 text-xs font-bold text-emerald-50 shadow-lg sm:bottom-2 sm:right-0 sm:text-sm">
+                Học vui · Sống xanh 🌱
+              </span>
+            </div>
+          </section>
         </div>
       )}
       {/* Thanh công cụ trên cùng */}
