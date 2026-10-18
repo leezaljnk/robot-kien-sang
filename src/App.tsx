@@ -6,19 +6,10 @@ import { TRASH_ITEMS } from './data/trashItems';
 import { YARD_TRASH_ITEMS } from './data/yardTrashItems';
 import { ClassroomBackground } from './components/ClassroomBackground';
 import { YardBackground } from './components/YardBackground';
-import { SunlitGardenGame } from './components/SunlitGardenGame';
 import { TrashBin } from './components/TrashBin';
 import { TrashItemView } from './components/TrashItemView';
 import { RobotKienSang } from './components/RobotKienSang';
 import { TopBar } from './components/TopBar';
-import { VoiceStudioModal } from './components/VoiceStudioModal';
-import { ScratchModal } from './components/ScratchModal';
-import { VictoryModal } from './components/VictoryModal';
-import { MascotModal } from './components/MascotModal';
-import { MascotCostumesModal } from './components/MascotCostumesModal';
-import { TrashBinModal } from './components/TrashBinModal';
-import { TrashItemUploadModal } from './components/TrashItemUploadModal';
-import { OfflineHtmlModal } from './components/OfflineHtmlModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Shirt } from 'lucide-react';
 import { MASCOT_COSTUMES, getPrimaryMascotImage } from './data/mascotCostumes';
@@ -40,6 +31,39 @@ import {
   getPersistentItem,
   removePersistentItem,
 } from './utils/persistentStorage';
+
+const ScratchModal = React.lazy(() =>
+  import('./components/ScratchModal').then(({ ScratchModal: modal }) => ({ default: modal }))
+);
+const VictoryModal = React.lazy(() =>
+  import('./components/VictoryModal').then(({ VictoryModal: modal }) => ({ default: modal }))
+);
+const VoiceStudioModal = React.lazy(() =>
+  import('./components/VoiceStudioModal').then(({ VoiceStudioModal: modal }) => ({ default: modal }))
+);
+const MascotModal = React.lazy(() =>
+  import('./components/MascotModal').then(({ MascotModal: modal }) => ({ default: modal }))
+);
+const MascotCostumesModal = React.lazy(() =>
+  import('./components/MascotCostumesModal').then(({ MascotCostumesModal: modal }) => ({ default: modal }))
+);
+const TrashBinModal = React.lazy(() =>
+  import('./components/TrashBinModal').then(({ TrashBinModal: modal }) => ({ default: modal }))
+);
+const TrashItemUploadModal = React.lazy(() =>
+  import('./components/TrashItemUploadModal').then(({ TrashItemUploadModal: modal }) => ({ default: modal }))
+);
+const OfflineHtmlModal = React.lazy(() =>
+  import('./components/OfflineHtmlModal').then(({ OfflineHtmlModal: modal }) => ({ default: modal }))
+);
+const SunlitGardenGame = React.lazy(() =>
+  import('./components/SunlitGardenGame').then(({ SunlitGardenGame: game }) => ({ default: game }))
+);
+const modalLoadingFallback = (
+  <div role="status" className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 text-sm font-bold text-white">
+    Đang mở cửa sổ…
+  </div>
+);
 
 const MAX_SCORE = 20;
 const TRASH_BATCH_SIZE = 5;
@@ -203,45 +227,13 @@ export default function App() {
     setSharedError('');
   }, []);
 
-  // Load custom voice clips, mascot, costumes, trash bins & trash images from preloaded state, disk API, and persistent storage (IndexedDB + localStorage)
+  // Load local and preloaded custom assets before starting the game; network assets load separately.
   useEffect(() => {
     let isMounted = true;
     const loadAllPersisted = async () => {
       try {
         const inlinePreloaded =
           typeof window !== 'undefined' ? window.__KIEN_SANG_PRELOADED_STATE__ : undefined;
-
-        // Thử đọc thêm các ảnh trang phục & rác đã lưu trên đĩa của dự án (nếu đang chạy server preview)
-        let serverAssets: {
-          customCostumes?: CustomCostumesMap;
-          customTrashImages?: Record<string, string>;
-          customMascotUrl?: string | null;
-          customOrganicUrl?: string | null;
-          customRecyclableUrl?: string | null;
-          voiceClips?: VoiceClips;
-        } | null = null;
-
-        if (typeof window !== 'undefined' && window.location.protocol.startsWith('http')) {
-          try {
-            const res = await fetch('./api/preloaded-assets');
-            if (res.ok) {
-              serverAssets = await res.json();
-            }
-          } catch {
-            // The development-server endpoint is unavailable in static builds.
-          }
-
-          if (!serverAssets) {
-            try {
-              const res = await fetch('./kien-sang-assets.json');
-              if (res.ok) {
-                serverAssets = await res.json();
-              }
-            } catch {
-              // Static asset manifest is optional in older builds.
-            }
-          }
-        }
 
         const [
           savedVoice,
@@ -267,7 +259,6 @@ export default function App() {
 
         const mergedVoice: VoiceClips = {
           correct: null, incorrect: null, victory: null,
-          ...serverAssets?.voiceClips,
           ...inlinePreloaded?.voiceClips,
           ...savedVoice,
         };
@@ -282,7 +273,6 @@ export default function App() {
         }
 
         const parsedCostumes: CustomCostumesMap = {
-          ...(serverAssets?.customCostumes || {}),
           ...(inlinePreloaded?.customCostumes || {}),
           ...(savedCostumes || {}),
         };
@@ -290,8 +280,7 @@ export default function App() {
         const effectiveMascot = getPrimaryMascotImage(
           parsedCostumes,
           savedMascot,
-          inlinePreloaded?.customMascotUrl,
-          serverAssets?.customMascotUrl
+          inlinePreloaded?.customMascotUrl
         );
 
         if (effectiveMascot) {
@@ -309,12 +298,10 @@ export default function App() {
         const offline = window.location.protocol === 'file:';
         const effectiveOrganic =
           (offline && savedOrganic?.startsWith('/') ? null : savedOrganic) ||
-          inlinePreloaded?.customOrganicUrl || serverAssets?.customOrganicUrl || null;
+          inlinePreloaded?.customOrganicUrl || null;
         const effectiveRecyclable =
           (offline && savedRecyclable?.startsWith('/') ? null : savedRecyclable) ||
-          inlinePreloaded?.customRecyclableUrl ||
-          serverAssets?.customRecyclableUrl ||
-          null;
+          inlinePreloaded?.customRecyclableUrl || null;
 
         if (effectiveOrganic) setCustomOrganicUrl(effectiveOrganic);
         if (effectiveRecyclable) setCustomRecyclableUrl(effectiveRecyclable);
@@ -326,21 +313,12 @@ export default function App() {
         }
 
         const mergedTrash: Record<string, string> = {
-          ...(serverAssets?.customTrashImages || {}),
           ...(inlinePreloaded?.customTrashImages || {}),
           ...(savedTrashImages || {}),
         };
         setCustomTrashImages(mergedTrash);
         if (Object.keys(mergedTrash).length > 0) {
           setPersistentItem(STORAGE_KEY_TRASH_IMAGES, mergedTrash).catch(() => {});
-        }
-        if (sharedAssetsEnabled && isMounted) {
-          try {
-            await refreshSharedAssets();
-          } catch (err) {
-            console.error('Lỗi tải tài nguyên dùng chung:', err);
-            setSharedError(err instanceof Error ? err.message : 'Không thể tải tài nguyên chung.');
-          }
         }
       } catch (err) {
         console.warn('Error loading persistent storage:', err);
@@ -354,30 +332,81 @@ export default function App() {
     return () => {
       isMounted = false;
     };
-  }, [refreshSharedAssets]);
+  }, []);
+
+  useEffect(() => {
+    if (!assetsLoaded) return;
+    let cancelled = false;
+    const loadOptionalAssets = async () => {
+      if (window.location.protocol.startsWith('http')) {
+        let serverAssets: PreloadedOfflineState | null = null;
+        try {
+          const response = await fetch('./api/preloaded-assets');
+          if (response.ok) serverAssets = await response.json();
+          else {
+            const manifestResponse = await fetch('./kien-sang-assets.json');
+            if (manifestResponse.ok) serverAssets = await manifestResponse.json();
+          }
+        } catch {
+          // Optional preview and static asset manifests are unavailable in some deployments.
+        }
+
+        if (serverAssets && !cancelled) {
+          setCustomCostumes(current => ({ ...(serverAssets?.customCostumes || {}), ...current }));
+          setCustomMascotUrl(current => current || getPrimaryMascotImage(
+            serverAssets?.customCostumes || {},
+            serverAssets?.customMascotUrl
+          ));
+          setCustomOrganicUrl(current => current || serverAssets?.customOrganicUrl || null);
+          setCustomRecyclableUrl(current => current || serverAssets?.customRecyclableUrl || null);
+          setCustomTrashImages(current => ({ ...(serverAssets?.customTrashImages || {}), ...current }));
+          if (serverAssets.voiceClips) {
+            setVoiceClips(current => ({
+              ...serverAssets?.voiceClips,
+              ...Object.fromEntries(Object.entries(current).filter(([, url]) => url)),
+              correct: current.correct || serverAssets?.voiceClips?.correct || null,
+              incorrect: current.incorrect || serverAssets?.voiceClips?.incorrect || null,
+              victory: current.victory || serverAssets?.voiceClips?.victory || null,
+            }));
+          }
+        }
+      }
+
+      if (sharedAssetsEnabled && !cancelled) {
+        try {
+          await refreshSharedAssets();
+        } catch (err) {
+          console.error('Lỗi tải tài nguyên dùng chung:', err);
+          if (!cancelled) {
+            setSharedError(err instanceof Error ? err.message : 'Không thể tải tài nguyên chung.');
+          }
+        }
+      }
+    };
+    void loadOptionalAssets();
+    return () => { cancelled = true; };
+  }, [assetsLoaded, refreshSharedAssets]);
 
   useEffect(() => {
     if (!assetsLoaded) return;
     let cancelled = false;
     const mascotUrl = getPrimaryMascotImage(customCostumes, customMascotUrl);
     const prepareMascot = async () => {
-      const urls = [...new Set([mascotUrl, ...Object.values(customCostumes)]
-        .filter((url): url is string => Boolean(url)))];
-      const failed = await Promise.all(urls.map(async url => {
-        const image = new Image();
-        image.src = url;
-        try {
-          await image.decode();
-          return false;
-        } catch (err) {
-          console.error('Không tải được ảnh trang phục Kiến Sáng:', url, err);
-          return true;
-        }
-      }));
-      if (!cancelled && failed.some(Boolean)) {
-        setSharedError('Một số ảnh Kiến Sáng không tải được. Hãy kiểm tra kết nối rồi tải lại trang.');
+      if (!mascotUrl) {
+        setGameReady(true);
+        return;
       }
-      if (!cancelled) setGameReady(true);
+      setGameReady(true);
+      const image = new Image();
+      image.src = mascotUrl;
+      try {
+        await image.decode();
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Không tải được ảnh trang phục Kiến Sáng:', mascotUrl, err);
+          setSharedError('Ảnh Kiến Sáng không tải được. Hãy kiểm tra kết nối rồi tải lại trang.');
+        }
+      }
     };
     void prepareMascot();
     return () => { cancelled = true; };
@@ -1552,12 +1581,14 @@ export default function App() {
       {/* KHUNG CẢNH LỚP HỌC CHÍNH */}
       <div ref={playAreaRef} className="relative flex-1 w-full h-full overflow-hidden">
         {isGardenOpen ? (
-          <SunlitGardenGame
-            onReturnToClassroom={() => setIsGardenOpen(false)}
-            customMascotUrl={customMascotUrl}
-            customCostumes={customCostumes}
-            mascotScale={mascotScale}
-          />
+          <React.Suspense fallback={<div role="status" className="absolute inset-0 z-40 flex items-center justify-center bg-sky-200 font-bold text-emerald-900">Đang mở khu vườn…</div>}>
+            <SunlitGardenGame
+              onReturnToClassroom={() => setIsGardenOpen(false)}
+              customMascotUrl={customMascotUrl}
+              customCostumes={customCostumes}
+              mascotScale={mascotScale}
+            />
+          </React.Suspense>
         ) : <>
         {scene === 'classroom' ? (
           <ClassroomBackground
@@ -1791,99 +1822,115 @@ export default function App() {
       )}
 
       {/* MODAL CẬP NHẬT ẢNH CHO 2 THÙNG RÁC */}
-      <TrashBinModal
-        isOpen={isTrashBinModalOpen}
-        onClose={() => setIsTrashBinModalOpen(false)}
-        targetCategory={targetBinCategory}
-        customOrganicUrl={customOrganicUrl}
-        customRecyclableUrl={customRecyclableUrl}
-        onSaveBinImages={handleSaveBinImages}
-        binScale={binScale}
-        onUpdateScale={setBinScale}
-      />
+      {isTrashBinModalOpen && <React.Suspense fallback={modalLoadingFallback}>
+        <TrashBinModal
+          isOpen={isTrashBinModalOpen}
+          onClose={() => setIsTrashBinModalOpen(false)}
+          targetCategory={targetBinCategory}
+          customOrganicUrl={customOrganicUrl}
+          customRecyclableUrl={customRecyclableUrl}
+          onSaveBinImages={handleSaveBinImages}
+          binScale={binScale}
+          onUpdateScale={setBinScale}
+        />
+      </React.Suspense>}
 
       {/* MODAL QUẢN LÝ & TẢI ẢNH 16 LOẠI RÁC (8 HỮU CƠ + 8 VÔ CƠ) */}
-      <TrashItemUploadModal
-        isOpen={isTrashItemsModalOpen}
-        onClose={() => setIsTrashItemsModalOpen(false)}
-        trashDefinitions={allTrashItems}
-        customTrashImages={customTrashImages}
-        onSaveCustomTrashImages={handleSaveCustomTrashImages}
-      />
+      {isTrashItemsModalOpen && <React.Suspense fallback={modalLoadingFallback}>
+        <TrashItemUploadModal
+          isOpen={isTrashItemsModalOpen}
+          onClose={() => setIsTrashItemsModalOpen(false)}
+          trashDefinitions={allTrashItems}
+          customTrashImages={customTrashImages}
+          onSaveCustomTrashImages={handleSaveCustomTrashImages}
+        />
+      </React.Suspense>}
 
       {/* MODAL XƯỞNG TRANG PHỤC SCRATCH BẠN KIẾN SÁNG (tim_rac, cam_rac, vui, buon) */}
       <ErrorBoundary fallbackTitle="Lỗi hiển thị Xưởng Trang Phục Bạn Kiến">
-        <MascotCostumesModal
-          isOpen={isCostumesModalOpen}
-          onClose={() => setIsCostumesModalOpen(false)}
-          customCostumes={customCostumes}
-          onSaveCostumes={handleSaveCustomCostumes}
-          mascotScale={mascotScale}
-          onUpdateScale={setMascotScale}
-        />
+        <React.Suspense fallback={modalLoadingFallback}>
+          {isCostumesModalOpen && <MascotCostumesModal
+            isOpen={isCostumesModalOpen}
+            onClose={() => setIsCostumesModalOpen(false)}
+            customCostumes={customCostumes}
+            onSaveCostumes={handleSaveCustomCostumes}
+            mascotScale={mascotScale}
+            onUpdateScale={setMascotScale}
+          />}
+        </React.Suspense>
       </ErrorBoundary>
 
       {/* MODAL CẬP NHẬT ẢNH BẠN KIẾN SÁNG (kien-sang-main.png) */}
-      <MascotModal
-        isOpen={isMascotModalOpen}
-        onClose={() => setIsMascotModalOpen(false)}
-        customMascotUrl={customMascotUrl}
-        onSaveMascot={handleSaveMascot}
-        mascotScale={mascotScale}
-        onUpdateScale={setMascotScale}
-      />
+      {isMascotModalOpen && <React.Suspense fallback={modalLoadingFallback}>
+        <MascotModal
+          isOpen={isMascotModalOpen}
+          onClose={() => setIsMascotModalOpen(false)}
+          customMascotUrl={customMascotUrl}
+          onSaveMascot={handleSaveMascot}
+          mascotScale={mascotScale}
+          onUpdateScale={setMascotScale}
+        />
+      </React.Suspense>}
 
       {/* MODAL PHÒNG THU LỒNG TIẾNG CỦA BÉ */}
-      <VoiceStudioModal
-        isOpen={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
-        voiceClips={voiceClips}
-        onSaveVoiceClips={handleSaveVoiceClips}
-      />
+      {isVoiceModalOpen && <React.Suspense fallback={modalLoadingFallback}>
+        <VoiceStudioModal
+          isOpen={isVoiceModalOpen}
+          onClose={() => setIsVoiceModalOpen(false)}
+          voiceClips={voiceClips}
+          onSaveVoiceClips={handleSaveVoiceClips}
+        />
+      </React.Suspense>}
 
       {/* MODAL XUẤT TỆP SCRATCH (.SB3) VÀ HƯỚNG DẪN */}
-      <ScratchModal
-        isOpen={isScratchModalOpen}
-        onClose={() => setIsScratchModalOpen(false)}
-        voiceClips={voiceClips}
-        customMascotUrl={customMascotUrl}
-        customOrganicUrl={customOrganicUrl}
-        customRecyclableUrl={customRecyclableUrl}
-        customCostumes={customCostumes}
-        customTrashImages={customTrashImages}
-        mascotScale={mascotScale}
-      />
+      {isScratchModalOpen && <React.Suspense fallback={modalLoadingFallback}>
+        <ScratchModal
+          isOpen={isScratchModalOpen}
+          onClose={() => setIsScratchModalOpen(false)}
+          voiceClips={voiceClips}
+          customMascotUrl={customMascotUrl}
+          customOrganicUrl={customOrganicUrl}
+          customRecyclableUrl={customRecyclableUrl}
+          customCostumes={customCostumes}
+          customTrashImages={customTrashImages}
+          mascotScale={mascotScale}
+        />
+      </React.Suspense>}
 
       {/* MODAL XUẤT TỆP HTML OFFLINE (ĐỒNG BỘ TRANG PHỤC & HÌNH ẢNH BẢN PREVIEW) */}
-      <OfflineHtmlModal
-        onImportSettings={handleImportSettings}
-        isOpen={isOfflineHtmlModalOpen}
-        onClose={() => setIsOfflineHtmlModalOpen(false)}
-        customCostumes={customCostumes}
-        customMascotUrl={customMascotUrl}
-        mascotScale={mascotScale}
-        customOrganicUrl={customOrganicUrl}
-        customRecyclableUrl={customRecyclableUrl}
-        binScale={binScale}
-        customTrashImages={customTrashImages}
-        voiceClips={voiceClips}
-      />
+      {isOfflineHtmlModalOpen && <React.Suspense fallback={modalLoadingFallback}>
+        <OfflineHtmlModal
+          onImportSettings={handleImportSettings}
+          isOpen={isOfflineHtmlModalOpen}
+          onClose={() => setIsOfflineHtmlModalOpen(false)}
+          customCostumes={customCostumes}
+          customMascotUrl={customMascotUrl}
+          mascotScale={mascotScale}
+          customOrganicUrl={customOrganicUrl}
+          customRecyclableUrl={customRecyclableUrl}
+          binScale={binScale}
+          customTrashImages={customTrashImages}
+          voiceClips={voiceClips}
+        />
+      </React.Suspense>}
 
       {/* MODAL CHIẾN THẮNG KHI ĐẠT ĐỦ 16 SAO */}
-      <VictoryModal
-        isOpen={isVictoryModalOpen}
-        onPlayAgain={handleRestart}
-        onOpenScratchModal={() => {
-          setIsVictoryModalOpen(false);
-          setIsScratchModalOpen(true);
-        }}
-        onOpenOfflineHtmlModal={sharedAssetsEnabled ? undefined : () => {
-          setIsVictoryModalOpen(false);
-          setIsOfflineHtmlModalOpen(true);
-        }}
-        customMascotUrl={customMascotUrl}
-        maxScore={MAX_SCORE}
-      />
+      {isVictoryModalOpen && <React.Suspense fallback={modalLoadingFallback}>
+        <VictoryModal
+          isOpen={isVictoryModalOpen}
+          onPlayAgain={handleRestart}
+          onOpenScratchModal={() => {
+            setIsVictoryModalOpen(false);
+            setIsScratchModalOpen(true);
+          }}
+          onOpenOfflineHtmlModal={sharedAssetsEnabled ? undefined : () => {
+            setIsVictoryModalOpen(false);
+            setIsOfflineHtmlModalOpen(true);
+          }}
+          customMascotUrl={customMascotUrl}
+          maxScore={MAX_SCORE}
+        />
+      </React.Suspense>}
     </div>
     </ErrorBoundary>
   );

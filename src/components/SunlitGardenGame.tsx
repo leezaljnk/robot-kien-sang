@@ -12,6 +12,7 @@ interface FallingTrash {
   speed: number;
   icon: string;
   name: string;
+  points: number;
   wobble: number;
   isHazard: boolean;
   isBonus: boolean;
@@ -41,12 +42,15 @@ interface SunlitGardenGameProps {
   mascotScale?: number;
 }
 
-const TRASH = [
-  { icon: '📄', name: 'tờ giấy' },
-  { icon: '📦', name: 'vỏ hộp' },
-  { icon: '🧴', name: 'chai nhựa' },
-  { icon: '🥫', name: 'lon nước' },
-  { icon: '🛍️', name: 'túi giấy' },
+const TREATS = [
+  { icon: '🍰', name: 'miếng bánh', points: 9 },
+  { icon: '🍬', name: 'viên kẹo', points: 9 },
+  { icon: '🍿', name: 'bim bim', points: 9 },
+  { icon: '🍪', name: 'bánh quy', points: 9 },
+  { icon: '🍎', name: 'quả táo', points: 10 },
+  { icon: '🍓', name: 'quả dâu', points: 10 },
+  { icon: '🍊', name: 'quả cam', points: 10 },
+  { icon: '🍉', name: 'miếng dưa hấu', points: 10 },
 ];
 
 const CHALLENGE_GOAL = 10;
@@ -63,13 +67,16 @@ const FLYING_FRIENDS: FlyingFriend[] = Array.from({ length: 5 }, (_, id) => ({
   duration: 8 + Math.random() * 9,
 }));
 const BONUSES = [
-  { icon: '🌱', name: 'hạt giống' },
-  { icon: '💧', name: 'giọt nước' },
-  { icon: '⭐', name: 'ngôi sao' },
+  { icon: '🌱', name: 'hạt giống', points: 10 },
+  { icon: '💧', name: 'giọt nước', points: 10 },
+  { icon: '⭐', name: 'ngôi sao', points: 10 },
 ];
 const HAZARDS = [
-  { icon: '🪨', name: 'hòn đá' },
-  { icon: '🪵', name: 'cành cây' },
+  { icon: '🧱', name: 'viên gạch', points: 1 },
+  { icon: '🪨', name: 'hòn đá nhỏ', points: 2 },
+  { icon: '🪨', name: 'hòn đá lớn', points: 3 },
+  { icon: '🌿', name: 'cành cây', points: 4 },
+  { icon: '🪵', name: 'khúc cây', points: 5 },
 ];
 
 export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
@@ -81,6 +88,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   const [mode, setMode] = useState<GardenMode>('free');
   const [started, setStarted] = useState(false);
   const [caught, setCaught] = useState(0);
+  const [score, setScore] = useState(0);
   const [trash, setTrash] = useState<FallingTrash[]>([]);
   const [flowers, setFlowers] = useState<GardenFlower[]>([]);
   const [misses, setMisses] = useState(0);
@@ -101,6 +109,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   const nextTrashId = useRef(0);
   const nextFlowerId = useRef(0);
   const caughtRef = useRef(caught);
+  const scoreRef = useRef(score);
   const missesRef = useRef(misses);
   const directionsRef = useRef(new Set<-1 | 1>());
   const slowUntilRef = useRef(0);
@@ -113,6 +122,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   trashRef.current = trash;
   antXRef.current = antX;
   caughtRef.current = caught;
+  scoreRef.current = score;
   missesRef.current = misses;
 
   const moveAnt = useCallback((direction: -1 | 1) => {
@@ -127,6 +137,8 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     setMode(selectedMode);
     setCaught(0);
     caughtRef.current = 0;
+    setScore(0);
+    scoreRef.current = 0;
     setMisses(0);
     missesRef.current = 0;
     setTrash([]);
@@ -252,7 +264,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
         ? HAZARDS[Math.floor(Math.random() * HAZARDS.length)]
         : isBonus
           ? BONUSES[Math.floor(Math.random() * BONUSES.length)]
-          : TRASH[Math.floor(Math.random() * TRASH.length)];
+          : TREATS[Math.floor(Math.random() * TREATS.length)];
       const next: FallingTrash = {
         ...piece,
         id: nextTrashId.current++,
@@ -278,14 +290,23 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       let caughtNow = 0;
       let missesNow = 0;
       let bonusesNow = 0;
+      let pointsEarned = 0;
+      let pointsLost = 0;
       const next = trashRef.current.flatMap((piece) => {
         const slowFactor = now < slowUntilRef.current ? 0.5 : 1;
         const y = piece.y + piece.speed * slowFactor * deltaSeconds;
         const crossedAnt = piece.y < CATCH_LINE && y >= CATCH_LINE;
         if (crossedAnt && Math.abs(piece.x - antXRef.current) < 7) {
-          if (piece.isHazard) missesNow += 1;
-          else if (piece.isBonus) bonusesNow += 1;
-          else caughtNow += 1;
+          if (piece.isHazard) {
+            missesNow += 1;
+            pointsLost += piece.points;
+          } else if (piece.isBonus) {
+            bonusesNow += 1;
+            pointsEarned += piece.points;
+          } else {
+            caughtNow += 1;
+            pointsEarned += piece.points;
+          }
           return [];
         }
         if (y > 102) return [];
@@ -293,6 +314,11 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       });
       trashRef.current = next;
       setTrash(next);
+      if (pointsEarned > 0 || pointsLost > 0) {
+        const total = Math.max(0, scoreRef.current + pointsEarned - pointsLost);
+        scoreRef.current = total;
+        setScore(total);
+      }
 
       if (caughtNow > 0) {
         const total = caughtRef.current + caughtNow;
@@ -433,6 +459,14 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
           0%, 100% { opacity: .3; transform: scale(.65) rotate(0deg); }
           50% { opacity: 1; transform: scale(1.2) rotate(35deg); }
         }
+        @keyframes garden-treat-wiggle {
+          0%, 100% { transform: rotate(-8deg) scale(1); }
+          50% { transform: rotate(8deg) scale(1.14); }
+        }
+        @keyframes garden-item-glow {
+          0%, 100% { box-shadow: 0 4px 12px rgb(15 23 42 / 20%); }
+          50% { box-shadow: 0 0 22px rgb(250 204 21 / 90%); }
+        }
       `}</style>
       <div className="absolute inset-x-0 top-[54%] h-[46%] bg-gradient-to-b from-lime-300 via-green-400 to-green-600" />
       {[4, 24, 76, 92].map((left, index) => (
@@ -516,11 +550,12 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
 
       <div className="garden-hud absolute left-1/2 top-16 z-20 flex -translate-x-1/2 flex-col items-center gap-2 rounded-2xl border-2 border-white/80 bg-white/90 px-4 py-3 text-center shadow-lg">
         <p className="text-sm font-black text-emerald-900 sm:text-base">
-          {mode === 'challenge' ? `Thử thách: ${Math.min(caught, CHALLENGE_GOAL)}/${CHALLENGE_GOAL} món rác` : 'Cùng Kiến Sáng giữ vườn sạch nhé!'}
+          {mode === 'challenge' ? `Thử thách: ${Math.min(caught, CHALLENGE_GOAL)}/${CHALLENGE_GOAL} món ngon` : 'Cùng Kiến Sáng đón món ngon nhé!'}
         </p>
         <p className="text-xs font-semibold text-emerald-800 sm:text-sm">
-          {started ? slowMotion ? '✨ Phần thưởng! Rác đang rơi chậm lại' : '← → Hứng rác, né đá và cành cây!' : 'Chọn cách chơi để bắt đầu'}
+          {started ? slowMotion ? '✨ Phần thưởng! Đồ vật đang rơi chậm lại' : '← → Hứng bánh kẹo, né gạch đá và cành cây!' : 'Chọn cách chơi để bắt đầu'}
         </p>
+        {started && <p className="rounded-full bg-amber-100 px-3 py-1 text-sm font-black text-amber-800">⭐ Điểm: {score}</p>}
         {started && <div className="flex gap-2">
           <button
             type="button"
@@ -561,17 +596,22 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       {trash.map((piece) => (
         <span
           key={piece.id}
-          title={piece.name}
-          className={`garden-falling-item absolute z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 text-3xl shadow-md sm:h-14 sm:w-14 sm:text-4xl ${piece.isHazard ? 'border-red-500 bg-red-100/95' : piece.isBonus ? 'border-yellow-400 bg-yellow-100/95' : 'border-white/90 bg-white/90'}`}
+          title={`${piece.name}: ${piece.isHazard ? '-' : '+'}${piece.points} điểm`}
+          className={`garden-falling-item absolute z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 text-3xl shadow-md sm:h-14 sm:w-14 sm:text-4xl ${piece.isHazard ? 'border-red-500 bg-red-100/95' : piece.isBonus ? 'border-yellow-400 bg-yellow-100/95' : 'border-pink-300 bg-white/95'}`}
           style={{
             left: `${piece.x}%`,
             top: `${piece.y}%`,
-            transform: `translate(calc(-50% + ${Math.sin(piece.y / 5 + piece.wobble) * (piece.isHazard ? 1 : 8)}px), -50%) rotate(${piece.icon === '📄' || piece.icon === '🛍️' ? Math.sin(piece.y / 6 + piece.wobble) * 18 : piece.icon === '📦' ? Math.sin(piece.y / 5 + piece.wobble) * 8 : 0}deg)`,
+            transform: `translate(calc(-50% + ${Math.sin(piece.y / 5 + piece.wobble) * (piece.isHazard ? 2 : 8)}px), -50%) rotate(${Math.sin(piece.y / 6 + piece.wobble) * 10}deg)`,
+            animation: piece.isHazard ? undefined : 'garden-item-glow 1.4s ease-in-out infinite',
           }}
-          aria-label={piece.isHazard ? `Vật cản: ${piece.name}` : piece.isBonus ? `Vật phẩm thưởng: ${piece.name}` : piece.name}
+          aria-label={`${piece.isHazard ? 'Vật cản' : piece.isBonus ? 'Vật phẩm thưởng' : 'Món ngon'}: ${piece.name}, ${piece.isHazard ? 'trừ' : 'cộng'} ${piece.points} điểm`}
         >
-          {piece.isHazard ? '⚠️' : piece.icon}
-          {piece.isHazard && <span className="absolute -bottom-2 text-xl">{piece.icon}</span>}
+          <span style={{ animation: piece.isHazard ? undefined : 'garden-treat-wiggle 1.1s ease-in-out infinite' }}>
+            {piece.icon}
+          </span>
+          <span className={`absolute -bottom-2 rounded-full border border-white px-1.5 text-xs font-black leading-5 shadow ${piece.isHazard ? 'bg-red-600 text-white' : 'bg-amber-400 text-amber-950'}`}>
+            {piece.isHazard ? '-' : '+'}{piece.points}
+          </span>
         </span>
       ))}
 
@@ -642,7 +682,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
           <div className="max-w-md rounded-3xl border-4 border-white bg-amber-50 p-8 text-center shadow-2xl">
             <div className="text-6xl" aria-hidden="true">🌱🐜</div>
             <h2 className="mt-3 text-2xl font-black text-emerald-900">Nghỉ một chút nhé!</h2>
-            <p className="mt-2 font-semibold text-slate-700">Lần sau mình nhớ né đá và cành cây nha.</p>
+            <p className="mt-2 font-semibold text-slate-700">Lần sau mình nhớ né gạch, đá và cành cây nhé!</p>
             <button
               type="button"
               onClick={() => startGame(mode)}
@@ -660,7 +700,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
             <div className="mb-2 text-5xl" aria-hidden="true">🐜🌼</div>
             <h1 className="text-2xl font-black text-emerald-900 sm:text-3xl">Kiến Sáng bảo vệ khu vườn</h1>
             <p className="mt-3 text-sm font-semibold leading-relaxed text-slate-700 sm:text-base">
-              Dùng phím mũi tên, các nút điều khiển hoặc kéo chuột/chạm và di chuyển Kiến Sáng sang trái/phải để đón rác.
+              Dùng phím mũi tên, các nút điều khiển hoặc kéo chuột/chạm để đón bánh kẹo, trái cây lấy điểm và né gạch, đá, cành cây nhé!
             </p>
             <div className="garden-start-actions mt-6 grid gap-3 sm:grid-cols-2">
               <button
@@ -669,15 +709,15 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
                 className="garden-start-button rounded-2xl border-2 border-emerald-700 bg-emerald-600 px-4 py-4 text-left text-white shadow-md transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
               >
                 <span className="block text-lg font-black">🌱 Chơi tự do</span>
-                <span className="mt-1 block text-sm font-semibold">Đón rác và ngắm vườn xanh lên</span>
+                <span className="mt-1 block text-sm font-semibold">Đón món ngon, ngắm vườn rực rỡ</span>
               </button>
               <button
                 type="button"
                 onClick={() => startGame('challenge')}
                 className="garden-start-button rounded-2xl border-2 border-orange-700 bg-orange-500 px-4 py-4 text-left text-white shadow-md transition hover:bg-orange-600 focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
               >
-                <span className="block text-lg font-black">🌟 Thử thách dọn vườn</span>
-                <span className="mt-1 block text-sm font-semibold">Đón đủ {CHALLENGE_GOAL} món rác để nhận huy hiệu</span>
+                <span className="block text-lg font-black">🌟 Thử thách đón quà</span>
+                <span className="mt-1 block text-sm font-semibold">Đón đủ {CHALLENGE_GOAL} món ngon để nhận huy hiệu</span>
               </button>
             </div>
           </div>
@@ -689,7 +729,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
           <div className="max-w-md rounded-3xl border-4 border-white bg-amber-50 p-8 text-center shadow-2xl">
             <div className="text-6xl" aria-hidden="true">🏅🌷🌼</div>
             <h2 className="mt-3 text-2xl font-black text-emerald-900">Tuyệt vời, bạn nhỏ!</h2>
-            <p className="mt-2 font-semibold text-slate-700">Khu vườn đã sạch hơn nhờ có bạn và Kiến Sáng.</p>
+            <p className="mt-2 font-semibold text-slate-700">Bạn đã đón đủ món ngon và ghi được {score} điểm. Tuyệt lắm!</p>
             <button
               type="button"
               onClick={() => startGame('challenge')}
