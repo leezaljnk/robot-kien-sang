@@ -51,7 +51,7 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 - Tùy chỉnh hình ảnh robot, trang phục, thùng rác và hình ảnh các món rác.
 - Thu âm giọng nói cho phản hồi đúng, sai và chiến thắng.
 - Lưu các tùy chỉnh trong trình duyệt và nạp ảnh đã lưu trong project khi chạy bản build.
-- Khi mở trang, hiển thị màn chào mừng dự án với logo FPT Schools và hình nhóm đã tối ưu dung lượng; phát âm thanh vui khi tài nguyên sẵn sàng và chỉ bật nút bắt đầu sau khi trò chơi tải xong.
+- Khi mở trang, hiển thị màn chào tông xanh công nghệ với banner FPT Schools “Deep Learning with Love” từ `public/background-2.png`, giữ trọn ảnh và tách riêng phần giới thiệu/nút chơi để dễ đọc trên điện thoại. Ảnh được tối ưu thành `src/assets/welcome-background.webp` và nhúng sẵn để dùng được cả trong bản HTML offline; khi thay ảnh gốc cần tạo lại bản WebP (rộng 1600 px, chất lượng 86). Phát âm thanh vui khi tài nguyên sẵn sàng và chỉ bật nút bắt đầu sau khi trò chơi tải xong.
 - Chế độ “Nhờ Kiến Sáng” di chuyển theo quãng đường thực tế (trung bình 200 px/giây, ít nhất 0,6 giây mỗi chặng), áp dụng cả khi đi nhặt, mang rác và quay về.
 - Xuất trò chơi sang dự án Scratch (`.sb3`) và tải bản HTML độc lập để chơi offline.
 

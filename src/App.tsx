@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import fscLogoUrl from './assets/logo-fsc.webp?inline';
-import teamLogoUrl from './assets/team-logo-fpt.webp?inline';
+import welcomeBackgroundUrl from './assets/welcome-background.webp?inline';
 import { ActiveTrashItem, GameMode, KienSangMood, TrashCategory, TrashItemDef, VoiceClips, CostumeId, CustomCostumesMap, PreloadedOfflineState } from './types';
 import { TRASH_ITEMS } from './data/trashItems';
 import { YARD_TRASH_ITEMS } from './data/yardTrashItems';
@@ -1508,66 +1507,63 @@ export default function App() {
           aria-modal="true"
           aria-labelledby="welcome-title"
           aria-describedby="welcome-description"
-          className="visible fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-gradient-to-br from-sky-950 via-emerald-950 to-teal-900 p-4 text-white sm:items-center sm:p-8"
+          className="visible fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[radial-gradient(ellipse_at_top,_#0c4a6e_0%,_#07152f_50%,_#020617_100%)] p-3 text-white sm:p-6"
         >
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-            <span className="absolute -left-20 top-10 text-8xl opacity-20 sm:text-9xl">🍃</span>
-            <span className="absolute right-[8%] top-[12%] text-6xl opacity-25 sm:text-8xl">✨</span>
-            <span className="absolute bottom-[8%] left-[12%] text-6xl opacity-20 sm:text-8xl">🌼</span>
-            <span className="absolute bottom-[12%] right-[10%] text-7xl opacity-20 sm:text-9xl">♻️</span>
+            <div className="absolute -left-32 top-1/3 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl" />
+            <div className="absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-blue-600/15 blur-3xl" />
           </div>
-          <section className="relative my-auto grid w-full max-w-6xl items-center gap-6 rounded-[2rem] border border-white/25 bg-white/10 p-5 shadow-2xl backdrop-blur-xl sm:gap-10 sm:p-9 lg:grid-cols-[1fr_1.15fr] lg:p-12">
-            <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-              <span className="rounded-full border border-amber-200/50 bg-amber-100/15 px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-amber-100 sm:text-sm">
-                Dự án học tập · FPT Cầu Giấy
-              </span>
+          <section className="relative my-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-cyan-200/20 bg-slate-950/80 shadow-[0_24px_100px_rgba(0,0,0,0.5)] sm:rounded-[2rem]">
+            <div className="relative border-b border-cyan-200/20 bg-gradient-to-r from-[#03102c] via-[#06385a] to-[#03102c]">
               <img
-                src={fscLogoUrl}
-                alt="FPT Schools"
-                className="mt-4 h-auto w-36 rounded-xl bg-white px-3 py-2 shadow-lg sm:w-44 lg:mt-5"
+                src={welcomeBackgroundUrl}
+                alt="FPT Schools – Deep Learning with Love, năm học 2026–2027. Các bạn học sinh cùng robot trong không gian công nghệ."
+                width={1600}
+                height={840}
+                fetchPriority="high"
+                className="mx-auto max-h-[50svh] w-full object-contain"
               />
-              <h1 id="welcome-title" className="mt-5 text-3xl font-black leading-tight text-white drop-shadow sm:text-4xl lg:text-5xl">
-                Xin chào!
-                <span className="mt-1 block text-amber-300">Cùng Kiến Sáng giữ môi trường sạch đẹp</span>
-              </h1>
-              <p id="welcome-description" className="mt-4 max-w-xl text-sm leading-relaxed text-emerald-50 sm:text-base">
-                Chào mừng bạn đến với dự án <strong className="text-white">Robot Kiến Sáng – Thử tài Phân loại Rác</strong>.
-                Cùng Kiến Sáng phân loại rác và chăm sóc lớp học, sân trường xanh – sạch – đẹp nhé!
-              </p>
-              <div className="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start">
-                {['Diệp Anh', 'Hải Quân', 'Phúc Hưng'].map((member) => (
-                  <span key={member} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white sm:text-sm">
-                    {member}
-                  </span>
-                ))}
+            </div>
+            <div className="grid items-center gap-6 p-5 sm:gap-8 sm:p-8 lg:grid-cols-[1.4fr_1fr] lg:px-10">
+              <div className="text-center lg:text-left">
+                <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.2em] text-cyan-300 sm:text-xs">
+                  Dự án học tập · FPT Cầu Giấy
+                </p>
+                <h1 id="welcome-title" className="mt-3 text-3xl font-black leading-tight text-white sm:text-4xl">
+                  Robot Kiến Sáng
+                  <span className="mt-1 block text-xl text-amber-300 sm:text-2xl">Thử tài phân loại rác</span>
+                </h1>
+                <p id="welcome-description" className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-300 lg:mx-0">
+                  Cùng Kiến Sáng khám phá lớp học, chăm sóc sân trường và học cách phân loại rác.
+                  Mỗi hành động nhỏ, thêm một mầm xanh!
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-2 lg:justify-start">
+                  {['Diệp Anh', 'Hải Quân', 'Phúc Hưng'].map((member) => (
+                    <span key={member} className="rounded-full border border-cyan-200/15 bg-cyan-300/5 px-3 py-1 text-xs font-semibold text-sky-100">
+                      {member}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="mt-7 w-full max-w-sm">
+              <div className="mx-auto w-full max-w-sm rounded-2xl border border-cyan-200/15 bg-sky-900/20 p-4 text-center sm:p-5">
+                <p className="mb-4 text-sm font-bold text-sky-100">
+                  Học vui · Sống xanh 🌱
+                </p>
                 <button
                   type="button"
                   disabled={!gameReady}
                   onClick={handleStartGame}
-                  className="w-full rounded-2xl bg-amber-400 px-6 py-3.5 text-base font-black text-emerald-950 shadow-lg shadow-amber-950/30 transition hover:scale-[1.02] hover:bg-amber-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-white disabled:cursor-wait disabled:bg-white/25 disabled:text-white/75 disabled:shadow-none disabled:hover:scale-100 sm:text-lg"
+                  className="w-full rounded-xl bg-amber-400 px-6 py-3.5 text-base font-black text-slate-950 shadow-lg shadow-amber-500/15 transition hover:scale-[1.02] hover:bg-amber-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 disabled:cursor-wait disabled:bg-white/25 disabled:text-white/75 disabled:shadow-none disabled:hover:scale-100 motion-reduce:transform-none motion-reduce:transition-none sm:text-lg"
                 >
                   {gameReady ? 'Bắt đầu chơi! 🚀' : 'Đang chuẩn bị trò chơi…'}
                 </button>
-                <div role="status" aria-live="polite" className="mt-3 flex min-h-6 items-center justify-center gap-2 text-xs font-semibold text-emerald-100 sm:text-sm">
+                <div role="status" aria-live="polite" className="mt-3 flex min-h-6 items-center justify-center gap-2 text-xs leading-relaxed text-slate-300">
                   {!gameReady && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/35 border-t-amber-300" aria-hidden="true" />}
                   {gameReady
                     ? 'Trò chơi đã sẵn sàng. Bấm nút để cùng khám phá!'
                     : sharedError || 'Đang tải hình ảnh và chuẩn bị khu vui chơi…'}
                 </div>
               </div>
-            </div>
-            <div className="relative mx-auto flex w-full max-w-xl items-center justify-center">
-              <div className="absolute inset-8 rounded-full bg-amber-300/20 blur-3xl" aria-hidden="true" />
-              <img
-                src={teamLogoUrl}
-                alt="Ba thành viên nhóm dự án FPT Schools"
-                className="relative max-h-[34vh] w-full rounded-3xl object-contain drop-shadow-[0_24px_36px_rgba(0,0,0,0.35)] sm:max-h-[42vh] lg:max-h-[68vh]"
-              />
-              <span className="absolute -bottom-2 right-2 rounded-full border border-white/30 bg-emerald-950/75 px-3 py-1.5 text-xs font-bold text-emerald-50 shadow-lg sm:bottom-2 sm:right-0 sm:text-sm">
-                Học vui · Sống xanh 🌱
-              </span>
             </div>
           </section>
         </div>
