@@ -12,7 +12,7 @@ import { RobotKienSang } from './components/RobotKienSang';
 import { TopBar } from './components/TopBar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Shirt } from 'lucide-react';
-import { MASCOT_COSTUMES, getPrimaryMascotImage } from './data/mascotCostumes';
+import { MASCOT_COSTUMES, PICKUP_DURATION_MS, getPrimaryMascotImage } from './data/mascotCostumes';
 import { getBinApproachTarget, getCommandMoveDuration } from './utils/movement';
 import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from './utils/trashSpawn';
 import { drawTrashItems } from './utils/trashCycle';
@@ -99,6 +99,12 @@ export default function App() {
 
   // Kiến Sáng state
   const [kienMood, setKienMood] = useState<KienSangMood>('idle');
+  const pickupInProgressRef = useRef(false);
+  const pickupTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (pickupTimeoutRef.current !== null) window.clearTimeout(pickupTimeoutRef.current);
+  }, []);
   const [kienSpeech, setKienSpeech] = useState<string>(
     'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!'
   );
@@ -763,6 +769,10 @@ export default function App() {
 
   // Restart game
   const handleRestart = () => {
+    if (pickupTimeoutRef.current !== null) window.clearTimeout(pickupTimeoutRef.current);
+    pickupTimeoutRef.current = null;
+    pickupInProgressRef.current = false;
+    setCarriedItemInstanceId(null);
     setScore(0);
     trashCycleRef.current = { classroom: [], yard: [] };
     sceneItemsRef.current = { classroom: null, yard: null };
@@ -886,8 +896,24 @@ export default function App() {
     }
   };
 
+  const beginPickup = (instanceId: string, onComplete: () => void) => {
+    pickupInProgressRef.current = true;
+    setIsMoving(false);
+    setKienMood('picking');
+    setCarriedItemInstanceId(instanceId);
+    setActiveItems(prev => prev.map(item =>
+      item.instanceId === instanceId ? { ...item, isDragging: true } : item
+    ));
+    pickupTimeoutRef.current = window.setTimeout(() => {
+      pickupTimeoutRef.current = null;
+      pickupInProgressRef.current = false;
+      onComplete();
+    }, PICKUP_DURATION_MS);
+  };
+
   // Xử lý nhặt hoặc thả rác khi nhấn Phím Cách / Nút tương tác
   const handleActionPickOrDrop = () => {
+    if (pickupInProgressRef.current) return;
     // If carrying trash -> check if near bin to drop
     if (carriedItemInstanceId) {
       if (kienX <= 32) {
@@ -927,20 +953,11 @@ export default function App() {
       if (closestItem && minDistance < 22) {
         const itemToPick = closestItem as ActiveTrashItem;
         playPickSfx();
-        setKienMood('picking');
-        setCarriedItemInstanceId(itemToPick.instanceId);
-        setActiveItems((prev) =>
-          prev.map((it) =>
-            it.instanceId === itemToPick.instanceId ? { ...it, isDragging: true } : it
-          )
-        );
+        beginPickup(itemToPick.instanceId, () => setKienMood('carrying'));
         const def = getItemDef(itemToPick.defId);
         triggerSpeech(
           `Kiến Sáng đã nhặt "${def?.nameVi || 'món rác'}"! Hãy đưa tới thùng rác thích hợp nhé!`
         );
-        setTimeout(() => {
-          setKienMood('carrying');
-        }, 350);
       } else {
         triggerSpeech(
           'Hãy dùng phím mũi tên ⬅️ ➡️ đi lại gần món rác trên sàn rồi nhấn Phím Cách để nhặt nhé!'
@@ -1045,6 +1062,10 @@ export default function App() {
   );
 
   const updateSmoothMovement = useCallback(() => {
+    if (pickupInProgressRef.current) {
+      rafMovementIdRef.current = requestAnimationFrame(updateSmoothMovement);
+      return;
+    }
     const held = heldDirectionsRef.current;
     if (held.size === 0) {
       setIsMoving(false);
@@ -1086,6 +1107,7 @@ export default function App() {
 
   const startMovingDir = useCallback(
     (dir: 'left' | 'right' | 'up' | 'down') => {
+      if (pickupInProgressRef.current) return;
       // Dừng autopilot nếu người dùng chủ động bấm phím
       if (autopilotRafRef.current) {
         cancelAnimationFrame(autopilotRafRef.current);
@@ -1124,7 +1146,9 @@ export default function App() {
           rafMovementIdRef.current = null;
         }
         setIsMoving(false);
-        setKienMood(carriedItemInstanceIdRef.current ? 'carrying' : 'idle');
+        if (!pickupInProgressRef.current) {
+          setKienMood(carriedItemInstanceIdRef.current ? 'carrying' : 'idle');
+        }
       }
     },
     []
@@ -1141,7 +1165,9 @@ export default function App() {
       autopilotRafRef.current = null;
     }
     setIsMoving(false);
-    setKienMood(carriedItemInstanceIdRef.current ? 'carrying' : 'idle');
+    if (!pickupInProgressRef.current) {
+      setKienMood(carriedItemInstanceIdRef.current ? 'carrying' : 'idle');
+    }
   }, []);
 
   // Keyboard controls for moving Bạn Kiến Sáng:
@@ -1353,6 +1379,7 @@ export default function App() {
 
   // Click on a bin to command Kiến Sáng to pick and drop trash
   const handleCommandBinClick = (chosenCategory: TrashCategory) => {
+    if (pickupInProgressRef.current) return;
     if (!selectedTrashId || isMoving || kienMood === 'walking' || kienMood === 'carrying') {
       if (!selectedTrashId) {
         triggerSpeech('Bé hãy bấm chọn một món rác trên sàn trước nhé!');
@@ -1374,17 +1401,7 @@ export default function App() {
       () => {
         // Phase 2: Cúi người nhặt rác lên (Pick up action)
         playPickSfx();
-        setKienMood('picking');
-        setCarriedItemInstanceId(item.instanceId);
-
-        // Tạm ẩn món rác khỏi sàn khi Kiến Sáng ôm trên tay
-        setActiveItems((prev) =>
-          prev.map((it) =>
-            it.instanceId === item.instanceId ? { ...it, isDragging: true } : it
-          )
-        );
-
-        setTimeout(() => {
+        beginPickup(item.instanceId, () => {
           // Phase 3: Kiến Sáng ôm rác đi mượt mà tới thùng rác đã chọn (Carry & Walk)
           const area = playAreaRef.current;
           const bin = chosenCategory === 'organic' ? leftBinRef.current : rightBinRef.current;
@@ -1442,13 +1459,14 @@ export default function App() {
               }, 450);
             }
           );
-        }, 350);
+        });
       }
     );
   };
 
   // Toggle or switch game modes
   const handleSelectGameMode = (mode: GameMode) => {
+    if (pickupInProgressRef.current) return;
     if (autopilotRafRef.current) {
       cancelAnimationFrame(autopilotRafRef.current);
       autopilotRafRef.current = null;

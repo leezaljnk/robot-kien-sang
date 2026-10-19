@@ -380,7 +380,13 @@ Khi chạy ứng dụng bằng máy chủ phát triển, ảnh tải lên đư�
 
 Bộ tìm rác cần đủ `tim_rac_01` đến `tim_rac_12` để hiển thị hoạt ảnh riêng đủ 12 bước. Nếu chưa có ảnh tìm rác nào, khi di chuyển game dùng hoạt ảnh SVG mặc định thay vì giữ một ảnh cảm xúc đứng yên. Có thể bổ sung bộ ảnh vào project rồi build lại, hoặc tải bộ ảnh qua editor online và tải lại trang chơi.
 
-Ảnh PNG/JPG/WebP/SVG đặt sẵn trong các thư mục trên sẽ được chép sang `dist/`. Khi build, Vite tạo `dist/kien-sang-assets.json` để ứng dụng nhận biết và nạp ảnh trang phục, ảnh rác, robot và thùng rác. Đặt tên ảnh trang phục/rác khớp ID trong ứng dụng để ảnh được gắn đúng vị trí. Giao diện hiện có 196 trang phục vector mặc định được tạo từ mã SVG; chỉ cần thêm tệp vào `costumes/` nếu muốn thay một hay nhiều trang phục bằng ảnh riêng.
+Ba ảnh `tim_rac_13.png`, `tim_rac_14.png`, `tim_rac_15.png` dùng riêng cho động tác cúi nhặt, không thuộc chu kỳ đi bộ. Khi nhặt rác bằng phím/nút điều khiển hoặc nhờ Kiến Sáng tự đi nhặt, nhân vật lần lượt hiện ảnh 13 → 14 → 15 trong giai đoạn nhặt rồi chuyển sang bộ cầm rác. Biểu cảm vui dùng `vui_01.png` đến `vui_04.png`, biểu cảm buồn dùng `buon_01.png` đến `buon_04.png`. Xưởng Trang Phục có tab **Cúi nhặt**, tab biểu cảm 8 ảnh và chế độ xem thử cho từng nhóm. Với Supabase đang sử dụng, chạy lại `supabase/setup.sql` để cho phép upload các ID mới.
+
+Mỗi ảnh cúi nhặt hiển thị 180 ms; game giữ trọn chuỗi 540 ms trước khi đổi sang ảnh cầm rác. Trong lúc cúi nhặt, thao tác di chuyển, nhặt/thả và đổi chế độ được khóa để không ngắt chuỗi ảnh giữa chừng.
+
+Khu vườn dùng riêng bộ `public/images/costumes/cam_gio_01.png` đến `cam_gio_12.png` cho nhân vật cầm giỏ, không vẽ thêm giỏ emoji. Có thể tải từng ảnh, tải nhiều ảnh hoặc cả thư mục qua tab **Cầm giỏ** trong Xưởng Trang Phục và xem thử đủ 12 bước. Bộ này không thay bộ tìm rác trong lớp học; khi thiếu một frame sẽ dùng ảnh cầm giỏ khác đã có, khi chưa có cả bộ sẽ dùng nhân vật thông thường. Nếu dùng editor online với Supabase đã thiết lập, chạy lại `supabase/setup.sql` để cho phép upload nhóm `cam_gio_*`.
+
+Ảnh PNG/JPG/WebP/SVG đặt sẵn trong các thư mục trên sẽ được chép sang `dist/`. Khi build, Vite tạo `dist/kien-sang-assets.json` để ứng dụng nhận biết và nạp ảnh trang phục, ảnh rác, robot và thùng rác. Đặt tên ảnh trang phục/rác khớp ID trong ứng dụng để ảnh được gắn đúng vị trí. Giao diện có 215 ô trang phục cho các nhóm đi bộ, cúi nhặt, cầm giỏ, cầm rác và biểu cảm vui/buồn; chỉ cần thêm tệp vào `costumes/` nếu muốn thay một hay nhiều trang phục bằng ảnh riêng.
 
 Để ảnh tải lên qua giao diện được đưa vào bản publish: chạy máy chủ phát triển, tải ảnh và lưu, rồi chạy lại `npm run build`. Publish toàn bộ nội dung `dist/`. Build không thể lấy dữ liệu chỉ có trong IndexedDB/localStorage của một trình duyệt; các ảnh đó cần được tải vào project (hoặc xuất thành HTML offline) trước khi chia sẻ.
 

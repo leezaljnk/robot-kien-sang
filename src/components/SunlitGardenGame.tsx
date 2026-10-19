@@ -26,6 +26,16 @@ interface GardenFlower {
   icon: string;
 }
 
+interface CatchEffect {
+  id: number;
+  x: number;
+  points: number;
+  icon: string;
+  isBonus: boolean;
+  isHazard: boolean;
+  createdAt: number;
+}
+
 interface FlyingFriend {
   id: number;
   icon: '🦋' | '🐦';
@@ -57,6 +67,7 @@ const CHALLENGE_GOAL = 10;
 const CATCH_LINE = 78;
 const MAX_MISSES = 5;
 const MAX_ACTIVE_FALLING_ITEMS = 8;
+const CATCH_EFFECT_DURATION = 1100;
 const FLOWER_ICONS = ['🌼', '🌷', '🌻', '🌸', '🌺', '🪻', '🌹', '🪷', '💐', '💮', '🏵️'];
 const FLYING_FRIENDS: FlyingFriend[] = Array.from({ length: 5 }, (_, id) => ({
   id,
@@ -91,6 +102,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   const [score, setScore] = useState(0);
   const [trash, setTrash] = useState<FallingTrash[]>([]);
   const [flowers, setFlowers] = useState<GardenFlower[]>([]);
+  const [catchEffects, setCatchEffects] = useState<CatchEffect[]>([]);
   const [misses, setMisses] = useState(0);
   const [antX, setAntX] = useState(50);
   const [facingDirection, setFacingDirection] = useState<'left' | 'right'>('right');
@@ -104,6 +116,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     Array.from({ length: 4 }, () => 112 + Math.floor(Math.random() * 48))
   );
   const areaRef = useRef<HTMLDivElement>(null);
+  const mascotRef = useRef<HTMLDivElement>(null);
   const trashRef = useRef(trash);
   const antXRef = useRef(antX);
   const nextTrashId = useRef(0);
@@ -118,6 +131,35 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   const completed = mode === 'challenge' && caught >= CHALLENGE_GOAL;
   const butterflyCount = Math.min(caught, 3);
   const birdCount = Math.min(Math.floor(caught / 3), 2);
+  const latestCatchId = catchEffects.at(-1)?.id;
+  const latestCatchIsHazard = catchEffects.at(-1)?.isHazard;
+
+  useEffect(() => {
+    if (catchEffects.length === 0) return;
+    const timeout = window.setTimeout(() => {
+      const now = performance.now();
+      setCatchEffects(current => current.filter(effect => now - effect.createdAt < CATCH_EFFECT_DURATION));
+    }, Math.max(0, catchEffects[0].createdAt + CATCH_EFFECT_DURATION - performance.now()));
+    return () => window.clearTimeout(timeout);
+  }, [catchEffects]);
+
+  useEffect(() => {
+    if (latestCatchId === undefined || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const frames = latestCatchIsHazard ? [
+      { transform: 'translateX(0)' },
+      { transform: 'translateX(-7px)' },
+      { transform: 'translateX(7px)' },
+      { transform: 'translateX(-5px)' },
+      { transform: 'translateX(5px)' },
+      { transform: 'translateX(0)' },
+    ] : [
+      { transform: 'translateY(0)' },
+      { transform: 'translateY(-12px)', offset: 0.4 },
+      { transform: 'translateY(0)' },
+    ];
+    const animation = mascotRef.current?.animate(frames, { duration: 380, easing: 'ease-out' });
+    return () => animation?.cancel();
+  }, [latestCatchId, latestCatchIsHazard]);
 
   trashRef.current = trash;
   antXRef.current = antX;
@@ -144,6 +186,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     setTrash([]);
     trashRef.current = [];
     setFlowers([]);
+    setCatchEffects([]);
     setSlowMotion(false);
     slowUntilRef.current = 0;
     if (moodTimeoutRef.current !== null) window.clearTimeout(moodTimeoutRef.current);
@@ -292,11 +335,21 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       let bonusesNow = 0;
       let pointsEarned = 0;
       let pointsLost = 0;
+      const impacts: CatchEffect[] = [];
       const next = trashRef.current.flatMap((piece) => {
         const slowFactor = now < slowUntilRef.current ? 0.5 : 1;
         const y = piece.y + piece.speed * slowFactor * deltaSeconds;
         const crossedAnt = piece.y < CATCH_LINE && y >= CATCH_LINE;
         if (crossedAnt && Math.abs(piece.x - antXRef.current) < 7) {
+          impacts.push({
+            id: piece.id,
+            x: piece.x,
+            points: piece.points,
+            icon: piece.icon,
+            isBonus: piece.isBonus,
+            isHazard: piece.isHazard,
+            createdAt: now,
+          });
           if (piece.isHazard) {
             missesNow += 1;
             pointsLost += piece.points;
@@ -314,6 +367,9 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       });
       trashRef.current = next;
       setTrash(next);
+      if (impacts.length > 0) {
+        setCatchEffects(current => [...current, ...impacts].slice(-12));
+      }
       if (pointsEarned > 0 || pointsLost > 0) {
         const total = Math.max(0, scoreRef.current + pointsEarned - pointsLost);
         scoreRef.current = total;
@@ -397,6 +453,7 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       if (clearFallingItems) {
         trashRef.current = [];
         setTrash([]);
+        setCatchEffects([]);
       }
       directionsRef.current.clear();
       pointerTargetXRef.current = null;
@@ -444,6 +501,31 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
       }}
     >
       <style>{`
+        @keyframes garden-catch-points {
+          0% { opacity: 0; transform: translateY(0) scale(.6); }
+          18% { opacity: 1; transform: translateY(-18px) scale(1.15); }
+          65% { opacity: 1; }
+          100% { opacity: 0; transform: translateY(-90px) scale(1); }
+        }
+        @keyframes garden-catch-ring {
+          0% { opacity: .95; transform: scale(.3); }
+          100% { opacity: 0; transform: scale(2.4); }
+        }
+        @keyframes garden-catch-spark {
+          0% { opacity: 0; transform: translate(0, 0) scale(.3); }
+          15% { opacity: 1; }
+          100% { opacity: 0; transform: translate(var(--spark-x), var(--spark-y)) rotate(140deg) scale(.6); }
+        }
+        .garden-catch-points { animation: garden-catch-points 1.1s ease-out both; }
+        .garden-catch-ring { animation: garden-catch-ring .65s ease-out both; }
+        .garden-catch-spark { animation: garden-catch-spark .85s ease-out both; }
+        @media (prefers-reduced-motion: reduce) {
+          .garden-catch-points, .garden-catch-ring, .garden-catch-spark {
+            animation: none;
+          }
+          .garden-catch-points { transform: translateY(-30px); }
+          .garden-catch-ring, .garden-catch-spark { display: none; }
+        }
         @keyframes garden-fly {
           0% { transform: translate3d(-18px, 8px, 0) rotate(-8deg); }
           25% { transform: translate3d(24px, -14px, 0) rotate(7deg); }
@@ -615,12 +697,49 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
         </span>
       ))}
 
+      {catchEffects.map(effect => (
+        <div
+          key={effect.id}
+          className="garden-catch-effect pointer-events-none absolute z-30"
+          data-impact={effect.isHazard ? 'hazard' : effect.isBonus ? 'bonus' : 'treat'}
+          style={{ left: `${Math.max(16, Math.min(84, effect.x))}%`, top: `${CATCH_LINE}%` }}
+          aria-hidden="true"
+        >
+          <div className="absolute -left-8 -top-8 h-16 w-16">
+            <span className={`garden-catch-ring absolute inset-0 rounded-full border-4 ${effect.isHazard ? 'border-red-400' : effect.isBonus ? 'border-cyan-300' : 'border-yellow-300'}`} />
+          </div>
+          {Array.from({ length: effect.isBonus ? 10 : 7 }, (_, index) => {
+            const angle = (index / (effect.isBonus ? 10 : 7)) * Math.PI * 2;
+            const distance = effect.isBonus ? 70 : 52;
+            return (
+              <span
+                key={index}
+                className="garden-catch-spark absolute -left-3 -top-3 flex h-6 w-6 items-center justify-center text-xl"
+                style={{
+                  '--spark-x': `${Math.cos(angle) * distance}px`,
+                  '--spark-y': `${Math.sin(angle) * distance - 24}px`,
+                  animationDelay: `${index * 12}ms`,
+                } as React.CSSProperties}
+              >{effect.isHazard ? index % 2 === 0 ? '💥' : '💨' : index % 3 === 0 ? '✨' : effect.isBonus ? '💫' : '⭐'}</span>
+            );
+          })}
+          <div className="absolute -left-16 -top-8 w-32 text-center">
+            <div className={`garden-catch-points text-2xl font-black ${effect.isHazard ? 'text-red-700' : effect.isBonus ? 'text-cyan-800' : 'text-emerald-800'}`} style={{ textShadow: '0 2px 0 white, 2px 0 0 white, -2px 0 0 white, 0 -2px 0 white' }}>
+              <span>{effect.icon} {effect.isHazard ? '-' : '+'}{effect.points}</span>
+              {effect.isHazard && <span className="block text-sm">Ối! Cẩn thận nhé!</span>}
+              {effect.isBonus && <span className="block text-sm">Tuyệt vời!</span>}
+            </div>
+          </div>
+        </div>
+      ))}
+
       {started && (
         <>
           <div className="pointer-events-none absolute bottom-[6%] left-0 right-0 flex justify-center">
-            <div className="garden-mascot relative h-24 w-full">
+            <div ref={mascotRef} className="garden-mascot relative h-24 w-full">
               <RobotKienSang
                 mood={mood}
+                carryingBasket
                 speechText=""
                 xPercent={antX}
                 yPercent={100}
@@ -633,11 +752,6 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
               />
             </div>
           </div>
-          <span
-            className="pointer-events-none absolute z-30 text-2xl"
-            style={{ left: `${Math.min(90, antX + 5)}%`, bottom: '8%' }}
-            aria-label="Giỏ đựng rác của Kiến Sáng"
-          >🧺</span>
           <div className="garden-controls absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 gap-4">
             <button
               type="button"

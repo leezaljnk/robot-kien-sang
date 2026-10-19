@@ -4,6 +4,11 @@ import { Volume2, Shirt } from 'lucide-react';
 import {
   getCostumeSvg,
   TIM_RAC_IDS,
+  CAM_GIO_IDS,
+  PICKUP_IDS,
+  PICKUP_FRAME_MS,
+  VUI_IDS,
+  BUON_IDS,
   getCarryCostumeIdsForTrash,
   getPrimaryMascotImage,
 } from '../data/mascotCostumes';
@@ -13,6 +18,7 @@ interface RobotKienSangProps {
   className?: string;
   mood: KienSangMood;
   carriedTrashId?: string | null;
+  carryingBasket?: boolean;
   speechText?: string;
   xPercent?: number; // 0 to 100% position across classroom
   yPercent?: number;
@@ -32,6 +38,7 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
   className,
   mood,
   carriedTrashId = null,
+  carryingBasket = false,
   speechText = 'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!',
   xPercent = 50,
   yPercent = 75,
@@ -48,7 +55,11 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
 }) => {
   // Đồng bộ bước đi 12 frame tức thời không có độ trễ state kép
   const [idlePose, setIdlePose] = useState(true);
-  const [emotionIndex, setEmotionIndex] = useState(0);
+  const [actionFrame, setActionFrame] = useState({ mood, index: 0 });
+  const actionFrameIds = mood === 'picking' ? PICKUP_IDS
+    : mood === 'sad' ? BUON_IDS
+    : mood === 'happy' || mood === 'victory' ? VUI_IDS : null;
+  const actionFrameIndex = actionFrame.mood === mood ? actionFrame.index : 0;
 
   useEffect(() => {
     if (isMoving) {
@@ -61,25 +72,33 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
 
   const stepIndex = idlePose && !isMoving ? 0 : Math.abs(walkStepTick) % 12;
 
-  // Timer đổi frame cảm xúc vui mừng (vui_01, vui_02) hoặc buồn (buon_01, buon_02)
   useEffect(() => {
-    setEmotionIndex(0);
-    if (mood !== 'happy' && mood !== 'victory' && mood !== 'sad') return;
+    setActionFrame({ mood, index: 0 });
+    if (!actionFrameIds) return;
 
     const timer = setInterval(() => {
-      setEmotionIndex((prev) => (prev === 0 ? 1 : 0));
-    }, 220);
+      setActionFrame(current => {
+        const index = mood === 'picking'
+          ? Math.min(current.index + 1, actionFrameIds.length - 1)
+          : (current.index + 1) % actionFrameIds.length;
+        return index === current.index ? current : { mood, index };
+      });
+    }, mood === 'picking' ? PICKUP_FRAME_MS : 220);
 
     return () => clearInterval(timer);
-  }, [mood]);
+  }, [mood, actionFrameIds]);
 
   // XÁC ĐỊNH COSTUME ID ĐANG HIỂN THỊ
   let currentCostumeId = 'tim_rac_01';
 
-  if (mood === 'happy' || mood === 'victory') {
-    currentCostumeId = emotionIndex === 0 ? 'vui_01' : 'vui_02';
-  } else if (mood === 'sad') {
-    currentCostumeId = emotionIndex === 0 ? 'buon_01' : 'buon_02';
+  const basketFallback = carryingBasket
+    ? CAM_GIO_IDS.map(id => customCostumes[id]).find(Boolean)
+    : null;
+
+  if (basketFallback) {
+    currentCostumeId = CAM_GIO_IDS[stepIndex];
+  } else if (actionFrameIds) {
+    currentCostumeId = actionFrameIds[actionFrameIndex];
   } else if (carriedTrashId) {
     // ĐANG CẦM RÁC: sử dụng nhóm 12 ảnh cam_[trashId]_01..12 tương ứng với bước chân hiện tại
     const carryFrames = getCarryCostumeIdsForTrash(carriedTrashId);
@@ -94,6 +113,14 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
   // Nguồn ảnh: Ảnh custom tải lên hoặc Vector SVG
   let customFrameImage: string | null = customCostumes[currentCostumeId] || null;
 
+  if (currentCostumeId.startsWith('cam_gio_')) {
+    customFrameImage ||= basketFallback || null;
+  }
+
+  if (!customFrameImage && actionFrameIds && !basketFallback) {
+    customFrameImage = actionFrameIds.map(id => customCostumes[id]).find(Boolean) || null;
+  }
+
   // Nếu frame hiện tại chưa có ảnh riêng nhưng người dùng đã tải bộ trang phục bạn Kiến:
   // Tự động ưu tiên lấy đúng pha bước chân (tim_rac_01..12) hoặc ảnh custom chính để giữ nguyên nhân vật và chuyển động mượt mà
   if (!customFrameImage && primaryCustomMascot) {
@@ -101,16 +128,16 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
     if (currentCostumeId.startsWith('cam_') || currentCostumeId.startsWith('tim_rac_')) {
       customFrameImage = customCostumes[walkFallbackId] || primaryCustomMascot;
     } else if (currentCostumeId.startsWith('vui_')) {
-      customFrameImage = customCostumes['vui_01'] || customCostumes['vui_02'] || primaryCustomMascot;
+      customFrameImage = VUI_IDS.map(id => customCostumes[id]).find(Boolean) || primaryCustomMascot;
     } else if (currentCostumeId.startsWith('buon_')) {
-      customFrameImage = customCostumes['buon_01'] || customCostumes['buon_02'] || primaryCustomMascot;
+      customFrameImage = BUON_IDS.map(id => customCostumes[id]).find(Boolean) || primaryCustomMascot;
     } else {
       customFrameImage = primaryCustomMascot;
     }
   }
 
   // Without walking images, animate the vector frames rather than a static emotion image.
-  if (isMoving && currentCostumeId.startsWith('tim_rac_') &&
+  if (isMoving && TIM_RAC_IDS.includes(currentCostumeId) &&
       !TIM_RAC_IDS.some(id => customCostumes[id])) {
     customFrameImage = null;
   }
@@ -200,7 +227,7 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
                 className="w-full h-full object-contain drop-shadow-md select-none pointer-events-none"
               />
               {/* Nếu đang cầm rác nhưng dùng ảnh bước đi chung, hiển thị món rác ôm trước ngực */}
-              {carriedTrashId && carriedItemDef && !customCostumes[currentCostumeId] && (
+              {mood !== 'picking' && carriedTrashId && carriedItemDef && !customCostumes[currentCostumeId] && (
                 <div
                   className="absolute bottom-6 right-1 w-10 h-10 bg-white/95 rounded-xl p-1 shadow-md border-2 border-orange-400 flex items-center justify-center pointer-events-none animate-bounce"
                   style={{ transform: facingDirection === 'left' ? 'scaleX(-1)' : 'none' }}
@@ -233,7 +260,7 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
                   __html: getCostumeSvg(currentCostumeId),
                 }}
               />
-              {carriedTrashId && carriedItemDef?.id.startsWith('yard_') && (
+              {mood !== 'picking' && carriedTrashId && carriedItemDef?.id.startsWith('yard_') && (
                 <div
                   className="absolute bottom-6 right-1 w-10 h-10 rounded-xl bg-white/95 p-1 shadow-md border-2 border-orange-400 flex items-center justify-center pointer-events-none animate-bounce"
                   style={{ transform: facingDirection === 'left' ? 'scaleX(-1)' : 'none' }}

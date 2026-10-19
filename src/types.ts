@@ -44,11 +44,18 @@ export type CostumeId =
   | 'tim_rac_10'
   | 'tim_rac_11'
   | 'tim_rac_12'
+  | 'tim_rac_13'
+  | 'tim_rac_14'
+  | 'tim_rac_15'
   // Cảm xúc vui mừng / buồn
   | 'vui_01'
   | 'vui_02'
+  | 'vui_03'
+  | 'vui_04'
   | 'buon_01'
   | 'buon_02'
+  | 'buon_03'
+  | 'buon_04'
   // Hỗ trợ linh hoạt cho các nhóm cầm rác và legacy
   | (string & {});
 
