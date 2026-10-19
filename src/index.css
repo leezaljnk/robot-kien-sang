@@ -1,5 +1,39 @@
 @import "tailwindcss";
 
+@keyframes trash-pickup {
+  0%, 40% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(var(--pickup-rotation)) scale(1);
+  }
+  70% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: translate(var(--pickup-x), var(--pickup-y)) rotate(0deg) scale(0.35);
+  }
+}
+
+@keyframes mascot-pickup-blend {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.trash-pickup {
+  animation: trash-pickup var(--pickup-duration) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.trash-pickup > div:last-child {
+  visibility: hidden;
+}
+
+.mascot-pickup-previous {
+  animation: mascot-pickup-blend 90ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trash-pickup { animation: none; }
+  .mascot-pickup-previous { animation: none; opacity: 0; }
+}
+
 .mobile-classroom-controls {
   display: none;
 }

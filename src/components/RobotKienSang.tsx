@@ -60,6 +60,18 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
     : mood === 'sad' ? BUON_IDS
     : mood === 'happy' || mood === 'victory' ? VUI_IDS : null;
   const actionFrameIndex = actionFrame.mood === mood ? actionFrame.index : 0;
+  const previousPickupImage = mood === 'picking' && actionFrameIndex > 0
+    ? customCostumes[PICKUP_IDS[actionFrameIndex - 1]] : null;
+
+  useEffect(() => {
+    for (const id of PICKUP_IDS) {
+      const source = customCostumes[id];
+      if (!source) continue;
+      const image = new Image();
+      image.src = source;
+      void image.decode().catch(() => {});
+    }
+  }, [customCostumes]);
 
   useEffect(() => {
     if (isMoving) {
@@ -226,6 +238,15 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
                 alt={`Bạn Kiến Sáng - ${currentCostumeId}`}
                 className="w-full h-full object-contain drop-shadow-md select-none pointer-events-none"
               />
+              {previousPickupImage && (
+                <img
+                  key={currentCostumeId}
+                  src={previousPickupImage}
+                  alt=""
+                  aria-hidden="true"
+                  className="mascot-pickup-previous pointer-events-none absolute inset-0 h-full w-full object-contain drop-shadow-md"
+                />
+              )}
               {/* Nếu đang cầm rác nhưng dùng ảnh bước đi chung, hiển thị món rác ôm trước ngực */}
               {mood !== 'picking' && carriedTrashId && carriedItemDef && !customCostumes[currentCostumeId] && (
                 <div

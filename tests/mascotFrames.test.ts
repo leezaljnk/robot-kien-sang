@@ -4,7 +4,22 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { BUON_IDS, CAM_GIO_IDS, getPrimaryMascotImage, PICKUP_IDS, TIM_RAC_IDS, VUI_IDS } from '../src/data/mascotCostumes';
 import { RobotKienSang } from '../src/components/RobotKienSang';
+import { TrashItemView } from '../src/components/TrashItemView';
+import { TRASH_ITEMS } from '../src/data/trashItems';
 import type { CustomCostumesMap } from '../src/types';
+
+test('trash keeps a visible pickup state until it transfers to the mascot', () => {
+  const definition = TRASH_ITEMS[0];
+  const html = renderToStaticMarkup(React.createElement(TrashItemView, {
+    definition,
+    item: { instanceId: 'pickup-test', defId: definition.id, xPercent: 50, yPercent: 75, rotation: 0 },
+    isPickingUp: true,
+  }));
+  assert.match(html, /data-trash-instance-id="pickup-test"/);
+  assert.match(html, /data-picking-up="true"/);
+  assert.match(html, /trash-pickup/);
+  assert.ok(html.includes(definition.nameVi));
+});
 
 test('picking uses crouching images before switching to carried trash images', () => {
   const customCostumes = Object.fromEntries(

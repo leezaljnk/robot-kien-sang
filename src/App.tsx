@@ -12,7 +12,7 @@ import { RobotKienSang } from './components/RobotKienSang';
 import { TopBar } from './components/TopBar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Shirt } from 'lucide-react';
-import { MASCOT_COSTUMES, PICKUP_DURATION_MS, getPrimaryMascotImage } from './data/mascotCostumes';
+import { MASCOT_COSTUMES, PICKUP_DURATION_MS, getCarryCostumeIdsForTrash, getPrimaryMascotImage } from './data/mascotCostumes';
 import { getBinApproachTarget, getCommandMoveDuration } from './utils/movement';
 import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from './utils/trashSpawn';
 import { drawTrashItems } from './utils/trashCycle';
@@ -99,6 +99,7 @@ export default function App() {
 
   // Kiến Sáng state
   const [kienMood, setKienMood] = useState<KienSangMood>('idle');
+  const [pickupVisual, setPickupVisual] = useState<{ instanceId: string; x: number; y: number } | null>(null);
   const pickupInProgressRef = useRef(false);
   const pickupTimeoutRef = useRef<number | null>(null);
 
@@ -725,7 +726,7 @@ export default function App() {
   const switchScene = useCallback((nextScene: GameScene) => {
     const currentScene = sceneRef.current;
     if (currentScene === nextScene) return;
-    if (carriedItemInstanceId || isMoving || draggingItem) {
+    if (pickupInProgressRef.current || carriedItemInstanceId || isMoving || draggingItem) {
       triggerSpeech('Kiến Sáng đang nhặt rác rồi. Hãy hoàn thành lượt này trước khi đổi cảnh nhé!');
       return;
     }
@@ -772,6 +773,7 @@ export default function App() {
     if (pickupTimeoutRef.current !== null) window.clearTimeout(pickupTimeoutRef.current);
     pickupTimeoutRef.current = null;
     pickupInProgressRef.current = false;
+    setPickupVisual(null);
     setCarriedItemInstanceId(null);
     setScore(0);
     trashCycleRef.current = { classroom: [], yard: [] };
@@ -856,7 +858,7 @@ export default function App() {
 
       setTimeout(() => {
         if (score + 1 < MAX_SCORE) {
-          setKienMood('idle');
+          setKienMood(current => current === 'happy' ? 'idle' : current);
         }
       }, 2500);
     } else {
@@ -888,7 +890,7 @@ export default function App() {
 
       // Return to idle mood after a moment
       setTimeout(() => {
-        setKienMood('idle');
+        setKienMood(current => current === 'sad' ? 'idle' : current);
         setActiveItems((prev) =>
           prev.map((it) => (it.instanceId === instanceId ? { ...it, isReturning: false } : it))
         );
@@ -897,16 +899,41 @@ export default function App() {
   };
 
   const beginPickup = (instanceId: string, onComplete: () => void) => {
+    const pickedItem = activeItemsRef.current.find(item => item.instanceId === instanceId);
+    if (pickedItem) {
+      for (const id of getCarryCostumeIdsForTrash(pickedItem.defId)) {
+        const source = customCostumes[id];
+        if (!source) continue;
+        const image = new Image();
+        image.src = source;
+        void image.decode().catch(() => {});
+      }
+    }
+    const trashElement = Array.from(playAreaRef.current?.querySelectorAll<HTMLElement>('[data-trash-instance-id]') || [])
+      .find(element => element.dataset.trashInstanceId === instanceId);
+    const trashBounds = trashElement?.getBoundingClientRect();
+    const mascotBounds = playAreaRef.current?.querySelector('[data-robot-sprite]')?.getBoundingClientRect();
+    setPickupVisual({
+      instanceId,
+      x: trashBounds && mascotBounds
+        ? mascotBounds.left + mascotBounds.width * (facingDirection === 'right' ? 0.65 : 0.35) - trashBounds.left - trashBounds.width / 2
+        : 0,
+      y: trashBounds && mascotBounds
+        ? mascotBounds.top + mascotBounds.height * 0.7 - trashBounds.top - trashBounds.height / 2
+        : -24,
+    });
     pickupInProgressRef.current = true;
     setIsMoving(false);
+    setWalkStepTick(0);
     setKienMood('picking');
-    setCarriedItemInstanceId(instanceId);
     setActiveItems(prev => prev.map(item =>
       item.instanceId === instanceId ? { ...item, isDragging: true } : item
     ));
     pickupTimeoutRef.current = window.setTimeout(() => {
       pickupTimeoutRef.current = null;
       pickupInProgressRef.current = false;
+      setPickupVisual(null);
+      setCarriedItemInstanceId(instanceId);
       onComplete();
     }, PICKUP_DURATION_MS);
   };
@@ -1437,25 +1464,7 @@ export default function App() {
 
               setTimeout(() => {
                 // Phase 5: Chấm điểm và hiển thị biểu cảm
-                processTrashSorting(item.instanceId, chosenCategory, (isCorrect) => {
-                  if (isCorrect) {
-                    // Sau khi đúng, bạn Kiến ăn mừng rồi bước mượt mà về vị trí trung tâm lớp
-                    setTimeout(() => {
-                      animateKienTo(50, 74, 'walking', () => {
-                        setFacingDirection('right');
-                        setKienMood('idle');
-                      });
-                    }, 1400);
-                  } else {
-                    // Khi sai, bạn Kiến buồn một chút rồi bước lại vị trí trung tâm lớp để bé chọn lại
-                    setTimeout(() => {
-                      animateKienTo(50, 74, 'walking', () => {
-                        setFacingDirection('right');
-                        setKienMood('idle');
-                      });
-                    }, 1600);
-                  }
-                });
+                processTrashSorting(item.instanceId, chosenCategory);
               }, 450);
             }
           );
@@ -1765,7 +1774,8 @@ export default function App() {
           if (!def) return null;
 
           const isCurrentDragging = draggingItem?.id === item.instanceId;
-          const isSelected = selectedTrashId === item.instanceId;
+          const isPickingUp = pickupVisual?.instanceId === item.instanceId;
+          const isSelected = selectedTrashId === item.instanceId && !isPickingUp;
 
           // If dragging via mouse/touch, position at pointer
           let itemStyle: React.CSSProperties = {
@@ -1788,7 +1798,18 @@ export default function App() {
             itemStyle.transition = 'left 900ms ease-in-out, top 900ms ease-in-out, transform 900ms ease-in-out';
           }
 
-          if (item.isDragging && !isCurrentDragging) {
+          if (isPickingUp && pickupVisual) {
+            itemStyle = {
+              ...itemStyle,
+              '--pickup-x': `${pickupVisual.x}px`,
+              '--pickup-y': `${pickupVisual.y}px`,
+              '--pickup-rotation': `${item.rotation}deg`,
+              '--pickup-duration': `${PICKUP_DURATION_MS}ms`,
+              pointerEvents: 'none',
+            } as React.CSSProperties;
+          }
+
+          if (item.isDragging && !isCurrentDragging && !isPickingUp) {
             // Being carried by Kien Sang
             return null;
           }
@@ -1800,6 +1821,7 @@ export default function App() {
               definition={def}
               isSelected={isSelected}
               isDragging={isCurrentDragging}
+              isPickingUp={isPickingUp}
               onPointerDown={(e) => handlePointerDownTrash(e, item)}
               onClick={() => {
                 if (gameMode === 'command') {

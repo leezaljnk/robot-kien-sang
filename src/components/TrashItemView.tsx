@@ -7,6 +7,7 @@ interface TrashItemViewProps {
   definition: TrashItemDef;
   isSelected?: boolean;
   isDragging?: boolean;
+  isPickingUp?: boolean;
   onPointerDown?: (e: React.PointerEvent) => void;
   onClick?: () => void;
   style?: React.CSSProperties;
@@ -17,6 +18,7 @@ export const TrashItemView: React.FC<TrashItemViewProps> = ({
   definition,
   isSelected = false,
   isDragging = false,
+  isPickingUp = false,
   onPointerDown,
   onClick,
   style,
@@ -309,6 +311,8 @@ export const TrashItemView: React.FC<TrashItemViewProps> = ({
   return (
     <div
       role="button"
+      data-trash-instance-id={item?.instanceId}
+      data-picking-up={isPickingUp || undefined}
       tabIndex={0}
       onPointerDown={onPointerDown}
       onClick={onClick}
@@ -317,7 +321,7 @@ export const TrashItemView: React.FC<TrashItemViewProps> = ({
         transform: `rotate(${item?.rotation ?? 0}deg) ${isSelected ? 'scale(1.22)' : isDragging ? 'scale(1.15)' : 'scale(1)'}`,
         touchAction: 'none',
       }}
-      className={`mobile-game-trash-item group absolute cursor-grab active:cursor-grabbing select-none flex flex-col items-center justify-center p-1.5 rounded-2xl transition-[transform,filter] duration-200 ${
+      className={`mobile-game-trash-item ${isPickingUp ? 'trash-pickup' : ''} group absolute cursor-grab active:cursor-grabbing select-none flex flex-col items-center justify-center p-1.5 rounded-2xl transition-[transform,filter] duration-200 ${
         isSelected
           ? 'drop-shadow-[0_0_16px_rgba(250,204,21,0.9)] animate-pulse'
           : isDragging

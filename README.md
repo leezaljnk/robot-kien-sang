@@ -384,6 +384,8 @@ Ba ảnh `tim_rac_13.png`, `tim_rac_14.png`, `tim_rac_15.png` dùng riêng cho �
 
 Mỗi ảnh cúi nhặt hiển thị 180 ms; game giữ trọn chuỗi 540 ms trước khi đổi sang ảnh cầm rác. Trong lúc cúi nhặt, thao tác di chuyển, nhặt/thả và đổi chế độ được khóa để không ngắt chuỗi ảnh giữa chừng.
 
+Rác vẫn hiện trên sàn trong phần đầu động tác cúi, sau đó dịch lên về phía tay và thu nhỏ trước khi chuyển sang trang phục cầm rác. Các tư thế cúi được hòa ảnh ngắn và nạp trước để giảm giật. Ở chế độ **Nhờ Kiến Sáng**, sau khi bỏ rác nhân vật đứng nguyên cạnh thùng, không tự quay về giữa lớp; lượt tiếp theo bắt đầu từ vị trí đang đứng.
+
 Khu vườn dùng riêng bộ `public/images/costumes/cam_gio_01.png` đến `cam_gio_12.png` cho nhân vật cầm giỏ, không vẽ thêm giỏ emoji. Có thể tải từng ảnh, tải nhiều ảnh hoặc cả thư mục qua tab **Cầm giỏ** trong Xưởng Trang Phục và xem thử đủ 12 bước. Bộ này không thay bộ tìm rác trong lớp học; khi thiếu một frame sẽ dùng ảnh cầm giỏ khác đã có, khi chưa có cả bộ sẽ dùng nhân vật thông thường. Nếu dùng editor online với Supabase đã thiết lập, chạy lại `supabase/setup.sql` để cho phép upload nhóm `cam_gio_*`.
 
 Ảnh PNG/JPG/WebP/SVG đặt sẵn trong các thư mục trên sẽ được chép sang `dist/`. Khi build, Vite tạo `dist/kien-sang-assets.json` để ứng dụng nhận biết và nạp ảnh trang phục, ảnh rác, robot và thùng rác. Đặt tên ảnh trang phục/rác khớp ID trong ứng dụng để ảnh được gắn đúng vị trí. Giao diện có 215 ô trang phục cho các nhóm đi bộ, cúi nhặt, cầm giỏ, cầm rác và biểu cảm vui/buồn; chỉ cần thêm tệp vào `costumes/` nếu muốn thay một hay nhiều trang phục bằng ảnh riêng.
