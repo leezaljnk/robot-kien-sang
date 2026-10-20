@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import welcomeBackgroundUrl from './assets/welcome-background.webp?inline';
 import { ActiveTrashItem, GameMode, KienSangMood, TrashCategory, TrashItemDef, VoiceClips, CostumeId, CustomCostumesMap, PreloadedOfflineState } from './types';
 import { TRASH_ITEMS } from './data/trashItems';
+import { getReuseHint, REUSE_HINT_DURATION_MS, type ReuseHint } from './data/reuseHints';
+import { ReuseHintCard } from './components/ReuseHintCard';
 import { YARD_TRASH_ITEMS } from './data/yardTrashItems';
 import { ClassroomBackground } from './components/ClassroomBackground';
 import { YardBackground } from './components/YardBackground';
@@ -14,7 +16,7 @@ import { Shirt } from 'lucide-react';
 import { MASCOT_COSTUMES, PICKUP_DURATION_MS, getCarryCostumeIdsForTrash, getPrimaryMascotImage } from './data/mascotCostumes';
 import { getBinApproachTarget, getCommandMoveDuration } from './utils/movement';
 import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from './utils/trashSpawn';
-import { drawTrashItems } from './utils/trashCycle';
+import { drawClassroomTrashItems, drawTrashItems } from './utils/trashCycle';
 import { voiceIdForText } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
 import {
@@ -86,6 +88,7 @@ export default function App() {
   const [selectedTrashId, setSelectedTrashId] = useState<string | null>(null);
   const [scene, setScene] = useState<GameScene>('classroom');
   const [isGardenOpen, setIsGardenOpen] = useState(false);
+  const [reuseSuggestion, setReuseSuggestion] = useState<{ instanceId: string; hint: ReuseHint } | null>(null);
   const sceneRef = useRef<GameScene>('classroom');
   const sceneItemsRef = useRef<Record<GameScene, ActiveTrashItem[] | null>>({
     classroom: null,
@@ -119,6 +122,15 @@ export default function App() {
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isScratchModalOpen, setIsScratchModalOpen] = useState(false);
   const [isVictoryModalOpen, setIsVictoryModalOpen] = useState(false);
+  useEffect(() => {
+    if (!reuseSuggestion) return;
+    const timeout = window.setTimeout(() => setReuseSuggestion(null), REUSE_HINT_DURATION_MS);
+    return () => window.clearTimeout(timeout);
+  }, [reuseSuggestion]);
+
+  useEffect(() => {
+    setReuseSuggestion(null);
+  }, [scene, isGardenOpen, isVictoryModalOpen]);
   const [isMascotModalOpen, setIsMascotModalOpen] = useState(false);
   const [isCostumesModalOpen, setIsCostumesModalOpen] = useState(false);
   const [isTrashBinModalOpen, setIsTrashBinModalOpen] = useState(false);
@@ -638,12 +650,9 @@ export default function App() {
     }
 
     const currentScene = sceneRef.current;
-    const sceneItems = currentScene === 'yard' ? YARD_TRASH_ITEMS : TRASH_ITEMS;
-    const { selected: chosenDefs, remaining } = drawTrashItems(
-      sceneItems,
-      trashCycleRef.current[currentScene],
-      TRASH_BATCH_SIZE
-    );
+    const { selected: chosenDefs, remaining } = currentScene === 'classroom'
+      ? drawClassroomTrashItems(TRASH_ITEMS, trashCycleRef.current.classroom)
+      : drawTrashItems(YARD_TRASH_ITEMS, trashCycleRef.current.yard, TRASH_BATCH_SIZE);
     trashCycleRef.current[currentScene] = remaining;
 
     const newItems: ActiveTrashItem[] = chosenDefs.map((def, idx) => ({
@@ -769,6 +778,7 @@ export default function App() {
 
   // Restart game
   const handleRestart = () => {
+    setReuseSuggestion(null);
     if (pickupTimeoutRef.current !== null) window.clearTimeout(pickupTimeoutRef.current);
     pickupTimeoutRef.current = null;
     pickupInProgressRef.current = false;
@@ -818,6 +828,8 @@ export default function App() {
     setCarriedItemInstanceId(null);
 
     if (itemDef.category === chosenCategory) {
+      const hint = getReuseHint(sceneRef.current, itemDef, chosenCategory);
+      if (hint) setReuseSuggestion({ instanceId, hint });
       // ĐÚNG THÙNG RÁC
       playDropSfx();
       playSuccessSfx();
@@ -1673,6 +1685,9 @@ export default function App() {
         </div>
 
         {/* THÙNG RÁC GÓC PHẢI: RÁC TÁI CHẾ / HỘP SỮA & CHAI NHỰA (MÀU CAM/XANH DƯƠNG) */}
+        {hasStartedGame && scene === 'classroom' && !isVictoryModalOpen && (
+          <ReuseHintCard hint={reuseSuggestion?.hint} />
+        )}
         <div
           ref={rightBinRef}
           className="mobile-game-bin absolute right-3 sm:right-8 bottom-3 sm:bottom-6 z-20"

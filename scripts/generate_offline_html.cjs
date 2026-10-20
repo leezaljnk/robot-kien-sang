@@ -112,6 +112,13 @@ function generateOfflineHtml() {
         'thung_rac_cam.png',
         'Thung_Rac_Xanh_Huu_Co.png',
         'Thung_Rac_Cam_Tai_Che.png',
+        'tai-su-dung/giay_cu_taisudung.png',
+        'tai-su-dung/ong_nhua_taisudung.png',
+        'tai-su-dung/vo_chai_nhua_taisudung.png',
+        'tai-su-dung/vo_chai_taisudung.png',
+        'tai-su-dung/vo_hop_giay_taisudung.png',
+        'tai-su-dung/vo_hop_sua_taisudung.png',
+        'tai-su-dung/vo_lon_taisudung.png',
       ];
 
       for (const imgFile of imageFiles) {

@@ -39,7 +39,7 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 ## Tính năng
 
 - Phân loại 15 món rác vào hai thùng: rác hữu cơ và rác tái chế.
-- Mỗi lượt có 5 món rác xuất hiện ở các vị trí riêng biệt; rác được chọn theo chu kỳ và không lặp lại trước khi tất cả đã xuất hiện.
+- Trong lớp học, mỗi lô có đúng **3 món rác tái chế và 2 món rác hữu cơ**, xuất hiện ở các vị trí riêng biệt và được xáo trộn thứ tự. Mỗi nhóm có chu kỳ chọn riêng: tất cả món trong nhóm xuất hiện trước khi nhóm đó bắt đầu chu kỳ mới; không trùng món trong cùng một lô. Sân trường giữ cách chọn rác ngẫu nhiên hiện có.
 - Bấm cửa sổ bên trái để ra sân trường; dọn 10 loại rác sân trường riêng (5 hữu cơ, 5 tái chế) bằng hình SVG dễ thương, rồi bấm **Về lớp học** để quay lại. Điểm, rác đang chơi và chu kỳ riêng của mỗi cảnh được giữ nguyên khi chuyển cảnh.
 - Ở sân trường, cứ mỗi 4 giây rác chưa được nhặt sẽ được gió thổi sang một vị trí trống khác; rác đang được cầm hoặc kéo sẽ không bị di chuyển. Rác trong lớp chỉ xuất hiện trên sàn, còn rác sân trường chỉ xuất hiện trên bãi cỏ, tránh bảng đen, tường và bầu trời.
 - Trong Khu Vườn nắng ấm, có thể dùng phím mũi tên hoặc bấm vào vị trí muốn đến để Kiến Sáng di chuyển mượt mà; mỗi món rác nhặt được giúp vườn nở thêm những bông hoa cao với nhiều hình dáng.
