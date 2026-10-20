@@ -1,6 +1,6 @@
 # Đặc tả cải tiến: Tái sử dụng và thử tài phân loại rác
 
-**Trạng thái:** Đã triển khai Cải tiến 1; Cải tiến 2 chưa triển khai  
+**Trạng thái:** Đã triển khai cả hai cải tiến; nên rà soát các ánh xạ sản phẩm cùng giáo viên/người lớn trước khi dùng rộng rãi
 **Dự án:** Robot Kiến Sáng – Thử tài Phân loại Rác  
 **Đối tượng chính:** Trẻ nhỏ, đặc biệt học sinh lớp 1, có thể tự chơi trên máy tính hoặc thiết bị cảm ứng.
 
@@ -92,7 +92,7 @@ Mỗi lượt hiển thị một món rác và sáu hình sản phẩm. Bé nố
 
 1. Bé mở màn chơi “Thử tài phân loại rác” bằng nút bấm cùng hàng, bên cạnh nút Nhờ Kiến Sáng
 2. Trò chơi hiển thị hướng dẫn ngắn bằng chữ và/hoặc hình minh họa thao tác.
-3. Trò chơi chọn ngẫu nhiên thứ tự của năm loại rác chính trong lượt chơi; mỗi loại xuất hiện một lần.
+3. Trò chơi chọn ngẫu nhiên năm nhóm khác nhau từ thư viện mười loại rác chính, rồi xáo thứ tự năm lượt; một nhóm không lặp lại trong cùng một ván.
 4. Trên màn hình có một món rác chính, sáu sản phẩm lựa chọn và các đường nối.
 5. Bé nối món rác với một hoặc nhiều sản phẩm mà bé cho là phù hợp.
 6. Trước khi kiểm tra, bé có thể gỡ hoặc thay đổi đường nối.
@@ -100,7 +100,7 @@ Mỗi lượt hiển thị một món rác và sáu hình sản phẩm. Bé nố
 8. Đáp án đúng được giữ lại. Lựa chọn sai được đánh dấu để bé sửa; bé có thể gỡ/nối lại rồi bấm **Kiểm tra** lần nữa.
 9. Nếu còn đáp án đúng chưa được chọn, lượt chưa hoàn thành. Trò chơi nhắc ngắn gọn để bé tiếp tục tìm, nhưng không tự vẽ đáp án còn thiếu.
 10. Lượt hoàn thành khi bé đã nối đủ cả ba sản phẩm đúng và không còn lựa chọn sai. Trò chơi chuyển sang loại rác tiếp theo.
-11. Sau khi hoàn thành đủ năm loại rác, trò chơi hiện màn kết thúc và cho bé chọn chơi lại hoặc quay về màn trước.
+11. Sau khi hoàn thành đủ năm lượt, trò chơi hiện màn kết thúc và cho bé chọn chơi lại hoặc quay về màn trước.
 
 ### Luật nối và chấm đáp án
 
@@ -139,25 +139,42 @@ Có thể dùng một lượt mẫu ngắn hoặc hình minh họa thao tác, nh
 ### Bố cục và thao tác
 
 - Một khu vực hiển thị món rác chính, đủ lớn để nhận biết.
-- Một khu vực hiển thị sáu sản phẩm, bố trí rõ ràng, không chồng lấp đường nối hoặc nhãn.
-- Một nút **Kiểm tra** có trạng thái dễ nhận biết.
+- Một khu vực hiển thị sáu hình sản phẩm, không hiện tên/số thứ tự hoặc viền/nền riêng cho từng hình; bố trí rõ ràng, không chồng lấp.
+- Món chính ở giữa với vị trí cố định; sáu hình lựa chọn tỏa xung quanh và được xáo vào các ô khác nhau, không đè lên nhau.
+- Hình món chính và các hình lựa chọn được thu nhỏ để chừa khoảng thở; món chính có ánh sáng xanh nhẹ để dễ nhận diện.
+- Đầu mũi tên kết thúc sát mép hình đích; dấu X/đánh dấu đúng nằm sát cạnh đường nối, không ở góc xa của hình.
+- Nút **Kiểm tra** luôn hiển thị và có thể bấm bất cứ lúc nào trong lượt.
 - Hiển thị tiến độ, ví dụ `2/5`, để bé biết đã chơi đến lượt nào.
 - Bố cục đáp ứng cả màn hình máy tính và điện thoại/máy tính bảng.
-- Trên máy tính, bé có thể kéo để nối.
+- Trên máy tính, khi kéo từ món chính chỉ có mũi tên đi theo con trỏ; hình món chính đứng yên.
 - Trên thiết bị cảm ứng, hỗ trợ thao tác chạm món rác rồi chạm sản phẩm, hoặc cách tương đương đủ dễ dùng; không yêu cầu thao tác kéo thật chính xác.
-- Vùng bấm/chạm đủ lớn cho trẻ; tên sản phẩm không bị cắt và không che hình.
+- Vùng bấm/chạm đủ lớn cho trẻ; văn bản nhãn không che hình.
 - Nếu có nhiều đường nối, đường mới không che mất sản phẩm hay làm bé khó phân biệt điểm bắt đầu/kết thúc.
 
 ### Chọn lượt và tiến độ
 
-- Có năm loại rác chính trong một lần chơi.
-- Thứ tự năm loại được xáo trộn khi bắt đầu lần chơi mới; mỗi loại xuất hiện đúng một lần trong lần chơi đó.
+- Thư viện có mười loại rác chính; mỗi ván chọn ngẫu nhiên năm loại khác nhau, không lặp.
+- Thứ tự của năm loại được xáo trộn khi bắt đầu ván mới; chơi lại sẽ chọn và xáo lại.
 - Sáu sản phẩm trong một lượt không trùng nhau.
 - Ba sản phẩm đúng luôn thuộc bộ ý tưởng đã duyệt của món rác đó.
-- Ba sản phẩm gây nhiễu được chọn từ bộ mười sản phẩm không liên quan đã chuẩn bị, hoặc từ nguồn khác đã được rà soát để không hợp lý với món rác hiện tại.
+- Ba sản phẩm gây nhiễu của mỗi lượt được chọn từ bộ gây nhiễu đã duyệt, bảo đảm không hợp lý với món rác hiện tại và không trùng nhau trong lượt.
 - Vị trí sáu sản phẩm nên được xáo trộn để đáp án không luôn ở cùng một vị trí.
 - Khi bé chơi lại, thứ tự rác và vị trí sản phẩm nên được xáo trộn lại.
 - Không áp dụng điểm số của màn lớp học cho màn mới trừ khi có yêu cầu riêng; màn mới có tiến độ riêng và kết thúc riêng.
+
+### MVP đã triển khai
+
+- Nút **Thử tài phân loại rác** mở màn chơi riêng cạnh các chế độ chơi lớp học.
+- Màn hướng dẫn giải thích cách nối, kiểm tra và sửa; mỗi ván chọn ngẫu nhiên năm trong mười nhóm, không lặp.
+- Mỗi lượt có sáu tranh đã xáo trộn: ba ý tưởng tái sử dụng và ba hình gây nhiễu. Bé có thể chạm để nối hoặc kéo từ món đồ; khi kéo, chỉ mũi tên đi theo con trỏ, hình món đồ đứng yên.
+- Món đồ chính cố định ở giữa và có ánh sáng xanh nhẹ; sáu lựa chọn tỏa xung quanh, hình được thu nhỏ, chỉ hiển thị tranh, không có nhãn tên, số thứ tự, viền hoặc nền riêng. Vị trí được xáo trộn trong các ô riêng biệt, không chồng nhau.
+- Đường nối kết thúc sát mép hình đích; dấu X đỏ và dấu đúng đặt cạnh đường nối để dễ thấy mối liên hệ với lựa chọn.
+- Đáp án đúng được khóa lại sau khi kiểm tra; lựa chọn sai có thể gỡ và chọn lại. Lượt chỉ chuyển khi đủ ba đáp án đúng và không còn lựa chọn sai.
+- Nút **Kiểm tra** luôn bật; nếu chưa nối hình, trò chơi nhắc bé chọn trước. Sau khi sửa lựa chọn, bé bấm kiểm tra lại để hoàn tất lượt.
+- Màn có tiến độ riêng, phản hồi bằng chữ/biểu tượng, màn kết thúc, chơi lại và quay về màn chính; không dùng điểm của lớp học.
+- Manifest tên, văn bản thay thế, ánh xạ tranh và lưu ý an toàn nằm trong `src/data/sortingGame.ts`; bố cục sáng được tạo bằng CSS.
+- Ảnh SVG được nhúng vào bản HTML offline trong `scripts/generate_offline_html.cjs`.
+- Kiểm thử dữ liệu: `node --import tsx --test tests/sortingGame.test.ts`. Vẫn nên thử trực tiếp trên máy tính/thiết bị cảm ứng và rà soát nội dung cùng người lớn.
 
 ## 4. Chuẩn bị nội dung và hình ảnh
 
@@ -166,11 +183,24 @@ Có thể dùng một lượt mẫu ngắn hoặc hình minh họa thao tác, nh
 - 5 hình món rác chính. Có thể tái sử dụng hình đang có trong ứng dụng nếu phù hợp, đủ rõ và có quyền sử dụng.
 - 15 hình sản phẩm đúng: 3 ý tưởng cho mỗi món rác chính.
 - 10 hình sản phẩm gây nhiễu.
-- 1 hình nền góc sáng tạo vui tươi, sinh động, tươi sáng.
+- Bối cảnh góc sáng tạo vui tươi, có thể tạo bằng CSS thay vì ảnh nền riêng.
 - Các biểu tượng/trạng thái cần thiết cho đường nối đúng, sai, chưa kiểm tra, nút kiểm tra và màn kết thúc; có thể dùng thành phần giao diện thay vì tạo ảnh riêng.
 - Các ảnh gợi ý nhỏ cho màn chơi lớp học có thể dùng lại 15 hình sản phẩm đúng ở trên.
 
-Tổng số ảnh sản phẩm tham chiếu ban đầu là 25 ảnh: 15 ảnh đáp án đúng và 10 ảnh gây nhiễu. Nếu cùng một sản phẩm được dùng làm đáp án cho nhiều loại rác, cần xác định rõ ID ảnh dùng chung và bảo đảm tính đúng của từng ánh xạ.
+Thư viện đủ nội dung cho 10 nhóm cần 10 ảnh rác chính, 30 ảnh đáp án đúng (3 cho mỗi nhóm) và đủ ảnh gây nhiễu để chọn ba ảnh cho từng lượt. Mỗi ván chỉ dùng 5 ảnh rác chính, 15 đáp án đúng tương ứng và 15 ảnh gây nhiễu. Nếu cùng một sản phẩm được dùng làm đáp án cho nhiều loại rác, cần xác định rõ ID ảnh dùng chung và bảo đảm tính đúng của từng ánh xạ.
+
+### Kiểm kê tài nguyên đã chuẩn bị
+
+- Ảnh hiện nằm trong `public/images/thu-tai-phan-loai/`:
+  - `rac-chinh/`: 10 ảnh món rác chính và 30 ảnh sản phẩm tái sử dụng.
+  - `gay_nhieu/`: 66 ảnh gây nhiễu, tên từ `gay_nhieu_01.svg` đến `gay_nhieu_66.svg`.
+- Đã có đủ 10 nhóm rác chính và ba sản phẩm tái sử dụng cho mỗi nhóm; mỗi ván dùng ngẫu nhiên 5 trong số 10 nhóm.
+- Các nhóm chính hiện có: `cd`, `chai_nhua`, `cuon_giay`, `giay_vun`, `hop_giay`, `tat_cu`, `vo_chai`, `vo_hop`, `vo_lon`, `vo_lop`.
+- Tên file và `id` bên trong SVG đã được chuẩn hóa cho .
+- Các file `.svg` mẫu đã kiểm tra có `<image>` với PNG nhúng base64, không phải path vector. Trình duyệt tải và hiển thị trực tiếp được; chất lượng phóng lớn bị giới hạn bởi độ phân giải PNG nhúng. Có thể dùng nguyên file trong game, không cần chuyển thành path; nếu tối ưu sau này, cân nhắc lấy PNG nhúng làm asset trực tiếp và giữ tên/ID ổn định.
+- Đã kiểm tra trực quan bộ ảnh món chính, ảnh tái sử dụng và ảnh gây nhiễu; màn chơi dùng trực tiếp các SVG này và tạo nền góc sáng tạo bằng CSS.
+
+**Đánh giá sẵn sàng:** Màn chơi và manifest MVP đã có; bộ ảnh cung cấp 10 nhóm rác, 30 ý tưởng tái sử dụng và 66 hình gây nhiễu. Manifest gán ba hình gây nhiễu cụ thể cho từng nhóm để lượt chơi có sáu lựa chọn riêng biệt. Tên, văn bản thay thế và các lưu ý an toàn đã được thêm; giáo viên/người lớn nên rà soát tính phù hợp của từng ánh xạ trước khi sử dụng rộng rãi.
 
 ### Tiêu chí hình ảnh
 
@@ -194,10 +224,10 @@ Mỗi loại rác chính cần có một dòng/nhóm dữ liệu với các trư
 | 3 sản phẩm đúng | Tên, ID ảnh, câu giải thích ngắn cho từng sản phẩm |
 | Nguồn/đánh giá nội dung | Người rà soát hoặc ghi chú xác nhận tính phù hợp |
 | Lưu ý an toàn | Ghi rõ nếu cần người lớn hỗ trợ; loại bỏ ý tưởng không an toàn |
-| 10 sản phẩm gây nhiễu | ID/nhãn, bảo đảm không gây tranh cãi trong lượt này |
+| Bộ 30 sản phẩm gây nhiễu | ID/nhãn, bảo đảm không gây tranh cãi trong các lượt |
 | Gợi ý lớp học | Ảnh và câu ngắn dùng sau khi bỏ đúng vào thùng tái chế |
 
-Tên năm loại rác và danh sách sản phẩm cụ thể **chưa được chốt trong đặc tả này**. Cần rà soát từng ý tưởng để tránh một sản phẩm bị xem là đúng cho quá nhiều loại rác hoặc khiến trẻ phải đoán ý người ra đề.
+Tên mười loại rác, tên sản phẩm đúng/gây nhiễu và văn bản thay thế hiện được khai báo trong manifest. Cần rà soát từng ý tưởng để tránh một sản phẩm bị xem là đúng cho quá nhiều loại rác hoặc khiến trẻ phải đoán ý người ra đề.
 
 ## 5. Gợi ý cấu trúc dữ liệu
 
@@ -206,7 +236,7 @@ Tên năm loại rác và danh sách sản phẩm cụ thể **chưa được ch
 - **Waste item:** ID, tên, ảnh và các thông tin hiển thị.
 - **Reuse product:** ID, tên, ảnh, mô tả ngắn, văn bản thay thế và trạng thái an toàn/đã duyệt.
 - **Reuse mapping:** ID món rác, danh sách đúng gồm ba sản phẩm, danh sách gây nhiễu hoặc quy tắc lấy gây nhiễu, cùng thông tin cần cho thẻ gợi ý lớp học.
-- **Round state:** thứ tự năm món rác đã xáo trộn, món hiện tại, các đường nối do bé tạo, trạng thái chấm gần nhất và tiến độ.
+- **Round state:** năm nhóm được chọn ngẫu nhiên từ thư viện mười nhóm, thứ tự đã xáo trộn, món hiện tại, các đường nối do bé tạo, trạng thái chấm gần nhất và tiến độ.
 
 Dữ liệu nên tách khỏi phần vẽ giao diện để có thể rà soát, sửa tên/câu giải thích và thay ảnh mà không phải thay đổi luật chơi. Cần kiểm tra dữ liệu trước khi chạy để phát hiện món rác thiếu đáp án, ID ảnh không tồn tại, trùng sản phẩm trong một lượt hoặc không đủ sản phẩm gây nhiễu.
 
@@ -216,7 +246,7 @@ Dữ liệu nên tách khỏi phần vẽ giao diện để có thể rà soát,
 
 - Thẻ gợi ý tái sử dụng không chặn chơi ở màn lớp học.
 - Màn chơi riêng “Thử tài phân loại rác”.
-- Xáo thứ tự năm loại rác và vị trí sản phẩm.
+- Chọn ngẫu nhiên năm nhóm khác nhau từ mười nhóm; xáo thứ tự lượt và vị trí sản phẩm.
 - Hỗ trợ nối, kiểm tra, sửa lựa chọn và thử lại.
 - Giao diện tự chơi trên máy tính và thiết bị cảm ứng.
 - Tài nguyên mới được đóng gói để dùng trong bản build và bản HTML offline hiện có.
@@ -256,8 +286,8 @@ Dữ liệu nên tách khỏi phần vẽ giao diện để có thể rà soát,
 - Bé có thể sửa lựa chọn sai và kiểm tra lại; đáp án đúng đã xác nhận không bị mất.
 - Chưa nối đủ đáp án đúng thì không tự chuyển lượt và không tiết lộ trực tiếp đáp án còn thiếu.
 - Đủ tất cả đáp án đúng, không có lựa chọn sai thì chuyển lượt.
-- Năm loại rác được chơi đúng một lần mỗi lượt chơi và thứ tự được xáo trộn.
-- Hoàn thành loại rác thứ năm thì hiện kết thúc, có cách chơi lại hoặc quay về.
+- Mỗi ván có năm nhóm khác nhau được chọn từ mười nhóm; không nhóm nào lặp lại.
+- Hoàn thành lượt thứ năm thì hiện kết thúc, có cách chơi lại hoặc quay về.
 - Thao tác hoạt động trên máy tính và thiết bị cảm ứng; không có phần tử bị chồng lấp ở kích thước màn hình được hỗ trợ.
 - Bản HTML offline vẫn tải được hình nền và toàn bộ hình sản phẩm.
 
@@ -289,23 +319,20 @@ Cho trẻ thử không hướng dẫn trực tiếp và quan sát:
 
 Ưu tiên sửa các câu chữ, hình ảnh và luật gây nhầm trước khi thêm nhiều lượt mới.
 
-## 9. Quyết định cần chốt trước khi triển khai
+## 9. Rà soát nội dung và trải nghiệm tiếp theo
 
-1. Chốt chính xác năm loại rác chính của màn mới.
-2. Chốt ba ý tưởng sản phẩm đúng cho từng loại rác và mười hình gây nhiễu; rà soát độ phù hợp, an toàn và tính rõ ràng.
-3. Chốt tên/ID, câu mô tả, hình sản phẩm và văn bản thay thế cho từng ảnh.
-4. Chọn phong cách minh họa và hình nền góc sáng tạo; xác nhận quyền sử dụng tài sản.
-5. Thử nghiệm thời gian tự ẩn thẻ gợi ý lớp học; giá trị ban đầu khoảng ba giây chỉ là đề xuất.
-6. Chốt cách gỡ đường nối sai và cách thể hiện các đáp án đúng được giữ lại.
-7. Chốt lời thoại ngắn cho đúng, sai, hoàn thành lượt và kết thúc game; tránh lặp/phát chồng âm thanh.
-8. Chốt cách vào màn mới, quay lại màn trước và bắt đầu lại lượt chơi.
+1. Giáo viên/người lớn rà soát tính phù hợp của ba ý tưởng đúng và ba hình gây nhiễu trong từng nhóm.
+2. Thử với trẻ xem tên và hình sản phẩm có rõ ở kích thước điện thoại hay không; điều chỉnh manifest nếu trẻ hiểu hình theo cách khác.
+3. Kiểm tra các ý tưởng cần người lớn hỗ trợ và giữ lưu ý an toàn đi cùng sản phẩm.
+4. Thử cách nối, sửa đáp án và phản hồi trên máy tính, điện thoại và máy tính bảng.
+5. Thử thời gian tự ẩn thẻ gợi ý lớp học; giá trị hiện tại khoảng ba giây vẫn cần quan sát khi dùng thực tế.
 
 ## 10. Thứ tự triển khai đề xuất
 
-1. Hoàn tất bảng nội dung cho năm loại rác và duyệt đáp án.
+1. Hoàn tất manifest nội dung cho mười loại rác và duyệt đáp án.
 2. Chuẩn bị một bộ mẫu hoàn chỉnh cho một loại rác: món rác, ba sản phẩm đúng, ba sản phẩm gây nhiễu, câu chữ và hình nền tạm.
 3. Làm thử luồng nối, kiểm tra, sửa và chuyển lượt trên một lượt mẫu; thử với trẻ để xác nhận luật tự giải thích được.
 4. Hoàn thiện tương tác cảm ứng, trạng thái tiếp cận và kiểm tra màn hình nhỏ.
-5. Bổ sung đủ năm lượt, xáo thứ tự và màn kết thúc.
+5. Hoàn thiện thư viện nội dung cho mười nhóm; mỗi ván chơi năm lượt được chọn ngẫu nhiên, xáo thứ tự và có màn kết thúc.
 6. Tích hợp thẻ gợi ý lớp học bằng các ảnh sản phẩm đã duyệt.
 7. Kiểm thử build, tài nguyên offline, hồi quy màn lớp học và trải nghiệm trên thiết bị mục tiêu.

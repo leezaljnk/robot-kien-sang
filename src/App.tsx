@@ -60,6 +60,9 @@ const OfflineHtmlModal = React.lazy(() =>
 const SunlitGardenGame = React.lazy(() =>
   import('./components/SunlitGardenGame').then(({ SunlitGardenGame: game }) => ({ default: game }))
 );
+const ReuseSortingGame = React.lazy(() =>
+  import('./components/ReuseSortingGame').then(({ ReuseSortingGame: game }) => ({ default: game }))
+);
 const modalLoadingFallback = (
   <div role="status" className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 text-sm font-bold text-white">
     Đang mở cửa sổ…
@@ -88,6 +91,7 @@ export default function App() {
   const [selectedTrashId, setSelectedTrashId] = useState<string | null>(null);
   const [scene, setScene] = useState<GameScene>('classroom');
   const [isGardenOpen, setIsGardenOpen] = useState(false);
+  const [isSortingGameOpen, setIsSortingGameOpen] = useState(false);
   const [reuseSuggestion, setReuseSuggestion] = useState<{ instanceId: string; hint: ReuseHint } | null>(null);
   const sceneRef = useRef<GameScene>('classroom');
   const sceneItemsRef = useRef<Record<GameScene, ActiveTrashItem[] | null>>({
@@ -1581,12 +1585,13 @@ export default function App() {
         </div>
       )}
       {/* Thanh công cụ trên cùng */}
-      {!isGardenOpen && <TopBar
+      {!isGardenOpen && !isSortingGameOpen && <TopBar
         readOnly={sharedAssetsEnabled}
         score={score}
         maxScore={MAX_SCORE}
         gameMode={gameMode}
         onSelectGameMode={handleSelectGameMode}
+        onOpenSortingGame={() => setIsSortingGameOpen(true)}
         onOpenVoiceStudio={() => setIsVoiceModalOpen(true)}
         onOpenScratchModal={() => setIsScratchModalOpen(true)}
         onOpenOfflineHtmlModal={() => setIsOfflineHtmlModalOpen(true)}
@@ -1981,6 +1986,9 @@ export default function App() {
           customMascotUrl={customMascotUrl}
           maxScore={MAX_SCORE}
         />
+      </React.Suspense>}
+      {isSortingGameOpen && <React.Suspense fallback={modalLoadingFallback}>
+        <ReuseSortingGame onExit={() => setIsSortingGameOpen(false)} />
       </React.Suspense>}
     </div>
     </ErrorBoundary>

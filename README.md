@@ -46,6 +46,7 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 - Ở lớp học và sân trường, lời thoại của Kiến Sáng được phát bằng âm thanh mà không hiện bong bóng chữ.
 - Đạt **10 sao** để chiến thắng. Rác xuất hiện ngoài vùng thùng rác với khoảng cách an toàn để dễ chọn/nhặt.
 - Chơi bằng cách tự kéo thả rác hoặc chọn rác để Robot Kiến Sáng đi nhặt.
+- Mở màn chơi riêng **Thử tài phân loại rác** để nối một món đồ cũ với các ý tưởng tái sử dụng. Mỗi ván có 5 lượt không lặp; mỗi lượt gồm 6 tranh, nút kiểm tra, cơ hội sửa đáp án và tiến độ riêng. Có thể chạm để chọn hoặc kéo trên máy tính; những ý tưởng cần gia công đều nhắc bé nhờ người lớn hỗ trợ.
 - Hướng dẫn nằm trên bảng phấn: giữ phím mũi tên / WASD để di chuyển Kiến Sáng, Space / Enter để nhặt hoặc thả rác. Không hiển thị D-pad trên sàn chơi hay mã trang phục dưới nhân vật.
 - Khi thiếu ảnh bước đi, Kiến dùng ảnh dự phòng trong nhóm `tim_rac_01`–`tim_rac_12` hoặc ảnh nhân vật chính; không lấy ảnh cầm rác (như `cam_banh_mi_*`) làm ảnh di chuyển tìm rác.
 - Tùy chỉnh hình ảnh robot, trang phục, thùng rác và hình ảnh các món rác.

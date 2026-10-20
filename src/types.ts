@@ -86,6 +86,7 @@ export interface PreloadedOfflineState {
   customRecyclableUrl?: string | null;
   binScale?: number;
   customTrashImages?: Record<string, string>;
+  sortingGameAssets?: Record<string, string>;
   voiceClips?: VoiceClips;
 }
 
