@@ -417,8 +417,8 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) =>
                           d={`M ${start.x} ${start.y} C ${control1.x} ${control1.y}, ${control2.x} ${control2.y}, ${endpoint.x} ${endpoint.y}`}
                           fill="none"
                           stroke={color}
-                          strokeWidth={status === 'correct' ? 5 : 4}
-                          markerEnd="url(#sorting-arrow-head)"
+                          strokeWidth={status === 'correct' ? 2.5 : status === 'wrong' ? 2 : 4}
+                          markerEnd={`url(#sorting-arrow-head-${status})`}
                           strokeDasharray={status === 'selected' ? '9 7' : undefined}
                           strokeLinecap="round"
                           opacity="0.9"
@@ -455,8 +455,26 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) =>
                     );
                   })}
                   <defs>
+                    {[
+                      ['selected', '#64748b'],
+                      ['correct', '#15803d'],
+                      ['wrong', '#dc2626'],
+                    ].map(([status, color]) => (
+                      <marker
+                        key={status}
+                        id={`sorting-arrow-head-${status}`}
+                        markerWidth="12"
+                        markerHeight="12"
+                        markerUnits="userSpaceOnUse"
+                        refX="12"
+                        refY="6"
+                        orient="auto"
+                      >
+                        <path d="M 0 0 L 12 6 L 0 12 z" fill={color} />
+                      </marker>
+                    ))}
                     <marker
-                      id="sorting-arrow-head"
+                      id="sorting-arrow-head-active"
                       markerWidth="12"
                       markerHeight="12"
                       markerUnits="userSpaceOnUse"
@@ -477,7 +495,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) =>
                       strokeWidth="4"
                       strokeDasharray="8 6"
                       strokeLinecap="round"
-                      markerEnd="url(#sorting-arrow-head)"
+                      markerEnd="url(#sorting-arrow-head-active)"
                     />
                   )}
                 </svg>
