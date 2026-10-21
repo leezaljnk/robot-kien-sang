@@ -222,6 +222,13 @@
   }
 }
 
+@media (max-height: 560px) {
+  .mobile-classroom-board {
+    height: 32%;
+    max-height: 170px;
+  }
+}
+
 @media (pointer: coarse) and (max-width: 900px) {
   .garden-return-button,
   .garden-title {

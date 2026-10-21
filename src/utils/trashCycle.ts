@@ -32,8 +32,13 @@ export function drawTrashItems<T extends IdentifiableTrashItem>(
 export function drawClassroomTrashItems<T extends IdentifiableTrashItem & { category: TrashCategory }>(
   items: readonly T[],
   remaining: readonly T[],
-  random: () => number = Math.random
+  random: () => number = Math.random,
+  batchSize = 5
 ): { selected: T[]; remaining: T[] } {
+  if (batchSize < 5) {
+    return drawTrashItems(items, remaining, batchSize, random);
+  }
+
   const selected: T[] = [];
   const nextRemaining: T[] = [];
   const quotas = { recyclable: 3, organic: 2 } as const;

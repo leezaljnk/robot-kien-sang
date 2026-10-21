@@ -59,6 +59,23 @@ test('classroom placement is randomized rather than always grouped by category',
   assert.notDeepEqual(first.map(item => item.id), second.map(item => item.id));
 });
 
+test('partial classroom batches continue drawing every trash category through the full cycle', () => {
+  let remaining: typeof TRASH_ITEMS = [];
+  const drawn: string[] = [];
+  const categories = new Set<string>();
+
+  while (drawn.length < TRASH_ITEMS.length) {
+    const draw = drawClassroomTrashItems(TRASH_ITEMS, remaining, () => 0, 1);
+    assert.equal(draw.selected.length, 1);
+    drawn.push(draw.selected[0].id);
+    categories.add(draw.selected[0].category);
+    remaining = draw.remaining;
+  }
+
+  assert.equal(new Set(drawn).size, TRASH_ITEMS.length);
+  assert.deepEqual(categories, new Set(['organic', 'recyclable']));
+});
+
 test('insufficient category data fails explicitly', () => {
   assert.throws(() => drawClassroomTrashItems([], []), /Không đủ rác recyclable/);
   assert.throws(

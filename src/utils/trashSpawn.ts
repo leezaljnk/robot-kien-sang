@@ -15,9 +15,12 @@ export function getTrashSpawnSlots(
   const height = area.bottom - area.top;
   const slots: { x: number; y: number }[] = [];
   const isCompact = width < 700 || height < 500;
+  const playableHeight = playableArea.bottom - playableArea.top;
   const halfWidth = isCompact ? 46 : 90;
-  const halfHeight = isCompact ? 38 : 55;
-  const clearance = isCompact ? 8 : 24;
+  const halfHeight = isCompact
+    ? Math.min(38, Math.max(20, (playableHeight - 16) / 2))
+    : 55;
+  const clearance = isCompact ? Math.min(8, Math.max(3, playableHeight * 0.025)) : 24;
   const stepX = isCompact ? 76 : 128;
   const stepY = isCompact ? 28 : 48;
   const blockers = [...bins, ...obstacles];

@@ -162,6 +162,26 @@ test('five trash items fit in compact phone portrait and landscape play areas', 
   }
 });
 
+test('small classroom viewports still have safe trash positions below the shortened board', () => {
+  const area = { left: 0, top: 0, right: 320, bottom: 240 };
+  const floor = { left: 0, top: area.bottom * 0.48, right: area.right, bottom: area.bottom };
+  const board = {
+    left: 10,
+    top: 3,
+    right: 310,
+    bottom: area.bottom * 0.32 + 12,
+  };
+  const bins = [
+    { left: 12, right: 90, top: area.bottom - 130, bottom: area.bottom },
+    { left: area.right - 90, right: area.right - 12, top: area.bottom - 130, bottom: area.bottom },
+  ];
+  const slots = getTrashSpawnSlots(area, bins, floor, [board]);
+  const positions = getNonOverlappingTrashSpawnSlots(slots, area, 5, [], () => 0);
+
+  assert(slots.length > 0);
+  assert(positions.length > 0);
+});
+
 test('trash spawn slots stay inside the floor and clear marked walls and objects', () => {
   const area = { left: 0, top: 0, right: 1366, bottom: 720 };
   const floor = { left: 0, top: 468, right: 1366, bottom: 720 };

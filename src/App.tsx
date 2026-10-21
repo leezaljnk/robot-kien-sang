@@ -647,7 +647,7 @@ export default function App() {
       areaBounds,
       TRASH_BATCH_SIZE
     );
-    if (slots.length < TRASH_BATCH_SIZE) {
+    if (slots.length === 0) {
       console.error('Không đủ vùng trống an toàn để đặt rác.');
       setKienSpeech('Vùng chơi quá nhỏ. Hãy phóng to cửa sổ hoặc giảm kích thước thùng rác rồi chơi lại nhé!');
       return;
@@ -655,8 +655,8 @@ export default function App() {
 
     const currentScene = sceneRef.current;
     const { selected: chosenDefs, remaining } = currentScene === 'classroom'
-      ? drawClassroomTrashItems(TRASH_ITEMS, trashCycleRef.current.classroom)
-      : drawTrashItems(YARD_TRASH_ITEMS, trashCycleRef.current.yard, TRASH_BATCH_SIZE);
+      ? drawClassroomTrashItems(TRASH_ITEMS, trashCycleRef.current.classroom, Math.random, slots.length)
+      : drawTrashItems(YARD_TRASH_ITEMS, trashCycleRef.current.yard, slots.length);
     trashCycleRef.current[currentScene] = remaining;
 
     const newItems: ActiveTrashItem[] = chosenDefs.map((def, idx) => ({
@@ -859,10 +859,10 @@ export default function App() {
       setActiveItems((prev) => {
         const remaining = prev.filter((it) => it.instanceId !== instanceId);
         if (remaining.length === 0 && score + 1 < MAX_SCORE) {
-          // Khi đã bỏ đúng hết 5 món rác, tự động xuất hiện tiếp 5 món rác ngẫu nhiên mới!
+          // Khi đã bỏ hết rác trong lô, tự động xuất hiện lô mới.
           setTimeout(() => {
             spawnTrashBatch();
-            triggerSpeech('Hoan hô! Đã dọn sạch 5 món rác! Cùng tiếp tục với 5 món rác mới nhé!');
+            triggerSpeech('Hoan hô! Đã dọn sạch rác! Cùng tiếp tục nhé!');
           }, 800);
         }
         return remaining;
