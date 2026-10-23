@@ -14,11 +14,13 @@ import { TopBar } from './components/TopBar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Shirt } from 'lucide-react';
 import { MASCOT_COSTUMES, PICKUP_DURATION_MS, getCarryCostumeIdsForTrash, getPrimaryMascotImage } from './data/mascotCostumes';
-import { getBinApproachTarget, getCommandMoveDuration } from './utils/movement';
+import { getBinApproachTarget, getCommandMoveDuration, getKeyboardMove } from './utils/movement';
+import { createMascotPosition } from './utils/mascotPosition';
 import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from './utils/trashSpawn';
 import { drawClassroomTrashItems, drawTrashItems } from './utils/trashCycle';
 import { VOICE_PROMPTS, type TriggerSpeech } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
+import { loadProjectAssets } from './utils/preloadedAssets';
 import {
   playPickSfx,
   playDropSfx,
@@ -115,8 +117,9 @@ export default function App() {
   const [kienSpeech, setKienSpeech] = useState<string>(
     'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!'
   );
-  const [kienX, setKienX] = useState<number>(50); // % across screen
-  const [kienY, setKienY] = useState<number>(68);
+  // Only the mascot subscribes to per-frame positions, not the entire game scene.
+  const [kienPosition] = useState(() => createMascotPosition(50, 68));
+  const { setX: setKienX, setY: setKienY } = kienPosition;
 
   // Hover states for bins during drag
   const [hoveredBin, setHoveredBin] = useState<TrashCategory | null>(null);
@@ -249,13 +252,23 @@ export default function App() {
     setSharedError('');
   }, []);
 
-  // Load local and preloaded custom assets before starting the game; network assets load separately.
+  // Load project frames and local custom assets before enabling the start button.
   useEffect(() => {
     let isMounted = true;
     const loadAllPersisted = async () => {
       try {
-        const inlinePreloaded =
-          typeof window !== 'undefined' ? window.__KIEN_SANG_PRELOADED_STATE__ : undefined;
+        const embeddedPreloaded = window.__KIEN_SANG_PRELOADED_STATE__;
+        const serverAssets = await loadProjectAssets(import.meta.env.DEV, window.location.protocol);
+        const inlinePreloaded: PreloadedOfflineState = {
+          ...serverAssets,
+          ...embeddedPreloaded,
+          customCostumes: { ...serverAssets?.customCostumes, ...embeddedPreloaded?.customCostumes },
+          customTrashImages: { ...serverAssets?.customTrashImages, ...embeddedPreloaded?.customTrashImages },
+          voiceClips: {
+            correct: null, incorrect: null, victory: null,
+            ...serverAssets?.voiceClips, ...embeddedPreloaded?.voiceClips,
+          },
+        };
 
         const [
           savedVoice,
@@ -360,40 +373,6 @@ export default function App() {
     if (!assetsLoaded) return;
     let cancelled = false;
     const loadOptionalAssets = async () => {
-      if (window.location.protocol.startsWith('http')) {
-        let serverAssets: PreloadedOfflineState | null = null;
-        try {
-          const response = await fetch('./api/preloaded-assets');
-          if (response.ok) serverAssets = await response.json();
-          else {
-            const manifestResponse = await fetch('./kien-sang-assets.json');
-            if (manifestResponse.ok) serverAssets = await manifestResponse.json();
-          }
-        } catch {
-          // Optional preview and static asset manifests are unavailable in some deployments.
-        }
-
-        if (serverAssets && !cancelled) {
-          setCustomCostumes(current => ({ ...(serverAssets?.customCostumes || {}), ...current }));
-          setCustomMascotUrl(current => current || getPrimaryMascotImage(
-            serverAssets?.customCostumes || {},
-            serverAssets?.customMascotUrl
-          ));
-          setCustomOrganicUrl(current => current || serverAssets?.customOrganicUrl || null);
-          setCustomRecyclableUrl(current => current || serverAssets?.customRecyclableUrl || null);
-          setCustomTrashImages(current => ({ ...(serverAssets?.customTrashImages || {}), ...current }));
-          if (serverAssets.voiceClips) {
-            setVoiceClips(current => ({
-              ...serverAssets?.voiceClips,
-              ...Object.fromEntries(Object.entries(current).filter(([, url]) => url)),
-              correct: current.correct || serverAssets?.voiceClips?.correct || null,
-              incorrect: current.incorrect || serverAssets?.voiceClips?.incorrect || null,
-              victory: current.victory || serverAssets?.voiceClips?.victory || null,
-            }));
-          }
-        }
-      }
-
       if (sharedAssetsEnabled && !cancelled) {
         try {
           await refreshSharedAssets();
@@ -966,6 +945,7 @@ export default function App() {
   // Xử lý nhặt hoặc thả rác khi nhấn Phím Cách / Nút tương tác
   const handleActionPickOrDrop = () => {
     if (pickupInProgressRef.current) return;
+    const { x: kienX, y: kienY } = kienPosition.getSnapshot();
     // If carrying trash -> check if near bin to drop
     if (carriedItemInstanceId) {
       if (kienX <= 32) {
@@ -1025,12 +1005,6 @@ export default function App() {
   const carriedItemInstanceIdRef = useRef(carriedItemInstanceId);
   carriedItemInstanceIdRef.current = carriedItemInstanceId;
 
-  const kienXRef = useRef(kienX);
-  kienXRef.current = kienX;
-
-  const kienYRef = useRef(kienY);
-  kienYRef.current = kienY;
-
   const handleActionPickOrDropRef = useRef(handleActionPickOrDrop);
   handleActionPickOrDropRef.current = handleActionPickOrDrop;
 
@@ -1039,6 +1013,7 @@ export default function App() {
   const rafMovementIdRef = useRef<number | null>(null);
   const autopilotRafRef = useRef<number | null>(null);
   const lastStepTimeRef = useRef<number>(0);
+  const lastMovementTimeRef = useRef<number | null>(null);
 
   // Hàm di chuyển Bạn Kiến Sáng mượt mà 60fps từ vị trí hiện tại đến đích (targetX, targetY)
   // Tốc độ đều đặn tự nhiên, chân bước 12 dáng nhịp nhàng, không bị giật hay nhảy cóc
@@ -1059,8 +1034,7 @@ export default function App() {
         console.error('Không thể di chuyển Kiến Sáng: chưa xác định được vùng chơi.');
         return;
       }
-      const startX = kienXRef.current;
-      const startY = kienYRef.current;
+      const { x: startX, y: startY } = kienPosition.getSnapshot();
       const durationMs = getCommandMoveDuration(
         startX, startY, targetX, targetY, area.getBoundingClientRect()
       );
@@ -1087,10 +1061,7 @@ export default function App() {
         const currentX = startX + (targetX - startX) * progress;
         const currentY = startY + (targetY - startY) * progress;
 
-        setKienX(currentX);
-        setKienY(currentY);
-        kienXRef.current = currentX;
-        kienYRef.current = currentY;
+        kienPosition.moveTo(currentX, currentY);
 
         // Cập nhật nhịp bước chân 12 trang phục mỗi 75ms (nhịp bước tự nhiên sinh động)
         if (now - lastStepTickTime >= 75) {
@@ -1103,10 +1074,7 @@ export default function App() {
         } else {
           autopilotRafRef.current = null;
           setIsMoving(false);
-          setKienX(targetX);
-          setKienY(targetY);
-          kienXRef.current = targetX;
-          kienYRef.current = targetY;
+          kienPosition.moveTo(targetX, targetY);
           onComplete?.();
         }
       };
@@ -1116,7 +1084,9 @@ export default function App() {
     []
   );
 
-  const updateSmoothMovement = useCallback(() => {
+  const updateSmoothMovement = useCallback((now: number) => {
+    const elapsed = lastMovementTimeRef.current === null ? 0 : now - lastMovementTimeRef.current;
+    lastMovementTimeRef.current = now;
     if (pickupInProgressRef.current) {
       rafMovementIdRef.current = requestAnimationFrame(updateSmoothMovement);
       return;
@@ -1132,26 +1102,13 @@ export default function App() {
     setIsMoving(true);
     setKienMood(carriedItemInstanceIdRef.current ? 'carrying' : 'walking');
 
-    // Tốc độ di chuyển liên tục khi giữ phím (nhanh nhẹn, mượt mà, cho phép đi khắp lớp học)
-    // Cho phép đi xuống tới 99% (chạm mép đáy màn hình) và lên tới 44% (chân bảng)
-    if (held.has('left')) {
-      setFacingDirection('left');
-      setKienX((prev) => Math.max(4, prev - 0.38));
-    }
-    if (held.has('right')) {
-      setFacingDirection('right');
-      setKienX((prev) => Math.min(96, prev + 0.38));
-    }
-    if (held.has('up')) {
-      setKienY((prev) => Math.max(44, prev - 0.32));
-    }
-    if (held.has('down')) {
-      // Cho phép nhân vật đi xuống tận đáy màn hình (100%)
-      setKienY((prev) => Math.min(100, prev + 0.35));
-    }
+    if (held.has('left')) setFacingDirection('left');
+    if (held.has('right')) setFacingDirection('right');
+    const current = kienPosition.getSnapshot();
+    const next = getKeyboardMove(current.x, current.y, held, elapsed);
+    kienPosition.moveTo(next.x, next.y);
 
     // Nhịp bước chân khi giữ phím: mỗi 75ms chuyển tiếp 1 frame trong 12 frame hoạt họa
-    const now = performance.now();
     if (now - lastStepTimeRef.current >= 75) {
       lastStepTimeRef.current = now;
       setWalkStepTick((prev) => prev + 1);
@@ -1186,6 +1143,7 @@ export default function App() {
       if (dir === 'down') setKienY((prev) => Math.min(100, prev + 1.0));
 
       if (!rafMovementIdRef.current) {
+        lastMovementTimeRef.current = performance.now();
         rafMovementIdRef.current = requestAnimationFrame(updateSmoothMovement);
       }
     },
@@ -1737,8 +1695,7 @@ export default function App() {
           mood={kienMood}
           carriedTrashId={carriedItemDef?.id || null}
           speechText=""
-          xPercent={kienX}
-          yPercent={kienY}
+          positionStore={kienPosition}
           onReplaySpeech={() => triggerSpeech(kienSpeech, speechIdRef.current)}
           isMoving={isMoving}
           walkStepTick={walkStepTick}

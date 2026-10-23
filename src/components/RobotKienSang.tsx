@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { createMascotPosition, type MascotPositionStore } from '../utils/mascotPosition';
 import { CustomCostumesMap, KienSangMood, TrashItemDef } from '../types';
 import { Volume2, Shirt } from 'lucide-react';
 import {
@@ -22,6 +23,7 @@ interface RobotKienSangProps {
   speechText?: string;
   xPercent?: number; // 0 to 100% position across classroom
   yPercent?: number;
+  positionStore?: MascotPositionStore;
   onReplaySpeech?: () => void;
   isMoving?: boolean;
   walkStepTick?: number;
@@ -42,6 +44,7 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
   speechText = 'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!',
   xPercent = 50,
   yPercent = 75,
+  positionStore,
   onReplaySpeech,
   isMoving = false,
   walkStepTick = 0,
@@ -53,7 +56,9 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
   carriedItemVariant = 0,
   onOpenMascotModal,
 }) => {
-  // Đồng bộ bước đi 12 frame tức thời không có độ trễ state kép
+  const fallbackPosition = useMemo(() => createMascotPosition(xPercent, yPercent), [xPercent, yPercent]);
+  const positions = positionStore || fallbackPosition;
+  const position = useSyncExternalStore(positions.subscribe, positions.getSnapshot, positions.getSnapshot);
   const [idlePose, setIdlePose] = useState(true);
   const [actionFrame, setActionFrame] = useState({ mood, index: 0 });
   const actionFrameIds = mood === 'picking' ? PICKUP_IDS
@@ -63,15 +68,25 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
   const previousPickupImage = mood === 'picking' && actionFrameIndex > 0
     ? customCostumes[PICKUP_IDS[actionFrameIndex - 1]] : null;
 
+  const carryFrameIds = useMemo(() => carriedTrashId ? getCarryCostumeIdsForTrash(carriedTrashId) : [], [carriedTrashId]);
+  const preloadFrameIds = carryingBasket ? CAM_GIO_IDS : actionFrameIds || (carriedTrashId ? carryFrameIds : TIM_RAC_IDS);
   useEffect(() => {
-    for (const id of PICKUP_IDS) {
-      const source = customCostumes[id];
-      if (!source) continue;
-      const image = new Image();
-      image.src = source;
-      void image.decode().catch(() => {});
-    }
-  }, [customCostumes]);
+    let cancelled = false;
+    const sources = [...new Set([...preloadFrameIds, ...PICKUP_IDS].map(id => customCostumes[id]).filter((source): source is string => Boolean(source)))];
+    const images: HTMLImageElement[] = [];
+    let next = 0;
+    const warm = async () => {
+      while (!cancelled && next < sources.length) {
+        const image = new Image();
+        images.push(image);
+        image.src = sources[next++];
+        await image.decode().catch(() => {});
+      }
+    };
+    // Warm only the current animation, with bounded parallel downloads.
+    void Promise.all(Array.from({ length: 3 }, warm));
+    return () => { cancelled = true; images.length = 0; };
+  }, [customCostumes, preloadFrameIds]);
 
   useEffect(() => {
     if (isMoving) {
@@ -156,13 +171,10 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
 
   return (
     <div
-      className={`absolute z-30 select-none pointer-events-none flex flex-col items-center group will-change-[left,top] ${className || ''}`}
-      style={{
-        left: `${xPercent}%`,
-        top: `${yPercent}%`,
-        transform: 'translate(-50%, -100%)',
-      }}
+      className={`absolute inset-0 z-30 select-none pointer-events-none will-change-transform ${className || ''}`}
+      style={{ transform: `translate3d(${position.x}%, ${position.y}%, 0)` }}
     >
+      <div className="absolute left-0 top-0 flex flex-col items-center group" style={{ transform: 'translate(-50%, -100%)' }}>
       {/* Bong bóng lời nói của Bạn Kiến Sáng */}
       {speechText && (
         <div className="relative mb-2 max-w-xs sm:max-w-sm pointer-events-auto">
@@ -297,6 +309,7 @@ export const RobotKienSang: React.FC<RobotKienSangProps> = ({
           )}
         </div>
 
+      </div>
       </div>
     </div>
   );

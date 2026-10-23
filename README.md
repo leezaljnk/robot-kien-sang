@@ -56,6 +56,17 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 - Chế độ “Nhờ Kiến Sáng” di chuyển theo quãng đường thực tế (trung bình 200 px/giây, ít nhất 0,6 giây mỗi chặng), áp dụng cả khi đi nhặt, mang rác và quay về.
 - Xuất trò chơi sang dự án Scratch (`.sb3`) và tải bản HTML độc lập để chơi offline.
 
+## Hiệu năng trên GitHub Pages
+
+- Khi build, ảnh trang phục, rác và thùng trong project được tạo thêm bản WebP (tối đa 512 × 512 px, giữ tỉ lệ và độ trong suốt). Manifest dùng bản nhẹ hơn với tên có hash để tận dụng cache; ảnh gốc vẫn giữ nguyên cho chỉnh sửa và xuất Scratch/offline.
+- Bản production đọc thẳng manifest tĩnh, không gọi thử API của máy chủ dev trên GitHub Pages.
+- Chỉ nạp trước nhóm hoạt ảnh đang dùng và các dáng nhặt rác, tối đa 3 ảnh đồng thời; không tải toàn bộ trang phục ngay khi mở trang.
+- Vị trí từng khung hình chỉ cập nhật nhân vật thay vì render lại toàn bộ màn chơi. Giữ phím di chuyển theo thời gian thực, không phụ thuộc màn hình 30/60/144 Hz; dùng `transform` thay vì thay đổi `left/top` mỗi frame.
+- Tài nguyên Supabase vẫn được ưu tiên và không bị thay thế bởi ảnh project. Các ảnh đã tải lên Supabase không được bước build này nén lại; nên tối ưu ảnh trước khi tải lên editor nếu dùng chế độ chia sẻ.
+- Sau khi triển khai lại, dùng F5 để nhận manifest mới. Ping Google chỉ đo độ trễ tới Google, không đo tốc độ tải ảnh từ GitHub Pages/Supabase hay tốc độ render của trình duyệt.
+
+Kiểm tra chuyển động: `node --import tsx --test tests/movement.test.ts tests/commandMovement.test.ts tests/mascotPosition.test.ts tests/mascotFrames.test.ts`.
+
 ## Yêu cầu
 
 - [Bun](https://bun.sh/) hoặc Node.js và npm.
@@ -89,6 +100,8 @@ Hai giá trị này là cấu hình công khai trong bundle, không phải mật
 ### 2. Build và đưa lên GitHub Pages
 
 Khuyến nghị dùng **GitHub Actions**: mỗi lần push mã nguồn lên branch `main`, GitHub tự cài dependencies, kiểm tra TypeScript, build và publish toàn bộ `dist/`. Không cần commit `dist/` hoặc tạo branch `gh-pages`. Workflow đã có sẵn tại [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml).
+
+GitHub Pages chỉ phục vụ file tĩnh, không chạy API của Vite. Bản build đọc trực tiếp `kien-sang-assets.json` (được tạo khi build) để nạp ảnh trang phục, ảnh rác, thùng rác và giọng nói trước khi bật nút bắt đầu. Cần publish cả manifest và thư mục `images/`, `voice/` trong `dist/`; các URL tương đối giữ đúng đường dẫn `/robot-kien-sang/`. Endpoint `/api/preloaded-assets` chỉ được gọi khi chạy dev server; nếu API không khả dụng, bản dev thử manifest tĩnh. Bản HTML offline tiếp tục dùng tài nguyên nhúng, không gọi mạng.
 
 #### 2.1. Tạo repository GitHub
 
