@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RobotKienSang } from './RobotKienSang';
 import { CustomCostumesMap, KienSangMood } from '../types';
 import { playErrorSfx, playPickSfx, playSuccessSfx } from '../utils/audio';
+import { type TriggerSpeech } from '../data/voicePrompts';
 
 type GardenMode = 'free' | 'challenge';
 
@@ -47,6 +48,7 @@ interface FlyingFriend {
 
 interface SunlitGardenGameProps {
   onReturnToClassroom: () => void;
+  triggerSpeech: TriggerSpeech;
   customMascotUrl?: string | null;
   customCostumes?: CustomCostumesMap;
   mascotScale?: number;
@@ -92,6 +94,7 @@ const HAZARDS = [
 
 export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   onReturnToClassroom,
+  triggerSpeech,
   customMascotUrl,
   customCostumes,
   mascotScale,
@@ -133,6 +136,22 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
   const birdCount = Math.min(Math.floor(caught / 3), 2);
   const latestCatchId = catchEffects.at(-1)?.id;
   const latestCatchIsHazard = catchEffects.at(-1)?.isHazard;
+
+  useEffect(() => {
+    if (!started) {
+      triggerSpeech('Dùng phím mũi tên, các nút điều khiển hoặc kéo chuột/chạm để đón bánh kẹo, trái cây lấy điểm và né gạch, đá, cành cây nhé!', 'garden_intro');
+    } else if (gameOver) {
+      triggerSpeech('Nghỉ một chút nhé! Lần sau mình nhớ né gạch, đá và cành cây nhé!', 'garden_game_over');
+    } else if (completed) {
+      triggerSpeech('Tuyệt vời, bạn nhỏ! Bạn đã đón đủ món ngon. Tuyệt lắm!', 'garden_victory');
+    }
+  }, [started, gameOver, completed, triggerSpeech]);
+
+  useEffect(() => {
+    if (latestCatchIsHazard && !gameOver && !completed) {
+      triggerSpeech('Ối! Cẩn thận nhé!', 'garden_hazard');
+    }
+  }, [latestCatchId, latestCatchIsHazard, gameOver, completed, triggerSpeech]);
 
   useEffect(() => {
     if (catchEffects.length === 0) return;
@@ -198,6 +217,10 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
     setWalkStepTick(0);
     directionsRef.current.clear();
     setStarted(true);
+    triggerSpeech(
+      selectedMode === 'challenge' ? 'Đón đủ 10 món ngon để nhận huy hiệu' : 'Cùng Kiến Sáng đón món ngon nhé!',
+      selectedMode === 'challenge' ? 'garden_challenge' : 'garden_free'
+    );
   };
 
   const moveAntToPointer = (clientX: number) => {

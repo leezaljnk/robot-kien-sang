@@ -211,64 +211,27 @@ Nếu Supabase lỗi, game báo lỗi và giữ tài nguyên đang có; có nút
 
 ## Giọng thu âm cho toàn bộ lời hướng dẫn
 
-Game hỗ trợ **43 file giọng nói**: 13 câu chung và 30 câu chọn/nhặt 15 món rác. Không bắt buộc đủ bộ: thiếu file hoặc phát lỗi sẽ đọc văn bản bằng giọng trình duyệt. Hiệu ứng nhặt/thả, đúng/sai và nhạc chiến thắng vẫn được tạo bằng Web Audio, không phải các file này.
+Game hỗ trợ **98 ID giọng nói cho cả 4 màn**: lớp học, sân trường, khu vườn và thử tài phân loại. Mọi lệnh gọi `triggerSpeech(text, voiceId)` truyền ID tường minh, kể cả câu động và nghe lại. Xem [toàn bộ ID, tên file và lời thoại cần thu](docs/voice-prompts.md). Không bắt buộc đủ bộ: thiếu file hoặc phát lỗi sẽ đọc văn bản bằng giọng trình duyệt. Hiệu ứng nhặt/thả, đúng/sai và nhạc chiến thắng vẫn được tạo bằng Web Audio, không phải các file này.
 
 ### Đặt file hoặc upload
 
 - **Trong project:** copy MP3 vào `public/voice/`, giữ đúng tên chữ thường dưới đây, commit/push để build và deploy lại. Không cần insert `game_assets`. Manifest build, dev server và bản HTML offline được tạo lại đều nhận các MP3 này.
 - **Dùng chung online:** chọn vị trí `voice/<ID>` trong editor hoặc tải nhiều file đúng tên. Ví dụ `welcome.mp3` tương ứng `voice/welcome`. Không cần deploy lại sau upload; người chơi F5.
 - **Supabase đã thiết lập trước đây:** chạy lại toàn bộ [`supabase/setup.sql`](supabase/setup.sql) để cập nhật các ID được phép upload. Script không xóa tài nguyên đã có.
-- **Thu trực tiếp trong game cục bộ/offline:** phòng thu có đủ 43 câu. Dữ liệu thu giữ định dạng trình duyệt tạo ra, không tự chuyển MP3. Khi chơi online, dùng editor để tải file thu sẵn lên Supabase.
+- **Thu trực tiếp trong game cục bộ/offline:** phòng thu có đủ 98 câu. Dữ liệu thu giữ định dạng trình duyệt tạo ra, không tự chuyển MP3. Khi chơi online, dùng editor để tải file thu sẵn lên Supabase.
 - Supabase ưu tiên hơn MP3 trong bản build cho cùng ID. Nhập/xuất tùy chỉnh JSON và xuất HTML giữ toàn bộ các giọng này. Xuất Scratch vẫn chỉ dùng ba giọng đúng/sai/chiến thắng như trước; các câu hướng dẫn mở rộng dành cho game web.
 
-### 13 file câu chung
+### Danh sách bản thu cho cả 4 màn
 
-Nếu đã thu `victory.mp3` với câu “16 sao”, hãy thu/thay lại câu “Yeah, 10 sao rồi, lớp mình sạch quá!”; file âm thanh cũ không tự đổi nội dung khi cập nhật mã nguồn.
+[Danh sách đầy đủ 98 ID và lời thoại](docs/voice-prompts.md) gồm 21 câu chung/dự phòng cho lớp học và sân trường, 30 câu theo rác lớp học, 20 câu theo rác sân trường, 6 câu khu vườn và 21 câu thử tài phân loại.
 
-| Tên file chính xác | Nội dung nên thu |
-|---|---|
-| `correct.mp3` | Hoan hô! Đúng rồi bạn ơi! |
-| `incorrect.mp3` | Ôi nhầm rồi, bạn thử lại nhé! |
-| `victory.mp3` | Yeah, 10 sao rồi, lớp mình sạch quá! |
-| `welcome.mp3` | Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé! |
-| `continue_sorting.mp3` | Bé tiếp tục phân loại rác nhé! |
-| `batch_complete.mp3` | Hoan hô! Đã dọn sạch 5 món rác! Cùng tiếp tục với 5 món rác mới nhé! |
-| `approach_bin.mp3` | Kiến Sáng hãy đi lại gần Thùng Xanh (bên trái) hoặc Thùng Cam (bên phải) rồi nhấn Phím Cách nhé! |
-| `approach_trash.mp3` | Hãy dùng phím mũi tên trái, phải đi lại gần món rác trên sàn rồi nhấn Phím Cách để nhặt nhé! |
-| `select_trash.mp3` | Bé hãy bấm chọn một món rác trên sàn trước nhé! |
-| `bin_unavailable.mp3` | Chưa xác định được vị trí thùng rác, bạn hãy chọn lại nhé! |
-| `mode_drag.mp3` | Chế độ: Bé tự nhấn giữ chuột kéo rác thả vào thùng nhé! |
-| `mode_command.mp3` | Chế độ: Bé bấm chọn rác, rồi bấm chọn thùng để tớ chạy lại nhặt nhé! |
-| `mascot_updated.mp3` | A! Đã nhận đúng ảnh Kiến Sáng rồi! Cùng dọn lớp với bạn Kiến Sáng nhé! |
+Cần thu lại `victory.mp3` theo mốc **20 sao**. Các câu khen khác nhau dùng ID riêng; bản thu cũ không tự đổi nội dung. Xem danh sách để kiểm tra các câu hướng dẫn đã được đồng bộ lại.
 
-Các câu khen đúng ngẫu nhiên cùng sử dụng `correct.mp3`; khi nghe lại lời nói, game cũng dùng file tương ứng. Lời chào ban đầu và lời nhắc tiếp tục có thể nghe bằng nút loa; không ép phát tiếng lúc vừa mở trang vì trình duyệt có thể chặn autoplay.
+Tạo lại danh sách từ mã nguồn:
 
-### 30 file theo từng món rác
-
-Mỗi món cần hai câu, thay `[tên món]` bằng cột đầu tiên:
-
-- **Chọn:** `Bé đã chọn "[tên món]"! Hãy bấm vào thùng rác muốn bỏ nhé!`
-- **Nhặt:** `Kiến Sáng đã nhặt "[tên món]"! Hãy đưa tới thùng rác thích hợp nhé!`
-
-| Tên món trong câu thu | File câu chọn | File câu nhặt |
-|---|---|---|
-| Vỏ hộp sữa | `selected_vo_hop_sua.mp3` | `picked_vo_hop_sua.mp3` |
-| Vỏ hộp giấy | `selected_vo_hop_giay.mp3` | `picked_vo_hop_giay.mp3` |
-| Giầy cũ | `selected_giay_cu.mp3` | `picked_giay_cu.mp3` |
-| Vỏ chai thủy tinh | `selected_vo_chai.mp3` | `picked_vo_chai.mp3` |
-| Ống nhựa (ống hút) | `selected_ong_nhua.mp3` | `picked_ong_nhua.mp3` |
-| Vỏ kẹo (túi nilon) | `selected_vo_keo.mp3` | `picked_vo_keo.mp3` |
-| Vỏ lon nước ngọt | `selected_vo_lon.mp3` | `picked_vo_lon.mp3` |
-| Vỏ chai nhựa | `selected_vo_chai_nhua.mp3` | `picked_vo_chai_nhua.mp3` |
-| Xương cá | `selected_xuong_ca.mp3` | `picked_xuong_ca.mp3` |
-| Xương đùi gà | `selected_dui_ga.mp3` | `picked_dui_ga.mp3` |
-| Vỏ dưa hấu | `selected_vo_dua_hau.mp3` | `picked_vo_dua_hau.mp3` |
-| Mẩu bánh mì | `selected_banh_mi.mp3` | `picked_banh_mi.mp3` |
-| Lá cây | `selected_la_cay.mp3` | `picked_la_cay.mp3` |
-| Vỏ chuối | `selected_vo_chuoi.mp3` | `picked_vo_chuoi.mp3` |
-| Lõi / Vỏ táo | `selected_vo_tao.mp3` | `picked_vo_tao.mp3` |
-
-Ví dụ `selected_banh_mi.mp3`: “Bé đã chọn mẩu bánh mì! Hãy bấm vào thùng rác muốn bỏ nhé!”.
+```bash
+node --import tsx scripts/generate_voice_catalog.ts
+```
 
 ## Cài đặt và chạy ở chế độ phát triển
 

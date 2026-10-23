@@ -7,9 +7,11 @@ import {
   type SortingGameRound,
 } from '../data/sortingGame';
 import { playErrorSfx, playSuccessSfx } from '../utils/audio';
+import { type TriggerSpeech } from '../data/voicePrompts';
 
 interface ReuseSortingGameProps {
   onExit: () => void;
+  triggerSpeech: TriggerSpeech;
 }
 
 interface Point {
@@ -48,7 +50,7 @@ const getContainedImageBounds = (image: HTMLImageElement) => {
 
 type GamePhase = 'intro' | 'playing' | 'complete';
 
-export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) => {
+export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, triggerSpeech }) => {
   const [phase, setPhase] = useState<GamePhase>('intro');
   const [rounds, setRounds] = useState<SortingGameRound[]>([]);
   const [roundIndex, setRoundIndex] = useState(0);
@@ -72,6 +74,19 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) =>
   const choiceRefs = useRef(new Map<string, HTMLButtonElement>());
   const activeArrowRef = useRef<ActiveArrow | null>(null);
   const currentRound = rounds[roundIndex];
+
+  const showFeedback = useCallback((text: string, voiceId: string) => {
+    setFeedback(text);
+    triggerSpeech(text, voiceId);
+  }, [triggerSpeech]);
+
+  useEffect(() => {
+    if (phase === 'intro') {
+      triggerSpeech('Mỗi lượt có một món đồ và sáu bức tranh. Bé hãy tìm ba ý tưởng phù hợp nhé.', 'sorting_intro');
+    } else if (phase === 'complete') {
+      triggerSpeech('Bé giỏi quá! Bé đã tìm được nhiều cách sáng tạo để dùng lại đồ cũ. Nhớ nhờ người lớn giúp với những ý tưởng cần làm thủ công nhé!', 'sorting_victory');
+    }
+  }, [phase, triggerSpeech]);
 
   const measureConnections = useCallback(() => {
     const board = boardRef.current;
@@ -135,13 +150,13 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) =>
       const nextWrong = wrongIds.filter((wrongId) => wrongId !== id);
       setSelectedIds(nextSelected);
       setWrongIds(nextWrong);
-      setFeedback('Đã gỡ lựa chọn. Bé có thể nối hình khác rồi kiểm tra nhé!');
+      showFeedback('Đã gỡ lựa chọn. Bé có thể nối hình khác rồi kiểm tra nhé!', 'sorting_removed');
       return;
     }
     setSelectedIds([...selectedIds, id]);
     setWrongIds(wrongIds.filter((wrongId) => wrongId !== id));
-    setFeedback('Đã nối hình. Bé có thể chọn thêm rồi bấm Kiểm tra.');
-  }, [roundComplete, confirmedCorrectIds, selectedIds, wrongIds]);
+    showFeedback('Đã nối hình. Bé có thể chọn thêm rồi bấm Kiểm tra.', 'sorting_connected');
+  }, [roundComplete, confirmedCorrectIds, selectedIds, wrongIds, showFeedback]);
 
   const toggleChoiceRef = useRef(toggleChoice);
 
@@ -217,10 +232,10 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) =>
       setSourceSelected(false);
       activeArrowRef.current = null;
       setActiveArrow(null);
-      setFeedback('');
-    }, 1000);
+      showFeedback('Bé hãy nối một hay nhiều hình rồi kiểm tra nhé!', 'sorting_continue');
+    }, 4500);
     return () => window.clearTimeout(timeout);
-  }, [roundComplete, roundIndex, rounds.length]);
+  }, [roundComplete, roundIndex, rounds.length, showFeedback]);
 
   const startGame = () => {
     setRounds(createSortingGameRounds());
@@ -232,14 +247,14 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) =>
     setSourceSelected(false);
     activeArrowRef.current = null;
     setActiveArrow(null);
-    setFeedback('Kéo từ món rác đến hình phù hợp, hoặc chạm vào hình để nối.');
+    showFeedback('Kéo từ món rác đến hình phù hợp, hoặc chạm vào hình để nối.', 'sorting_start');
     setPhase('playing');
   };
 
   const checkAnswers = () => {
     if (!currentRound || roundComplete) return;
     if (selectedIds.length === 0) {
-      setFeedback('Bé hãy nối một hay nhiều hình phù hợp trước nhé!');
+      showFeedback('Bé hãy nối một hay nhiều hình phù hợp trước nhé!', 'sorting_select');
       return;
     }
     const { correctIds, wrongIds: nextWrongIds, isComplete } =
@@ -249,16 +264,16 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) =>
 
     if (nextWrongIds.length > 0) {
       playErrorSfx();
-      setFeedback('Bé thử gỡ đường nối có dấu X rồi kiểm tra lại nhé!');
+      showFeedback('Bé thử gỡ đường nối có dấu X rồi kiểm tra lại nhé!', 'sorting_retry');
       return;
     }
     playSuccessSfx();
     if (isComplete) {
       setRoundComplete(true);
-      setFeedback('Bé giỏi lắm! Cả ba ý tưởng phù hợp đã được tìm thấy.');
+      showFeedback('Bé giỏi lắm! Cả ba ý tưởng phù hợp đã được tìm thấy.', 'sorting_round_complete');
       return;
     }
-    setFeedback('Tốt lắm! Còn ý tưởng phù hợp nữa, bé tìm tiếp nhé!');
+    showFeedback('Tốt lắm! Còn ý tưởng phù hợp nữa, bé tìm tiếp nhé!', 'sorting_more');
   };
 
   const productStatus = (id: string) => {
@@ -519,7 +534,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) =>
                 }}
                 onClick={() => {
                   setSourceSelected(true);
-                  setFeedback(`Đã chọn ${currentRound.waste.name}. Bé chạm vào những ý tưởng phù hợp nhé!`);
+                  showFeedback(`Đã chọn ${currentRound.waste.name}. Bé chạm vào những ý tưởng phù hợp nhé!`, `sorting_selected_${currentRound.waste.id}`);
                 }}
                 aria-pressed={sourceSelected}
                 className={`relative z-10 col-start-2 row-start-2 flex h-full w-full flex-col items-center justify-center p-2 text-center focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 ${sourceSelected ? 'drop-shadow-[0_0_0.75rem_rgba(16,185,129,0.6)]' : ''}`}
@@ -584,9 +599,14 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit }) =>
                 Kiểm tra
               </button>
             </div>
-            <p className="mt-2 text-center text-xs font-semibold text-slate-600">
-              Một số ý tưởng cần người lớn hỗ trợ. Mình chỉ quan sát tranh và nhờ người lớn giúp nhé!
-            </p>
+            <button
+              type="button"
+              aria-label="Nghe lời nhắc an toàn"
+              onClick={() => triggerSpeech('Một số ý tưởng cần người lớn hỗ trợ. Mình chỉ quan sát tranh và nhờ người lớn giúp nhé!', 'sorting_safety')}
+              className="mt-2 min-h-11 w-full text-center text-xs font-semibold text-slate-600"
+            >
+              🔊 Một số ý tưởng cần người lớn hỗ trợ. Mình chỉ quan sát tranh và nhờ người lớn giúp nhé!
+            </button>
           </section>
         )}
 

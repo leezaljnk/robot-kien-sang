@@ -17,7 +17,7 @@ import { MASCOT_COSTUMES, PICKUP_DURATION_MS, getCarryCostumeIdsForTrash, getPri
 import { getBinApproachTarget, getCommandMoveDuration } from './utils/movement';
 import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from './utils/trashSpawn';
 import { drawClassroomTrashItems, drawTrashItems } from './utils/trashCycle';
-import { voiceIdForText } from './data/voicePrompts';
+import { VOICE_PROMPTS, type TriggerSpeech } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
 import {
   playPickSfx,
@@ -583,7 +583,7 @@ export default function App() {
             });
           } catch {}
           setKienMood('happy');
-          triggerSpeech('A! Đã nhận đúng ảnh kien-sang-main.png rồi! Cùng dọn lớp với bạn Kiến Sáng nhé!');
+          triggerSpeech('A! Đã nhận đúng ảnh kien-sang-main.png rồi! Cùng dọn lớp với bạn Kiến Sáng nhé!', 'mascot_updated');
         }
       };
       reader.readAsDataURL(file);
@@ -591,20 +591,21 @@ export default function App() {
   };
 
   // Helper to trigger speech and speech bubble
-  const triggerSpeech = useCallback(
-    (text: string, customClipKey?: keyof VoiceClips) => {
+  const speechIdRef = useRef('welcome');
+  const triggerSpeech = useCallback<TriggerSpeech>(
+    (text, voiceId) => {
+      speechIdRef.current = voiceId;
       setKienSpeech(text);
       if (speechTimeoutRef.current) {
         clearTimeout(speechTimeoutRef.current);
       }
 
-      const clipKey = customClipKey || voiceIdForText(text);
-      const clipUrl = clipKey ? voiceClips[clipKey] : null;
-      speakKienSang(text, clipUrl);
+      speakKienSang(text, voiceClips[voiceId]);
 
       speechTimeoutRef.current = window.setTimeout(() => {
         // Return to idle message if not victory
         if (score < MAX_SCORE) {
+          speechIdRef.current = 'continue_sorting';
           setKienSpeech('Bé tiếp tục phân loại rác nhé!');
         }
       }, 4500);
@@ -649,6 +650,7 @@ export default function App() {
     );
     if (slots.length === 0) {
       console.error('Không đủ vùng trống an toàn để đặt rác.');
+      speechIdRef.current = 'play_area_small';
       setKienSpeech('Vùng chơi quá nhỏ. Hãy phóng to cửa sổ hoặc giảm kích thước thùng rác rồi chơi lại nhé!');
       return;
     }
@@ -739,13 +741,19 @@ export default function App() {
     const currentScene = sceneRef.current;
     if (currentScene === nextScene) return;
     if (pickupInProgressRef.current || carriedItemInstanceId || isMoving || draggingItem) {
-      triggerSpeech('Kiến Sáng đang nhặt rác rồi. Hãy hoàn thành lượt này trước khi đổi cảnh nhé!');
+      triggerSpeech('Kiến Sáng đang nhặt rác rồi. Hãy hoàn thành lượt này trước khi đổi cảnh nhé!', 'scene_busy');
       return;
     }
 
     sceneItemsRef.current[currentScene] = activeItemsRef.current;
     sceneRef.current = nextScene;
     setScene(nextScene);
+    triggerSpeech(
+      nextScene === 'yard'
+        ? 'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch sân trường nhé!'
+        : 'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!',
+      nextScene === 'yard' ? 'yard_welcome' : 'welcome'
+    );
     setSelectedTrashId(null);
     setDraggingItem(null);
     draggingItemRef.current = null;
@@ -798,12 +806,15 @@ export default function App() {
     setSelectedTrashId(null);
     setDraggingItem(null);
     draggingItemRef.current = null;
-    triggerSpeech('Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!');
+    triggerSpeech(
+      scene === 'yard' ? 'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch sân trường nhé!' : 'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!',
+      scene === 'yard' ? 'yard_welcome' : 'welcome'
+    );
     spawnTrashBatch();
   };
 
   const handleStartGame = () => {
-    triggerSpeech('Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!');
+    triggerSpeech('Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!', 'welcome');
     setHasStartedGame(true);
   };
 
@@ -812,7 +823,10 @@ export default function App() {
     if (score >= MAX_SCORE) {
       setKienMood('victory');
       playVictoryFanfare();
-      triggerSpeech(`Yeah, ${MAX_SCORE} sao rồi, lớp mình sạch quá!`, 'victory');
+      triggerSpeech(
+        sceneRef.current === 'yard' ? `Yeah, ${MAX_SCORE} sao rồi, sân trường sạch quá!` : `Yeah, ${MAX_SCORE} sao rồi, lớp mình sạch quá!`,
+        sceneRef.current === 'yard' ? 'yard_victory' : 'victory'
+      );
       setIsVictoryModalOpen(true);
     }
   }, [score, triggerSpeech]);
@@ -842,13 +856,9 @@ export default function App() {
       setTimeout(() => setBouncingBin(null), 800);
 
       // Reo vui
-      const compliments = [
-        'Hoan hô! Đúng rồi bạn ơi!',
-        'Tuyệt vời quá! Bé giỏi lắm!',
-        'Đúng rồi! Cảm ơn bé nhiều nhé!',
-      ];
+      const compliments = VOICE_PROMPTS.filter(prompt => ['correct', 'correct_great', 'correct_thanks'].includes(prompt.id));
       const comp = compliments[Math.floor(Math.random() * compliments.length)];
-      triggerSpeech(comp, 'correct');
+      triggerSpeech(comp.text, comp.id);
 
       // Update score and remove item
       setScore((prev) => {
@@ -862,7 +872,7 @@ export default function App() {
           // Khi đã bỏ hết rác trong lô, tự động xuất hiện lô mới.
           setTimeout(() => {
             spawnTrashBatch();
-            triggerSpeech('Hoan hô! Đã dọn sạch rác! Cùng tiếp tục nhé!');
+            triggerSpeech('Hoan hô! Đã dọn sạch rác! Cùng tiếp tục nhé!', 'batch_complete');
           }, 800);
         }
         return remaining;
@@ -974,7 +984,8 @@ export default function App() {
         }, 450);
       } else {
         triggerSpeech(
-          'Kiến Sáng hãy đi lại gần Thùng Xanh (bên trái) hoặc Thùng Cam (bên phải) rồi nhấn Phím Cách nhé!'
+          'Kiến Sáng hãy đi lại gần Thùng Xanh (bên trái) hoặc Thùng Cam (bên phải) rồi nhấn Phím Cách nhé!',
+          'approach_bin'
         );
       }
     } else {
@@ -998,11 +1009,13 @@ export default function App() {
         beginPickup(itemToPick.instanceId, () => setKienMood('carrying'));
         const def = getItemDef(itemToPick.defId);
         triggerSpeech(
-          `Kiến Sáng đã nhặt "${def?.nameVi || 'món rác'}"! Hãy đưa tới thùng rác thích hợp nhé!`
+          `Kiến Sáng đã nhặt "${def?.nameVi || 'món rác'}"! Hãy đưa tới thùng rác thích hợp nhé!`,
+          def ? `picked_${def.id}` : 'picked_unknown'
         );
       } else {
         triggerSpeech(
-          'Hãy dùng phím mũi tên ⬅️ ➡️ đi lại gần món rác trên sàn rồi nhấn Phím Cách để nhặt nhé!'
+          'Hãy dùng phím mũi tên ⬅️ ➡️ đi lại gần món rác trên sàn rồi nhấn Phím Cách để nhặt nhé!',
+          'approach_trash'
         );
       }
     }
@@ -1416,7 +1429,7 @@ export default function App() {
     setSelectedTrashId(item.instanceId);
 
     const def = getItemDef(item.defId);
-    triggerSpeech(`Bé đã chọn "${def?.nameVi || 'món rác'}"! Hãy bấm vào thùng rác muốn bỏ nhé!`);
+    triggerSpeech(`Bé đã chọn "${def?.nameVi || 'món rác'}"! Hãy bấm vào thùng rác muốn bỏ nhé!`, def ? `selected_${def.id}` : 'selected_unknown');
   };
 
   // Click on a bin to command Kiến Sáng to pick and drop trash
@@ -1424,7 +1437,7 @@ export default function App() {
     if (pickupInProgressRef.current) return;
     if (!selectedTrashId || isMoving || kienMood === 'walking' || kienMood === 'carrying') {
       if (!selectedTrashId) {
-        triggerSpeech('Bé hãy bấm chọn một món rác trên sàn trước nhé!');
+        triggerSpeech('Bé hãy bấm chọn một món rác trên sàn trước nhé!', 'select_trash');
       }
       return;
     }
@@ -1451,7 +1464,7 @@ export default function App() {
           const robot = area?.querySelector('[data-robot-sprite]');
           if (!area || !binImage || !robot) {
             console.error('Không thể xác định vị trí thùng rác hoặc nhân vật.');
-            triggerSpeech('Chưa xác định được vị trí thùng rác, bạn hãy chọn lại nhé!');
+            triggerSpeech('Chưa xác định được vị trí thùng rác, bạn hãy chọn lại nhé!', 'bin_unavailable');
             setIsMoving(false);
             setKienMood('idle');
             setCarriedItemInstanceId(null);
@@ -1501,9 +1514,9 @@ export default function App() {
     setDraggingItem(null);
     draggingItemRef.current = null;
     if (mode === 'drag') {
-      triggerSpeech('Chế độ: Bé chạm và kéo rác vào thùng, hoặc nhấn giữ chuột để kéo nhé!');
+      triggerSpeech('Chế độ: Bé chạm và kéo rác vào thùng, hoặc nhấn giữ chuột để kéo nhé!', 'mode_drag');
     } else {
-      triggerSpeech('Chế độ: Bé chạm chọn rác rồi chạm thùng để tớ chạy lại nhặt nhé!');
+      triggerSpeech('Chế độ: Bé chạm chọn rác rồi chạm thùng để tớ chạy lại nhặt nhé!', 'mode_command');
     }
   };
 
@@ -1624,6 +1637,7 @@ export default function App() {
           <React.Suspense fallback={<div role="status" className="absolute inset-0 z-40 flex items-center justify-center bg-sky-200 font-bold text-emerald-900">Đang mở khu vườn…</div>}>
             <SunlitGardenGame
               onReturnToClassroom={() => setIsGardenOpen(false)}
+              triggerSpeech={triggerSpeech}
               customMascotUrl={customMascotUrl}
               customCostumes={customCostumes}
               mascotScale={mascotScale}
@@ -1725,7 +1739,7 @@ export default function App() {
           speechText=""
           xPercent={kienX}
           yPercent={kienY}
-          onReplaySpeech={() => triggerSpeech(kienSpeech)}
+          onReplaySpeech={() => triggerSpeech(kienSpeech, speechIdRef.current)}
           isMoving={isMoving}
           walkStepTick={walkStepTick}
           customMascotUrl={customMascotUrl}
@@ -1988,7 +2002,7 @@ export default function App() {
         />
       </React.Suspense>}
       {isSortingGameOpen && <React.Suspense fallback={modalLoadingFallback}>
-        <ReuseSortingGame onExit={() => setIsSortingGameOpen(false)} />
+        <ReuseSortingGame onExit={() => setIsSortingGameOpen(false)} triggerSpeech={triggerSpeech} />
       </React.Suspense>}
     </div>
     </ErrorBoundary>

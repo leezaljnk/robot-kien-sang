@@ -336,3 +336,11 @@ Cho trẻ thử không hướng dẫn trực tiếp và quan sát:
 5. Hoàn thiện thư viện nội dung cho mười nhóm; mỗi ván chơi năm lượt được chọn ngẫu nhiên, xáo thứ tự và có màn kết thúc.
 6. Tích hợp thẻ gợi ý lớp học bằng các ảnh sản phẩm đã duyệt.
 7. Kiểm thử build, tài nguyên offline, hồi quy màn lớp học và trải nghiệm trên thiết bị mục tiêu.
+
+## 11. ID ghi âm cho bốn màn chơi
+
+Danh mục hiện tại có **98 ID** cho lớp học, sân trường, khu vườn và thử tài phân loại. Xem [đầy đủ ID, tên MP3 và lời thoại cần thu](voice-prompts.md); danh sách được sinh từ [voicePrompts.ts](../src/data/voicePrompts.ts).
+
+Các màn dùng chung `triggerSpeech(text, voiceId)` với ID bắt buộc, kể cả lời chọn rác động. Thử tài phân loại đọc phản hồi nối/gỡ, kiểm tra đúng/sai và hoàn thành; giữ phản hồi hoàn thành lượt 4,5 giây trước khi chuyển lượt để hạn chế cắt câu. Nhấn lời nhắc an toàn để nghe bản thu. Khu vườn đọc hướng dẫn, chế độ, va chạm và kết quả; điểm số biến thiên chỉ hiển thị, không nằm trong bản thu kết quả cố định.
+
+Phòng thu, tài nguyên dùng chung, nhập/xuất JSON và HTML offline đều nhận danh mục mới. Hệ thống Supabase đã triển khai cần chạy lại [setup.sql](../supabase/setup.sql) trước khi upload ID mới. Bản thu chiến thắng lớp học cần đổi thành **20 sao**. Thiếu bản thu hoặc phát lỗi sẽ dùng giọng đọc trình duyệt; các thẻ gợi ý hình ảnh và nhãn giao diện không được tự chuyển thành lời thoại.
