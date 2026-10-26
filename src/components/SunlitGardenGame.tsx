@@ -65,6 +65,20 @@ const TREATS = [
   { icon: '🍉', name: 'miếng dưa hấu', points: 10 },
 ];
 
+const GARDEN_CLOUDS = [
+  { left: 4, top: 10, size: 52, opacity: 0.8 },
+  { left: 17, top: 8, size: 64, opacity: 0.85 },
+  { left: 34, top: 5, size: 48, opacity: 0.7 },
+  { left: 51, top: 11, size: 60, opacity: 0.8 },
+  { left: 89, top: 12, size: 48, opacity: 0.75 },
+  { left: 8, top: 25, size: 72, opacity: 0.85 },
+  { left: 27, top: 21, size: 48, opacity: 0.7 },
+  { left: 44, top: 29, size: 64, opacity: 0.8 },
+  { left: 60, top: 20, size: 56, opacity: 0.75 },
+  { left: 79, top: 28, size: 72, opacity: 0.85 },
+  { left: 18, top: 37, size: 56, opacity: 0.7 },
+  { left: 61, top: 39, size: 48, opacity: 0.7 },
+];
 const CHALLENGE_GOAL = 10;
 const CATCH_LINE = 78;
 const MAX_MISSES = 5;
@@ -614,8 +628,19 @@ export const SunlitGardenGame: React.FC<SunlitGardenGameProps> = ({
           >✦</span>
         ))}
       </div>
-      <div className="absolute left-[17%] top-[8%] text-4xl opacity-80" aria-hidden="true">☁️</div>
-      <div className="absolute right-[35%] top-[18%] text-3xl opacity-70" aria-hidden="true">☁️</div>
+      {GARDEN_CLOUDS.map((cloud, index) => (
+        <div
+          key={index}
+          className="garden-cloud pointer-events-none absolute leading-none"
+          style={{
+            left: `${cloud.left}%`,
+            top: `${cloud.top}%`,
+            fontSize: `clamp(28px, ${cloud.size / 10}vw, ${cloud.size}px)`,
+            opacity: cloud.opacity,
+          }}
+          aria-hidden="true"
+        >☁️</div>
+      ))}
       {FLYING_FRIENDS.filter((friend) => friend.icon === '🦋')
         .slice(0, butterflyCount)
         .concat(

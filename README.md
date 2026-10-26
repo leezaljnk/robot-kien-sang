@@ -42,7 +42,7 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 - Trong lớp học, mỗi lô có đúng **3 món rác tái chế và 2 món rác hữu cơ**, xuất hiện ở các vị trí riêng biệt và được xáo trộn thứ tự. Mỗi nhóm có chu kỳ chọn riêng: tất cả món trong nhóm xuất hiện trước khi nhóm đó bắt đầu chu kỳ mới; không trùng món trong cùng một lô. Sân trường giữ cách chọn rác ngẫu nhiên hiện có.
 - Bấm cửa sổ bên trái để ra sân trường; dọn 10 loại rác sân trường riêng (5 hữu cơ, 5 tái chế) bằng hình SVG dễ thương, rồi bấm **Về lớp học** để quay lại. Điểm, rác đang chơi và chu kỳ riêng của mỗi cảnh được giữ nguyên khi chuyển cảnh.
 - Ở sân trường, cứ mỗi 4 giây rác chưa được nhặt sẽ được gió thổi sang một vị trí trống khác; rác đang được cầm hoặc kéo sẽ không bị di chuyển. Rác trong lớp chỉ xuất hiện trên sàn, còn rác sân trường chỉ xuất hiện trên bãi cỏ, tránh bảng đen, tường và bầu trời.
-- Trong Khu Vườn nắng ấm, có thể dùng phím mũi tên hoặc bấm vào vị trí muốn đến để Kiến Sáng di chuyển mượt mà; mỗi món rác nhặt được giúp vườn nở thêm những bông hoa cao với nhiều hình dáng.
+- Trong Khu Vườn nắng ấm, có thể dùng phím mũi tên hoặc bấm vào vị trí muốn đến để Kiến Sáng di chuyển mượt mà; mỗi món rác nhặt được giúp vườn nở thêm những bông hoa cao với nhiều hình dáng. Bầu trời có 12 đám mây với kích thước đa dạng, tự thu nhỏ trên màn hình hẹp và không cản thao tác chơi.
 - Ở lớp học và sân trường, lời thoại của Kiến Sáng được phát bằng âm thanh mà không hiện bong bóng chữ.
 - Đạt **10 sao** để chiến thắng. Rác xuất hiện ngoài vùng thùng rác với khoảng cách an toàn để dễ chọn/nhặt.
 - Chơi bằng cách tự kéo thả rác hoặc chọn rác để Robot Kiến Sáng đi nhặt.
