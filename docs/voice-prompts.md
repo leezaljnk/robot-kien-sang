@@ -1,6 +1,6 @@
 # Danh sách ID và lời thoại cho các màn chơi
 
-Có **106 ID**. Nguồn chuẩn: [voicePrompts.ts](../src/data/voicePrompts.ts).
+Có **86 ID bản thu**, gồm 46 câu đầy đủ và 40 đoạn. Nguồn chuẩn: [voicePrompts.ts](../src/data/voicePrompts.ts).
 Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.ts`.
 
 - Mỗi lệnh gọi `triggerSpeech(text, voiceId)` truyền ID tường minh; không dò ID theo nội dung khi phát hoặc nghe lại.
@@ -14,6 +14,100 @@ Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.
 - Thử tài phân loại tự đọc hướng dẫn, phản hồi nối/gỡ/kiểm tra, chuyển lượt và hoàn thành. Lời nhắc an toàn có nút bấm để nghe. Giữ phản hồi hoàn thành lượt 4,5 giây trước khi chuyển lượt để hạn chế ngắt câu.
 - `continue_sorting` và `play_area_small` là trạng thái lời nhắc thụ động ở màn chính: có ID lưu cùng lời thoại nhưng không tự phát. Bong bóng và nút nghe lại của robot màn chính hiện đang ẩn; callback nghe lại đã giữ ID tường minh, không thay đổi bố cục để bật lại nút. `selected_unknown` / `picked_unknown` là dự phòng khi thiếu định nghĩa món rác.
 - Danh mục là **lời nói/hướng dẫn/phản hồi**, không phải mọi nhãn nút, tên vật phẩm, văn bản mô tả ảnh, thẻ gợi ý tái sử dụng hoặc hiệu ứng âm thanh.
+- 60 ID câu đầy đủ đã được thay bằng sequence, không còn là ID bản thu và không cần thu/upload. Ứng dụng ghép ba đoạn theo thứ tự; nếu thiếu đoạn hoặc tải/giải mã lỗi, đọc nguyên câu bằng TTS.
+- Sáu câu Khu vườn không thuộc kế hoạch ghép, tiếp tục dùng bản ghi câu đầy đủ như hiện nay. Mười câu chọn trong Thử tài phân loại cũng ghép ba đoạn; 11 prompt còn lại tiếp tục dùng bản ghi riêng.
+
+## Đoạn ghi âm ghép tuần tự (40 ID)
+
+Ứng dụng phát ba đoạn theo thứ tự **câu mở đầu → tên món → câu kết thúc**. Chỉ thu phần chữ trong cột lời thoại; không đọc dấu ngoặc kép quanh tên món. Các đoạn được phát nối tiếp, không phát chồng tiếng.
+
+### Câu mở đầu và kết thúc dùng chung (6 ID)
+
+| ID | Tên file | Lời thoại cần thu |
+|---|---|---|
+| `voice_piece_selected_prefix` | `voice_piece_selected_prefix.mp3` | Bé đã chọn |
+| `voice_piece_selected_suffix` | `voice_piece_selected_suffix.mp3` | Hãy bấm vào thùng rác muốn bỏ nhé! |
+| `voice_piece_picked_prefix` | `voice_piece_picked_prefix.mp3` | Kiến Sáng đã nhặt |
+| `voice_piece_picked_suffix` | `voice_piece_picked_suffix.mp3` | Hãy đưa tới thùng rác thích hợp nhé! |
+| `voice_piece_sorting_prefix` | `voice_piece_sorting_prefix.mp3` | Đã chọn |
+| `voice_piece_sorting_suffix` | `voice_piece_sorting_suffix.mp3` | Bé chạm vào những ý tưởng phù hợp nhé! |
+
+### Tên món rác lớp học (15 ID)
+
+| ID | Tên file | Lời thoại cần thu |
+|---|---|---|
+| `voice_piece_name_vo_hop_sua` | `voice_piece_name_vo_hop_sua.mp3` | Vỏ hộp sữa |
+| `voice_piece_name_vo_hop_giay` | `voice_piece_name_vo_hop_giay.mp3` | Vỏ hộp giấy |
+| `voice_piece_name_giay_cu` | `voice_piece_name_giay_cu.mp3` | Giầy cũ |
+| `voice_piece_name_vo_chai` | `voice_piece_name_vo_chai.mp3` | Vỏ chai thủy tinh |
+| `voice_piece_name_ong_nhua` | `voice_piece_name_ong_nhua.mp3` | Ống nhựa (ống hút) |
+| `voice_piece_name_vo_keo` | `voice_piece_name_vo_keo.mp3` | Vỏ kẹo (túi nilon) |
+| `voice_piece_name_vo_lon` | `voice_piece_name_vo_lon.mp3` | Vỏ lon nước ngọt |
+| `voice_piece_name_vo_chai_nhua` | `voice_piece_name_vo_chai_nhua.mp3` | Vỏ chai nhựa |
+| `voice_piece_name_xuong_ca` | `voice_piece_name_xuong_ca.mp3` | Xương cá |
+| `voice_piece_name_dui_ga` | `voice_piece_name_dui_ga.mp3` | Xương đùi gà |
+| `voice_piece_name_vo_dua_hau` | `voice_piece_name_vo_dua_hau.mp3` | Vỏ dưa hấu |
+| `voice_piece_name_banh_mi` | `voice_piece_name_banh_mi.mp3` | Mẩu bánh mì |
+| `voice_piece_name_la_cay` | `voice_piece_name_la_cay.mp3` | Lá cây |
+| `voice_piece_name_vo_chuoi` | `voice_piece_name_vo_chuoi.mp3` | Vỏ chuối |
+| `voice_piece_name_vo_tao` | `voice_piece_name_vo_tao.mp3` | Lõi / Vỏ táo |
+
+### Tên món rác sân trường (10 ID)
+
+| ID | Tên file | Lời thoại cần thu |
+|---|---|---|
+| `voice_piece_name_yard_flower_petals` | `voice_piece_name_yard_flower_petals.mp3` | Cánh hoa rụng |
+| `voice_piece_name_yard_twig` | `voice_piece_name_yard_twig.mp3` | Cành cây nhỏ |
+| `voice_piece_name_yard_grass` | `voice_piece_name_yard_grass.mp3` | Cỏ vừa cắt |
+| `voice_piece_name_yard_pine_cone` | `voice_piece_name_yard_pine_cone.mp3` | Quả thông khô |
+| `voice_piece_name_yard_acorn` | `voice_piece_name_yard_acorn.mp3` | Quả sồi khô |
+| `voice_piece_name_yard_plastic_cup` | `voice_piece_name_yard_plastic_cup.mp3` | Cốc nhựa |
+| `voice_piece_name_yard_plastic_lid` | `voice_piece_name_yard_plastic_lid.mp3` | Nắp hộp nhựa |
+| `voice_piece_name_yard_plastic_spoon` | `voice_piece_name_yard_plastic_spoon.mp3` | Thìa nhựa |
+| `voice_piece_name_yard_broken_ruler` | `voice_piece_name_yard_broken_ruler.mp3` | Thước nhựa gãy |
+| `voice_piece_name_yard_food_container` | `voice_piece_name_yard_food_container.mp3` | Hộp đựng thức ăn nhựa |
+
+### Tên món trong Thử tài phân loại (9 ID mới)
+
+| ID | Tên file | Lời thoại cần thu |
+|---|---|---|
+| `voice_piece_sorting_name_cd` | `voice_piece_sorting_name_cd.mp3` | Đĩa CD cũ |
+| `voice_piece_sorting_name_chai_nhua` | `voice_piece_sorting_name_chai_nhua.mp3` | Chai nhựa |
+| `voice_piece_sorting_name_cuon_giay` | `voice_piece_sorting_name_cuon_giay.mp3` | Lõi giấy |
+| `voice_piece_sorting_name_giay_vun` | `voice_piece_sorting_name_giay_vun.mp3` | Giấy vụn |
+| `voice_piece_sorting_name_hop_giay` | `voice_piece_sorting_name_hop_giay.mp3` | Hộp giấy |
+| `voice_piece_sorting_name_tat_cu` | `voice_piece_sorting_name_tat_cu.mp3` | Tất cũ |
+| `voice_piece_sorting_name_vo_chai` | `voice_piece_sorting_name_vo_chai.mp3` | Chai thủy tinh |
+| `voice_piece_sorting_name_vo_lon` | `voice_piece_sorting_name_vo_lon.mp3` | Vỏ lon |
+| `voice_piece_sorting_name_vo_lop` | `voice_piece_sorting_name_vo_lop.mp3` | Lốp xe cũ |
+
+Tên “Vỏ hộp giấy” trong `sorting_selected_vo_hop` trùng chính xác, dùng chung `voice_piece_name_vo_hop_giay.mp3`.
+
+### Ánh xạ các ID câu hiện tại sang đoạn
+
+- `selected_<itemId>`: `voice_piece_selected_prefix.mp3` → `voice_piece_name_<itemId>.mp3` → `voice_piece_selected_suffix.mp3`.
+- `picked_<itemId>`: `voice_piece_picked_prefix.mp3` → `voice_piece_name_<itemId>.mp3` → `voice_piece_picked_suffix.mp3`.
+- Với sân trường, `selected_yard_<yardItemId>` và `picked_yard_<yardItemId>` dùng chung các đoạn đầu/cuối tương ứng và `voice_piece_name_yard_<yardItemId>.mp3`.
+- `sorting_selected_<wasteId>`: `voice_piece_sorting_prefix.mp3` → file tên món tương ứng trong bảng trên → `voice_piece_sorting_suffix.mp3`.
+- Ví dụ: `selected_vo_dua_hau` dùng `voice_piece_selected_prefix.mp3` → `voice_piece_name_vo_dua_hau.mp3` → `voice_piece_selected_suffix.mp3`.
+- Ví dụ sân trường: `picked_yard_flower_petals` dùng `voice_piece_picked_prefix.mp3` → `voice_piece_name_yard_flower_petals.mp3` → `voice_piece_picked_suffix.mp3`.
+
+Tổng cộng cần thu **40 file đoạn**. Các khóa logic `selected_*`, `picked_*` và `sorting_selected_*` không phải ID bản thu; mỗi khóa ánh xạ sang đúng ba đoạn.
+
+## Câu chọn món trong Thử tài phân loại — ghép tuần tự (10 ID logic)
+
+Các ID logic sau không có file ghi âm riêng; mỗi câu dùng ba đoạn trong mục trên theo thứ tự đã mô tả.
+
+- `sorting_selected_cd`
+- `sorting_selected_chai_nhua`
+- `sorting_selected_cuon_giay`
+- `sorting_selected_giay_vun`
+- `sorting_selected_hop_giay`
+- `sorting_selected_tat_cu`
+- `sorting_selected_vo_chai`
+- `sorting_selected_vo_hop`
+- `sorting_selected_vo_lon`
+- `sorting_selected_vo_lop`
 
 ## Câu chung cho lớp học / sân trường (21 ID)
 
@@ -41,67 +135,7 @@ Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.
 | `selected_unknown` | `selected_unknown.mp3` | Bé đã chọn "món rác"! Hãy bấm vào thùng rác muốn bỏ nhé! |
 | `picked_unknown` | `picked_unknown.mp3` | Kiến Sáng đã nhặt "món rác"! Hãy đưa tới thùng rác thích hợp nhé! |
 
-## Lớp học — chọn và nhặt 15 món rác (30 ID)
-
-| ID | Tên file | Lời thoại cần thu |
-|---|---|---|
-| `selected_vo_hop_sua` | `selected_vo_hop_sua.mp3` | Bé đã chọn "Vỏ hộp sữa"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_vo_hop_sua` | `picked_vo_hop_sua.mp3` | Kiến Sáng đã nhặt "Vỏ hộp sữa"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_vo_hop_giay` | `selected_vo_hop_giay.mp3` | Bé đã chọn "Vỏ hộp giấy"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_vo_hop_giay` | `picked_vo_hop_giay.mp3` | Kiến Sáng đã nhặt "Vỏ hộp giấy"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_giay_cu` | `selected_giay_cu.mp3` | Bé đã chọn "Giầy cũ"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_giay_cu` | `picked_giay_cu.mp3` | Kiến Sáng đã nhặt "Giầy cũ"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_vo_chai` | `selected_vo_chai.mp3` | Bé đã chọn "Vỏ chai thủy tinh"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_vo_chai` | `picked_vo_chai.mp3` | Kiến Sáng đã nhặt "Vỏ chai thủy tinh"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_ong_nhua` | `selected_ong_nhua.mp3` | Bé đã chọn "Ống nhựa (ống hút)"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_ong_nhua` | `picked_ong_nhua.mp3` | Kiến Sáng đã nhặt "Ống nhựa (ống hút)"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_vo_keo` | `selected_vo_keo.mp3` | Bé đã chọn "Vỏ kẹo (túi nilon)"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_vo_keo` | `picked_vo_keo.mp3` | Kiến Sáng đã nhặt "Vỏ kẹo (túi nilon)"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_vo_lon` | `selected_vo_lon.mp3` | Bé đã chọn "Vỏ lon nước ngọt"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_vo_lon` | `picked_vo_lon.mp3` | Kiến Sáng đã nhặt "Vỏ lon nước ngọt"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_vo_chai_nhua` | `selected_vo_chai_nhua.mp3` | Bé đã chọn "Vỏ chai nhựa"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_vo_chai_nhua` | `picked_vo_chai_nhua.mp3` | Kiến Sáng đã nhặt "Vỏ chai nhựa"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_xuong_ca` | `selected_xuong_ca.mp3` | Bé đã chọn "Xương cá"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_xuong_ca` | `picked_xuong_ca.mp3` | Kiến Sáng đã nhặt "Xương cá"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_dui_ga` | `selected_dui_ga.mp3` | Bé đã chọn "Xương đùi gà"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_dui_ga` | `picked_dui_ga.mp3` | Kiến Sáng đã nhặt "Xương đùi gà"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_vo_dua_hau` | `selected_vo_dua_hau.mp3` | Bé đã chọn "Vỏ dưa hấu"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_vo_dua_hau` | `picked_vo_dua_hau.mp3` | Kiến Sáng đã nhặt "Vỏ dưa hấu"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_banh_mi` | `selected_banh_mi.mp3` | Bé đã chọn "Mẩu bánh mì"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_banh_mi` | `picked_banh_mi.mp3` | Kiến Sáng đã nhặt "Mẩu bánh mì"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_la_cay` | `selected_la_cay.mp3` | Bé đã chọn "Lá cây"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_la_cay` | `picked_la_cay.mp3` | Kiến Sáng đã nhặt "Lá cây"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_vo_chuoi` | `selected_vo_chuoi.mp3` | Bé đã chọn "Vỏ chuối"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_vo_chuoi` | `picked_vo_chuoi.mp3` | Kiến Sáng đã nhặt "Vỏ chuối"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_vo_tao` | `selected_vo_tao.mp3` | Bé đã chọn "Lõi / Vỏ táo"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_vo_tao` | `picked_vo_tao.mp3` | Kiến Sáng đã nhặt "Lõi / Vỏ táo"! Hãy đưa tới thùng rác thích hợp nhé! |
-
-## Sân trường — chọn và nhặt 10 món rác (20 ID)
-
-| ID | Tên file | Lời thoại cần thu |
-|---|---|---|
-| `selected_yard_flower_petals` | `selected_yard_flower_petals.mp3` | Bé đã chọn "Cánh hoa rụng"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_yard_flower_petals` | `picked_yard_flower_petals.mp3` | Kiến Sáng đã nhặt "Cánh hoa rụng"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_yard_twig` | `selected_yard_twig.mp3` | Bé đã chọn "Cành cây nhỏ"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_yard_twig` | `picked_yard_twig.mp3` | Kiến Sáng đã nhặt "Cành cây nhỏ"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_yard_grass` | `selected_yard_grass.mp3` | Bé đã chọn "Cỏ vừa cắt"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_yard_grass` | `picked_yard_grass.mp3` | Kiến Sáng đã nhặt "Cỏ vừa cắt"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_yard_pine_cone` | `selected_yard_pine_cone.mp3` | Bé đã chọn "Quả thông khô"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_yard_pine_cone` | `picked_yard_pine_cone.mp3` | Kiến Sáng đã nhặt "Quả thông khô"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_yard_acorn` | `selected_yard_acorn.mp3` | Bé đã chọn "Quả sồi khô"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_yard_acorn` | `picked_yard_acorn.mp3` | Kiến Sáng đã nhặt "Quả sồi khô"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_yard_plastic_cup` | `selected_yard_plastic_cup.mp3` | Bé đã chọn "Cốc nhựa"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_yard_plastic_cup` | `picked_yard_plastic_cup.mp3` | Kiến Sáng đã nhặt "Cốc nhựa"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_yard_plastic_lid` | `selected_yard_plastic_lid.mp3` | Bé đã chọn "Nắp hộp nhựa"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_yard_plastic_lid` | `picked_yard_plastic_lid.mp3` | Kiến Sáng đã nhặt "Nắp hộp nhựa"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_yard_plastic_spoon` | `selected_yard_plastic_spoon.mp3` | Bé đã chọn "Thìa nhựa"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_yard_plastic_spoon` | `picked_yard_plastic_spoon.mp3` | Kiến Sáng đã nhặt "Thìa nhựa"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_yard_broken_ruler` | `selected_yard_broken_ruler.mp3` | Bé đã chọn "Thước nhựa gãy"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_yard_broken_ruler` | `picked_yard_broken_ruler.mp3` | Kiến Sáng đã nhặt "Thước nhựa gãy"! Hãy đưa tới thùng rác thích hợp nhé! |
-| `selected_yard_food_container` | `selected_yard_food_container.mp3` | Bé đã chọn "Hộp đựng thức ăn nhựa"! Hãy bấm vào thùng rác muốn bỏ nhé! |
-| `picked_yard_food_container` | `picked_yard_food_container.mp3` | Kiến Sáng đã nhặt "Hộp đựng thức ăn nhựa"! Hãy đưa tới thùng rác thích hợp nhé! |
-
-## Khu vườn (6 ID)
+## Khu vườn — bản ghi câu đầy đủ (6 ID)
 
 | ID | Tên file | Lời thoại cần thu |
 |---|---|---|
@@ -112,7 +146,7 @@ Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.
 | `garden_game_over` | `garden_game_over.mp3` | Nghỉ một chút nhé! Lần sau mình nhớ né gạch, đá và cành cây nhé! |
 | `garden_victory` | `garden_victory.mp3` | Tuyệt vời, bạn nhỏ! Bạn đã đón đủ món ngon. Tuyệt lắm! |
 
-## Thử tài phân loại (21 ID)
+## Thử tài phân loại — câu đầy đủ thông thường (11 ID)
 
 | ID | Tên file | Lời thoại cần thu |
 |---|---|---|
@@ -127,16 +161,6 @@ Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.
 | `sorting_continue` | `sorting_continue.mp3` | Bé hãy nối một hay nhiều hình rồi kiểm tra nhé! |
 | `sorting_safety` | `sorting_safety.mp3` | Một số ý tưởng cần người lớn hỗ trợ. Mình chỉ quan sát tranh và nhờ người lớn giúp nhé! |
 | `sorting_victory` | `sorting_victory.mp3` | Bé giỏi quá! Bé đã tìm được nhiều cách sáng tạo để dùng lại đồ cũ. Nhớ nhờ người lớn giúp với những ý tưởng cần làm thủ công nhé! |
-| `sorting_selected_cd` | `sorting_selected_cd.mp3` | Đã chọn Đĩa CD cũ. Bé chạm vào những ý tưởng phù hợp nhé! |
-| `sorting_selected_chai_nhua` | `sorting_selected_chai_nhua.mp3` | Đã chọn Chai nhựa. Bé chạm vào những ý tưởng phù hợp nhé! |
-| `sorting_selected_cuon_giay` | `sorting_selected_cuon_giay.mp3` | Đã chọn Lõi giấy. Bé chạm vào những ý tưởng phù hợp nhé! |
-| `sorting_selected_giay_vun` | `sorting_selected_giay_vun.mp3` | Đã chọn Giấy vụn. Bé chạm vào những ý tưởng phù hợp nhé! |
-| `sorting_selected_hop_giay` | `sorting_selected_hop_giay.mp3` | Đã chọn Hộp giấy. Bé chạm vào những ý tưởng phù hợp nhé! |
-| `sorting_selected_tat_cu` | `sorting_selected_tat_cu.mp3` | Đã chọn Tất cũ. Bé chạm vào những ý tưởng phù hợp nhé! |
-| `sorting_selected_vo_chai` | `sorting_selected_vo_chai.mp3` | Đã chọn Chai thủy tinh. Bé chạm vào những ý tưởng phù hợp nhé! |
-| `sorting_selected_vo_hop` | `sorting_selected_vo_hop.mp3` | Đã chọn Vỏ hộp giấy. Bé chạm vào những ý tưởng phù hợp nhé! |
-| `sorting_selected_vo_lon` | `sorting_selected_vo_lon.mp3` | Đã chọn Vỏ lon. Bé chạm vào những ý tưởng phù hợp nhé! |
-| `sorting_selected_vo_lop` | `sorting_selected_vo_lop.mp3` | Đã chọn Lốp xe cũ. Bé chạm vào những ý tưởng phù hợp nhé! |
 
 ## Tự tay nhặt rác (8 ID)
 

@@ -45,11 +45,10 @@ export async function listSharedAssets(): Promise<SharedAsset[]> {
   const rows: unknown = await response.json();
   if (!Array.isArray(rows) || !rows.every(row =>
     typeof row === 'object' && row !== null &&
-    typeof row.id === 'string' && typeof row.revision === 'string' &&
-    ASSET_SLOTS.some(slot => slot.id === row.id))) {
+    typeof row.id === 'string' && typeof row.revision === 'string')) {
     throw new Error('Danh sách tài nguyên Supabase không hợp lệ.');
   }
-  return rows;
+  return rows.filter(row => ASSET_SLOTS.some(slot => slot.id === row.id));
 }
 
 export function sharedAssetUrl(asset: SharedAsset) {

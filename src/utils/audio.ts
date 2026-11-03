@@ -155,12 +155,25 @@ export const playVictoryFanfare = () => {
 };
 
 let currentAudio: HTMLAudioElement | null = null;
+let currentBufferSources: AudioBufferSourceNode[] = [];
+let speechPlaybackToken = 0;
 
 export const stopKienSangSpeech = () => {
+  speechPlaybackToken++;
   if (currentAudio) {
     currentAudio.pause();
     currentAudio = null;
   }
+  currentBufferSources.forEach(source => {
+    source.onended = null;
+    try {
+      source.stop();
+      source.disconnect();
+    } catch {
+      // Source may already have ended.
+    }
+  });
+  currentBufferSources = [];
   window.speechSynthesis?.cancel();
 };
 
@@ -185,8 +198,12 @@ export const speakKienSang = (
       };
       audio.play().catch((err) => {
         if (currentAudio !== audio || err?.name === 'AbortError') return;
+        if (err?.name === 'NotAllowedError') {
+          console.warn('Trình duyệt chặn tự phát bản thu. Hãy cho phép phát âm thanh tự động trên trang này.', err);
+          return;
+        }
         console.warn('Không phát được giọng thu âm, chuyển sang đọc văn bản:', err);
-        // Fallback to speech synthesis if play is blocked
+        // Fallback only when the recording is unavailable or unsupported.
         speakFallbackTTS(textVi, onEnded);
       });
       return;
@@ -196,6 +213,64 @@ export const speakKienSang = (
   }
 
   speakFallbackTTS(textVi, onEnded);
+};
+
+export const speakKienSangSequence = async (
+  textVi: string,
+  clipUrls: string[],
+  onEnded?: () => void
+) => {
+  stopKienSangSpeech();
+  const playbackToken = speechPlaybackToken;
+  if (!clipUrls.length || clipUrls.some(url => !url)) {
+    speakFallbackTTS(textVi, onEnded);
+    return;
+  }
+
+  try {
+    const context = getAudioContext();
+    if (context.state === 'suspended') await context.resume();
+    const buffers = await Promise.all(clipUrls.map(async url => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Không tải được đoạn giọng nói: ${url}`);
+      return context.decodeAudioData(await response.arrayBuffer());
+    }));
+    if (playbackToken !== speechPlaybackToken) return;
+
+    const sources = buffers.map(buffer => {
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(context.destination);
+      return source;
+    });
+    currentBufferSources = sources;
+    let startAt = context.currentTime + 0.02;
+    sources.forEach((source, index) => {
+      source.onended = () => {
+        source.disconnect();
+        if (index === sources.length - 1 && playbackToken === speechPlaybackToken) {
+          currentBufferSources = [];
+          onEnded?.();
+        }
+      };
+      source.start(startAt);
+      startAt += buffers[index].duration;
+    });
+  } catch (error) {
+    if (playbackToken !== speechPlaybackToken) return;
+    currentBufferSources.forEach(source => {
+      source.onended = null;
+      try {
+        source.stop();
+        source.disconnect();
+      } catch {
+        // Source may already have ended.
+      }
+    });
+    currentBufferSources = [];
+    console.warn('Không phát được chuỗi giọng thu âm, chuyển sang đọc văn bản:', error);
+    speakFallbackTTS(textVi, onEnded);
+  }
 };
 
 function speakFallbackTTS(textVi: string, onEnded?: () => void) {

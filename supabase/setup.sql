@@ -5,11 +5,13 @@ returns boolean language sql immutable set search_path = '' as $$
     'images/mascot/main', 'images/bins/organic', 'images/bins/recyclable',
     'voice/correct', 'voice/incorrect', 'voice/victory'
   ) or asset_id ~ '^voice/(welcome|continue_sorting|batch_complete|approach_bin|approach_trash|select_trash|bin_unavailable|mode_drag|mode_command|mascot_updated)$'
-    or asset_id ~ '^voice/(selected|picked)_(vo_hop_sua|vo_hop_giay|giay_cu|vo_chai|ong_nhua|vo_keo|vo_lon|vo_chai_nhua|xuong_ca|dui_ga|vo_dua_hau|banh_mi|la_cay|vo_chuoi|vo_tao|unknown|yard_flower_petals|yard_twig|yard_grass|yard_pine_cone|yard_acorn|yard_plastic_cup|yard_plastic_lid|yard_plastic_spoon|yard_broken_ruler|yard_food_container)$'
+    or asset_id in ('voice/selected_unknown', 'voice/picked_unknown')
     or asset_id ~ '^voice/(correct_great|correct_thanks|yard_welcome|yard_victory|scene_busy|play_area_small)$'
     or asset_id ~ '^voice/garden_(intro|free|challenge|hazard|game_over|victory)$'
     or asset_id ~ '^voice/sorting_(intro|start|removed|connected|select|retry|round_complete|more|continue|safety|victory)$'
-    or asset_id ~ '^voice/sorting_selected_(cd|chai_nhua|cuon_giay|giay_vun|hop_giay|tat_cu|vo_chai|vo_hop|vo_lon|vo_lop)$'
+    or asset_id ~ '^voice/voice_piece_(selected_prefix|selected_suffix|picked_prefix|picked_suffix|sorting_prefix|sorting_suffix)$'
+    or asset_id ~ '^voice/voice_piece_name_(vo_hop_sua|vo_hop_giay|giay_cu|vo_chai|ong_nhua|vo_keo|vo_lon|vo_chai_nhua|xuong_ca|dui_ga|vo_dua_hau|banh_mi|la_cay|vo_chuoi|vo_tao|yard_flower_petals|yard_twig|yard_grass|yard_pine_cone|yard_acorn|yard_plastic_cup|yard_plastic_lid|yard_plastic_spoon|yard_broken_ruler|yard_food_container)$'
+    or asset_id ~ '^voice/voice_piece_sorting_name_(cd|chai_nhua|cuon_giay|giay_vun|hop_giay|tat_cu|vo_chai|vo_lon|vo_lop)$'
     or asset_id ~ '^voice/hand_pickup_(intro|retry_organic|retry_inorganic|miss|hint|drop_organic|drop_inorganic|victory)$'
     or asset_id ~ '^images/costumes/tim_rac_(0[1-9]|1[0-5])$'
     or asset_id ~ '^images/costumes/(vui|buon)_0[1-4]$'

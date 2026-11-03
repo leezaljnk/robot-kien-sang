@@ -18,7 +18,7 @@ import { getBinApproachTarget, getCommandMoveDuration, getKeyboardMove } from '.
 import { createMascotPosition } from './utils/mascotPosition';
 import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from './utils/trashSpawn';
 import { drawClassroomTrashItems, drawTrashItems } from './utils/trashCycle';
-import { VOICE_PROMPTS, type TriggerSpeech } from './data/voicePrompts';
+import { currentVoiceClips, VOICE_PROMPTS, VOICE_SEQUENCES, type TriggerSpeech } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
 import { loadProjectAssets } from './utils/preloadedAssets';
 import {
@@ -28,6 +28,7 @@ import {
   playErrorSfx,
   playVictoryFanfare,
   speakKienSang,
+  speakKienSangSequence,
 } from './utils/audio';
 import {
   setPersistentItem,
@@ -193,12 +194,9 @@ export default function App() {
   );
 
   // Child recorded voices
-  const [voiceClips, setVoiceClips] = useState<VoiceClips>(() => ({
-    ...preloaded?.voiceClips,
-    correct: preloaded?.voiceClips?.correct || null,
-    incorrect: preloaded?.voiceClips?.incorrect || null,
-    victory: preloaded?.voiceClips?.victory || null,
-  }));
+  const [voiceClips, setVoiceClips] = useState<VoiceClips>(() =>
+    currentVoiceClips(preloaded?.voiceClips)
+  );
 
   // Dragging state
   const [draggingItem, setDraggingItem] = useState<{
@@ -276,10 +274,10 @@ export default function App() {
           ...embeddedPreloaded,
           customCostumes: { ...serverAssets?.customCostumes, ...embeddedPreloaded?.customCostumes },
           customTrashImages: { ...serverAssets?.customTrashImages, ...embeddedPreloaded?.customTrashImages },
-          voiceClips: {
+          voiceClips: currentVoiceClips({
             correct: null, incorrect: null, victory: null,
             ...serverAssets?.voiceClips, ...embeddedPreloaded?.voiceClips,
-          },
+          }),
         };
 
         const [
@@ -304,11 +302,11 @@ export default function App() {
 
         if (!isMounted) return;
 
-        const mergedVoice: VoiceClips = {
+        const mergedVoice = currentVoiceClips({
           correct: null, incorrect: null, victory: null,
           ...inlinePreloaded?.voiceClips,
           ...savedVoice,
-        };
+        });
         if (Object.values(mergedVoice).some(Boolean)) {
           setVoiceClips(mergedVoice);
         }
@@ -451,7 +449,7 @@ export default function App() {
     setCustomOrganicUrl(settings.customOrganicUrl || null);
     setCustomRecyclableUrl(settings.customRecyclableUrl || null);
     setBinScale(settings.binScale ?? 0.85);
-    setVoiceClips(settings.voiceClips || { correct: null, incorrect: null, victory: null });
+    setVoiceClips(currentVoiceClips(settings.voiceClips));
   };
 
   // Save voice clips
@@ -591,7 +589,17 @@ export default function App() {
         clearTimeout(speechTimeoutRef.current);
       }
 
-      speakKienSang(text, voiceClips[voiceId]);
+      const sequence = VOICE_SEQUENCES[voiceId];
+      if (sequence) {
+        const sequenceClips = sequence.map(id => voiceClips[id]);
+        if (sequenceClips.every((url): url is string => Boolean(url))) {
+          void speakKienSangSequence(text, sequenceClips);
+        } else {
+          speakKienSang(text, null);
+        }
+      } else {
+        speakKienSang(text, voiceClips[voiceId]);
+      }
 
       speechTimeoutRef.current = window.setTimeout(() => {
         // Return to idle message if not victory

@@ -1,8 +1,73 @@
 import { TRASH_ITEMS } from './trashItems';
 import { YARD_TRASH_ITEMS } from './yardTrashItems';
 import { SORTING_GAME_WASTES } from './sortingGame';
+import type { VoiceClips } from '../types';
 
 export type TriggerSpeech = (text: string, voiceId: string) => void;
+
+type VoicePrompt = { id: string; text: string };
+
+export const VOICE_SHARED_PIECES: VoicePrompt[] = [
+  { id: 'voice_piece_selected_prefix', text: 'Bé đã chọn' },
+  { id: 'voice_piece_selected_suffix', text: 'Hãy bấm vào thùng rác muốn bỏ nhé!' },
+  { id: 'voice_piece_picked_prefix', text: 'Kiến Sáng đã nhặt' },
+  { id: 'voice_piece_picked_suffix', text: 'Hãy đưa tới thùng rác thích hợp nhé!' },
+  { id: 'voice_piece_sorting_prefix', text: 'Đã chọn' },
+  { id: 'voice_piece_sorting_suffix', text: 'Bé chạm vào những ý tưởng phù hợp nhé!' },
+];
+
+const namePiecesByText = new Map<string, VoicePrompt>();
+const getNamePiece = (id: string, text: string, prefix = 'voice_piece_name_') => {
+  const existing = namePiecesByText.get(text);
+  if (existing) return existing;
+  const piece = { id: `${prefix}${id}`, text };
+  namePiecesByText.set(text, piece);
+  return piece;
+};
+
+export const VOICE_CLASSROOM_NAME_PIECES = TRASH_ITEMS
+  .map(item => getNamePiece(item.id, item.nameVi));
+export const VOICE_YARD_NAME_PIECES = YARD_TRASH_ITEMS
+  .map(item => getNamePiece(item.id, item.nameVi));
+const trashNamePieces = [...VOICE_CLASSROOM_NAME_PIECES, ...VOICE_YARD_NAME_PIECES];
+const sortingNamePieces = SORTING_GAME_WASTES.map(waste => ({
+  waste,
+  piece: getNamePiece(waste.id, waste.name, 'voice_piece_sorting_name_'),
+}));
+export const VOICE_SORTING_NAME_PIECES = sortingNamePieces
+  .filter(({ piece }) => !trashNamePieces.includes(piece))
+  .map(({ piece }) => piece);
+export const REUSED_SORTING_NAME_PIECES = sortingNamePieces
+  .filter(({ piece }) => trashNamePieces.includes(piece));
+
+export const VOICE_PIECE_PROMPTS: VoicePrompt[] = [
+  ...VOICE_SHARED_PIECES,
+  ...VOICE_CLASSROOM_NAME_PIECES,
+  ...VOICE_YARD_NAME_PIECES,
+  ...VOICE_SORTING_NAME_PIECES,
+];
+
+const itemVoiceSequences = [...TRASH_ITEMS, ...YARD_TRASH_ITEMS].flatMap(item => {
+  const namePiece = getNamePiece(item.id, item.nameVi);
+  return [
+    [`selected_${item.id}`, [
+      'voice_piece_selected_prefix', namePiece.id, 'voice_piece_selected_suffix',
+    ]],
+    [`picked_${item.id}`, [
+      'voice_piece_picked_prefix', namePiece.id, 'voice_piece_picked_suffix',
+    ]],
+  ];
+});
+
+const sortingVoiceSequences = sortingNamePieces.map(({ waste, piece }) => [
+  `sorting_selected_${waste.id}`,
+  ['voice_piece_sorting_prefix', piece.id, 'voice_piece_sorting_suffix'],
+]);
+
+export const VOICE_SEQUENCES: Record<string, string[]> = Object.fromEntries([
+  ...itemVoiceSequences,
+  ...sortingVoiceSequences,
+]);
 
 export const VOICE_PROMPTS = [
   { id: 'correct', text: 'Hoan hô! Đúng rồi bạn ơi!' },
@@ -51,15 +116,21 @@ export const VOICE_PROMPTS = [
   { id: 'hand_pickup_drop_organic', text: 'Mở tay ở thùng Hữu cơ nhé!' },
   { id: 'hand_pickup_drop_inorganic', text: 'Mở tay ở thùng Vô cơ nhé!' },
   { id: 'hand_pickup_victory', text: 'Tuyệt vời! Con đã dọn sạch tất cả món rác!' },
-  ...SORTING_GAME_WASTES.map(waste => ({
-    id: `sorting_selected_${waste.id}`,
-    text: `Đã chọn ${waste.name}. Bé chạm vào những ý tưởng phù hợp nhé!`,
-  })),
-  ...[...TRASH_ITEMS, ...YARD_TRASH_ITEMS].flatMap(item => [
-    { id: `selected_${item.id}`, text: `Bé đã chọn "${item.nameVi}"! Hãy bấm vào thùng rác muốn bỏ nhé!` },
-    { id: `picked_${item.id}`, text: `Kiến Sáng đã nhặt "${item.nameVi}"! Hãy đưa tới thùng rác thích hợp nhé!` },
-  ]),
+  ...VOICE_PIECE_PROMPTS,
 ];
+
+export const VOICE_CLIP_IDS = new Set(VOICE_PROMPTS.map(prompt => prompt.id));
+
+export function currentVoiceClips(clips?: Record<string, string | null>): VoiceClips {
+  return {
+    ...Object.fromEntries(
+      Object.entries(clips || {}).filter(([id]) => VOICE_CLIP_IDS.has(id))
+    ),
+    correct: clips?.correct || null,
+    incorrect: clips?.incorrect || null,
+    victory: clips?.victory || null,
+  };
+}
 
 export function voiceIdForText(text: string): string | undefined {
   return VOICE_PROMPTS.find(prompt => prompt.text === text)?.id;
