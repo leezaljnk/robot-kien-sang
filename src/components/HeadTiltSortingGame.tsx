@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
-  ArrowRight,
   Camera,
   CameraOff,
   Check,
@@ -11,8 +10,6 @@ import {
   Eye,
   EyeOff,
   Frown,
-  Leaf,
-  Recycle,
   RotateCcw,
   Sparkles,
   Volume2,
@@ -42,6 +39,7 @@ import {
 } from '../utils/headTiltSorting';
 import visionWasmBinaryUrl from '@mediapipe/tasks-vision/vision_wasm_internal.wasm?url';
 import visionWasmLoaderUrl from '@mediapipe/tasks-vision/vision_wasm_internal.js?url';
+import './HeadTiltSortingGame.css';
 
 type GamePhase = 'intro' | 'playing' | 'feedback' | 'paused' | 'complete';
 
@@ -75,12 +73,12 @@ const cameraErrorMessage = (error: unknown) => {
 
 export const HeadTiltSortingGame: React.FC<HeadTiltSortingGameProps> = ({
   onExit,
-  customMascotUrl,
 }) => {
   const [phase, setPhase] = useState<GamePhase>('intro');
   const [cameraState, setCameraState] = useState<HeadTiltCameraState>('off');
   const [cameraError, setCameraError] = useState('');
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<TrashCategory | null>(null);
   const [questionCount, setQuestionCount] = useState(String(HEAD_TILT_ROUND_COUNT));
   const validQuestionCount = isValidHeadTiltRoundCount(Number(questionCount));
   const [secondsRemaining, setSecondsRemaining] = useState(HEAD_TILT_QUESTION_SECONDS);
@@ -95,6 +93,11 @@ export const HeadTiltSortingGame: React.FC<HeadTiltSortingGameProps> = ({
   const [calibrationProgress, setCalibrationProgress] = useState(0);
   const [trackingStatus, setTrackingStatus] = useState<HeadTiltSignalStatus | null>(null);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const [videoBounds, setVideoBounds] = useState({ width: 0, gap: 0 });
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const questionImageRef = useRef<HTMLDivElement>(null);
+  const flightRef = useRef<HTMLImageElement>(null);
+  const binRefs = useRef<Partial<Record<TrashCategory, HTMLButtonElement>>>({});
   const videoRef = useRef<HTMLVideoElement>(null);
   const celebrationCanvasRef = useRef<HTMLCanvasElement>(null);
   const feedbackIconRef = useRef<HTMLDivElement>(null);
@@ -112,6 +115,51 @@ export const HeadTiltSortingGame: React.FC<HeadTiltSortingGameProps> = ({
   const currentRound = rounds[roundIndex];
   const currentItem = currentRound?.item;
   const clockRunning = (phase === 'playing' || phase === 'feedback') && cameraState === 'ready';
+  const stageActive = phase === 'playing' || phase === 'feedback';
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !stageActive) return;
+    const updateBounds = () => {
+      const aspectRatio = video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : 4 / 3;
+      const width = Math.min(video.clientWidth, video.clientHeight * aspectRatio);
+      const gap = Math.max(0, (video.clientHeight - width / aspectRatio) / 2);
+      setVideoBounds(previous => previous.width === width && previous.gap === gap ? previous : { width, gap });
+    };
+    const observer = new ResizeObserver(updateBounds);
+    observer.observe(video);
+    video.addEventListener('loadedmetadata', updateBounds);
+    video.addEventListener('resize', updateBounds);
+    updateBounds();
+    return () => {
+      observer.disconnect();
+      video.removeEventListener('loadedmetadata', updateBounds);
+      video.removeEventListener('resize', updateBounds);
+    };
+  }, [stageActive]);
+
+  useEffect(() => {
+    if (phase !== 'feedback' || !selectedCategory || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const layout = layoutRef.current;
+    const source = questionImageRef.current?.querySelector('img');
+    const target = binRefs.current[selectedCategory]?.querySelector('.head-tilt-bin-art');
+    const flyer = flightRef.current;
+    if (!layout || !source || !target || !flyer) return;
+    const layoutBounds = layout.getBoundingClientRect();
+    const sourceBounds = source.getBoundingClientRect();
+    const targetBounds = target.getBoundingClientRect();
+    const scale = layoutBounds.width / layout.clientWidth;
+    const startX = (sourceBounds.left - layoutBounds.left) / scale;
+    const startY = (sourceBounds.top - layoutBounds.top) / scale;
+    const endX = (targetBounds.left + targetBounds.width / 2 - sourceBounds.width / 2 - layoutBounds.left) / scale;
+    const endY = (targetBounds.top + targetBounds.height * 0.18 - sourceBounds.height / 2 - layoutBounds.top) / scale;
+    const animation = flyer.animate([
+      { transform: `translate(${startX}px, ${startY}px) scale(1)`, opacity: 1 },
+      { transform: `translate(${(startX + endX) / 2}px, ${Math.min(startY, endY) - 24}px) scale(0.85) rotate(${selectedCategory === 'organic' ? -18 : 18}deg)`, opacity: 1, offset: 0.45 },
+      { transform: `translate(${endX}px, ${endY}px) scale(0.15)`, opacity: 0 },
+    ], { duration: 650, easing: 'ease-in-out', fill: 'both' });
+    return () => animation.cancel();
+  }, [phase, selectedCategory, roundIndex]);
 
   useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
 
@@ -301,6 +349,7 @@ export const HeadTiltSortingGame: React.FC<HeadTiltSortingGameProps> = ({
     if (phaseRef.current !== 'playing' || !currentItem || !isHeadTiltCameraReady(cameraState, streamRef.current?.active ?? false)) return;
     phaseRef.current = 'feedback';
     setPhase('feedback');
+    setSelectedCategory(choice);
     detectorRef.current?.lockUntilNeutral();
     if (detectorRef.current) setTrackingStatus(detectorRef.current.status);
     const isCorrect = evaluateHeadTiltChoice(currentItem, choice);
@@ -402,13 +451,30 @@ export const HeadTiltSortingGame: React.FC<HeadTiltSortingGameProps> = ({
   };
 
   const canAnswer = isHeadTiltCameraReady(cameraState, streamRef.current?.active ?? false);
-  const cameraCandidate = trackingStatus?.direction ? headTiltDirectionToCategory(trackingStatus.direction) : null;
   const cameraTiltValue = Math.max(-1, Math.min(1, -(trackingStatus?.offset ?? 0) / HEAD_TILT_ENTER_RADIANS));
+  const earlyCandidate = phase === 'playing' && canAnswer && faceDetected && trackingStatus?.enabled && !trackingStatus.needsNeutral && Math.abs(cameraTiltValue) >= 0.35
+    ? cameraTiltValue < 0 ? 'organic' : 'recyclable'
+    : null;
+  const highlightedCategory = phase === 'feedback' ? selectedCategory : earlyCandidate;
   const imageUrl = currentItem && !failedImages[currentItem.id]
     ? HEAD_TILT_TRASH_IMAGES[currentItem.id]
     : undefined;
+
+  useEffect(() => {
+    const question = questionImageRef.current?.parentElement;
+    const target = highlightedCategory ? binRefs.current[highlightedCategory] : null;
+    if (!question || !target) return;
+    const sourceBounds = question.getBoundingClientRect();
+    const targetBounds = target.getBoundingClientRect();
+    const scale = sourceBounds.width / question.clientWidth;
+    const deltaX = (targetBounds.left + targetBounds.width / 2 - sourceBounds.left - sourceBounds.width / 2) / scale;
+    const deltaY = (targetBounds.top - sourceBounds.bottom) / scale;
+    question.style.setProperty('--trash-pull-x', `${Math.max(-28, Math.min(28, deltaX * 0.12))}px`);
+    question.style.setProperty('--trash-pull-y', `${Math.max(-14, Math.min(14, deltaY * 0.12))}px`);
+  }, [highlightedCategory, videoBounds, roundIndex, phase]);
+
   return (
-    <main className="absolute inset-0 z-40 flex max-h-dvh min-h-0 flex-col overflow-hidden bg-white text-slate-900">
+    <main className="head-tilt-game absolute inset-0 z-40 flex max-h-dvh min-h-0 flex-col overflow-hidden bg-white text-slate-900">
       <canvas ref={celebrationCanvasRef} aria-hidden="true" className="pointer-events-none absolute inset-0 z-50 h-full w-full" />
       <header className="shrink-0 border-b border-emerald-100 bg-white/95">
         <div className="flex min-h-12 items-center justify-between gap-2 px-2 py-1 lg:min-h-14 lg:px-6 lg:py-2">
@@ -433,73 +499,67 @@ export const HeadTiltSortingGame: React.FC<HeadTiltSortingGameProps> = ({
         )}
       </header>
 
-      <div className="grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 p-2 sm:grid-cols-[minmax(220px,2fr)_minmax(0,3fr)] sm:grid-rows-[minmax(0,1fr)] sm:gap-3 sm:p-3 lg:gap-6 lg:px-6 lg:py-4 xl:px-8">
-        <div className="contents sm:flex sm:min-h-0 sm:min-w-0 sm:flex-col sm:overflow-y-auto lg:pr-1" aria-label="Câu hỏi và đáp án">
+      <div ref={layoutRef} style={{ '--camera-width': videoBounds.width ? `${videoBounds.width}px` : '100%', '--video-gap': `${videoBounds.gap}px` } as React.CSSProperties} className={`head-tilt-layout grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 p-2 sm:grid-cols-[minmax(220px,2fr)_minmax(0,3fr)] sm:grid-rows-[minmax(0,1fr)] sm:gap-3 sm:p-3 lg:gap-6 lg:px-6 lg:py-4 xl:px-8 ${stageActive ? 'head-tilt-layout--active' : phase === 'intro' ? 'head-tilt-layout--intro' : ''}`}>
+        <div className="head-tilt-content contents sm:flex sm:min-h-0 sm:min-w-0 sm:flex-col sm:overflow-y-auto lg:pr-1" aria-label="Câu hỏi và đáp án">
         {phase === 'intro' && (
-          <section className="col-start-1 row-start-1 grid items-center gap-3 py-1 sm:my-auto lg:gap-6 lg:py-4">
-            <div className="py-1 lg:py-3">
-              <div className="flex h-full flex-col justify-between gap-3 lg:gap-6">
-                <div className="flex items-center gap-3 lg:gap-4">
-                  <img src={customMascotUrl || './images/kien-sang-main.png'} alt="Kiến Sáng" className="size-12 rounded-full border-2 border-white bg-white object-contain shadow-sm lg:size-24" />
-                  <div>
-                    <p className="hidden text-xs font-extrabold uppercase text-emerald-800 lg:block">Trò chơi mới</p>
-                    <h2 className="text-xl font-black leading-tight text-emerald-950 lg:mt-1 lg:text-4xl">Nghiêng đầu<br />phân loại rác</h2>
-                  </div>
-                </div>
-                <p className="max-w-lg text-sm font-medium leading-snug text-emerald-950 lg:text-base lg:leading-relaxed">
-                  Bật camera để phân loại <strong>Hữu cơ</strong> hoặc <strong>Vô cơ</strong> bằng cử động đầu hoặc chạm đáp án.
-                </p>
-              </div>
+          <section className="head-tilt-intro">
+            <div className="head-tilt-intro-art" aria-hidden="true">
+              <span className="head-tilt-intro-ground" />
+              <img className="head-tilt-intro-bin head-tilt-intro-bin--left" src="./images/camera/thung_rac_huu_co.png" alt="" />
+              <img className="head-tilt-intro-bin head-tilt-intro-bin--right" src="./images/camera/thung_rac_vo_co.png" alt="" />
+              <img className="head-tilt-intro-trash head-tilt-intro-trash--left" src={HEAD_TILT_TRASH_IMAGES.huu_co_01} alt="" />
+              <img className="head-tilt-intro-trash head-tilt-intro-trash--right" src={HEAD_TILT_TRASH_IMAGES.vo_co_01} alt="" />
+              <Sparkles className="head-tilt-intro-spark head-tilt-intro-spark--left" />
+              <Sparkles className="head-tilt-intro-spark head-tilt-intro-spark--right" />
             </div>
-            <div className="flex flex-col gap-3">
-              <label htmlFor="head-tilt-question-count" className="flex flex-wrap items-center gap-3 text-sm font-bold text-slate-800">
+            <div className="head-tilt-intro-copy">
+              <h2><span>Gật Gù</span> <span>Bỏ Rác</span></h2>
+              <p>Cùng phân loại rác hữu cơ và vô cơ bằng cử động nghiêng đầu.</p>
+            </div>
+            <div className="head-tilt-intro-controls">
+              <label htmlFor="head-tilt-question-count" className="head-tilt-intro-count">
                 Số câu hỏi
                 <input id="head-tilt-question-count" type="number" min="1" step="1" value={questionCount} disabled={cameraState === 'requesting'} onChange={event => setQuestionCount(event.target.value)} aria-invalid={!validQuestionCount} aria-describedby={!validQuestionCount ? 'head-tilt-count-error' : undefined} className="min-h-11 w-24 rounded-lg border border-slate-400 bg-white px-3 py-2 text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700" />
               </label>
-              {!validQuestionCount && <p id="head-tilt-count-error" role="alert" className="text-xs font-semibold text-red-800">Nhập số câu hỏi là số nguyên lớn hơn 0.</p>}
-              <p className="text-xs leading-relaxed text-slate-700 lg:text-sm">Mỗi câu có đồng hồ 10 giây. Hết giờ, bé vẫn được chọn đáp án. Camera chỉ xử lý trên thiết bị, không ghi hoặc gửi hình ảnh.</p>
-              <button type="button" onClick={() => void beginCameraGame()} disabled={cameraState === 'requesting' || !validQuestionCount} className="flex min-h-11 touch-manipulation items-center justify-center gap-3 rounded-lg bg-emerald-800 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-emerald-900 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:cursor-wait disabled:opacity-60 lg:min-h-14 lg:px-5 lg:py-3 lg:text-base">
+              <button type="button" onClick={() => void beginCameraGame()} disabled={cameraState === 'requesting' || !validQuestionCount} className="head-tilt-intro-start flex touch-manipulation items-center justify-center gap-3 rounded-lg font-black text-white transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">
                 <Camera className="h-5 w-5" />
                 {cameraState === 'requesting' ? 'Đang bật camera…' : 'Bật camera'}
               </button>
+              {!validQuestionCount && <p id="head-tilt-count-error" role="alert" className="head-tilt-intro-error text-xs font-semibold text-red-800">Nhập số câu hỏi là số nguyên lớn hơn 0.</p>}
+              {cameraState === 'error' && <p role="alert" className="head-tilt-intro-error text-sm font-semibold text-red-800">{cameraError}</p>}
             </div>
           </section>
         )}
 
-        {phase === 'playing' && currentItem && (
-          <section className="contents sm:flex sm:h-full sm:min-h-0 sm:flex-col sm:gap-3 lg:gap-4" aria-live="polite">
-            <div className="col-start-1 row-start-1 flex min-w-0 flex-col gap-2 sm:min-h-0 sm:flex-1 sm:rounded-3xl sm:border sm:border-emerald-100 sm:bg-gradient-to-b sm:from-emerald-50 sm:to-white sm:p-4 lg:p-6">
-            <div className="grid items-center gap-2 sm:flex sm:min-h-0 sm:flex-1 sm:flex-col sm:gap-4">
-              <div className="grid grid-cols-[minmax(0,1fr)_72px] items-center gap-2 py-1 sm:flex sm:min-h-0 sm:w-full sm:flex-1 sm:flex-col sm:gap-4 lg:gap-6">
-                <div className="min-w-0 sm:w-full">
-                  <p className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase text-emerald-800 lg:text-xs"><Sparkles className="size-3 lg:size-4" aria-hidden="true" />Bé hãy phân loại</p>
-                  <h2 className="mt-1 break-words text-lg font-black leading-snug text-slate-950 lg:mt-2 lg:text-3xl">Rác trong hình thuộc nhóm nào?</h2>
-                </div>
-                <div className="relative grid aspect-square max-h-20 w-full max-w-20 place-items-center justify-self-end overflow-hidden rounded-2xl bg-emerald-50 p-1 sm:aspect-auto sm:min-h-0 sm:max-h-none sm:max-w-none sm:flex-1 sm:bg-white/80 lg:p-3">
-                  {imageUrl && <img src={imageUrl} alt="Ảnh rác cần phân loại" className="absolute inset-0 z-10 h-full w-full object-contain p-1 lg:p-3" onError={() => setFailedImages(previous => ({ ...previous, [currentItem.id]: true }))} />}
-                  {!imageUrl && <div role="status" className="relative z-10 text-center"><Sparkles className="mx-auto size-6 text-emerald-800 lg:size-12" /><span className="mt-2 text-xs font-bold">Không tải được ảnh rác</span></div>}
-                </div>
+        {stageActive && currentItem && (
+          <section className="head-tilt-stage" aria-label="Sân khấu phân loại">
+            <div key={currentItem.id + roundIndex} className={`head-tilt-question ${highlightedCategory ? `head-tilt-question--${highlightedCategory}` : ''} ${phase === 'feedback' ? 'head-tilt-question--answered' : ''}`} aria-live="polite">
+              <div ref={questionImageRef} className="head-tilt-question-image">
+                {imageUrl ? <img src={imageUrl} alt="Ảnh rác cần phân loại" onError={() => setFailedImages(previous => ({ ...previous, [currentItem.id]: true }))} /> : <span role="status">Không tải được ảnh rác</span>}
               </div>
             </div>
-
-            </div>
-            <div role="group" aria-label="Đáp án" className="col-start-1 row-start-3 grid shrink-0 grid-cols-2 gap-2 lg:gap-4">
-              <button type="button" disabled={!canAnswer} onClick={() => submitChoice('organic')} className={`group flex min-h-14 touch-manipulation items-center justify-center gap-2 rounded-2xl border-2 bg-emerald-50 px-2 py-2 text-center shadow-[0_3px_0_#a7f3d0] transition enabled:hover:-translate-y-0.5 enabled:hover:bg-emerald-100 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transform-none motion-reduce:transition-none lg:min-h-28 lg:flex-col lg:px-3 lg:py-3 ${cameraCandidate === 'organic' ? 'border-emerald-700 ring-2 ring-emerald-300' : 'border-emerald-800/35'}`}>
-                <Leaf className="size-5 text-emerald-800 lg:size-7" aria-hidden="true" />
-                <span className="text-sm font-black text-emerald-950 lg:text-lg">Hữu cơ</span>
-                <span className="hidden text-xs font-medium text-slate-600 lg:block">Lá, thức ăn, vỏ quả</span>
-              </button>
-              <button type="button" disabled={!canAnswer} onClick={() => submitChoice('recyclable')} className={`group flex min-h-14 touch-manipulation items-center justify-center gap-2 rounded-2xl border-2 bg-sky-50 px-2 py-2 text-center shadow-[0_3px_0_#bae6fd] transition enabled:hover:-translate-y-0.5 enabled:hover:bg-sky-100 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-sky-600 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transform-none motion-reduce:transition-none lg:min-h-28 lg:flex-col lg:px-3 lg:py-3 ${cameraCandidate === 'recyclable' ? 'border-sky-700 ring-2 ring-sky-300' : 'border-sky-800/35'}`}>
-                <Recycle className="size-5 text-sky-800 lg:size-7" aria-hidden="true" />
-                <span className="text-sm font-black text-sky-950 lg:text-lg">Vô cơ</span>
-                <span className="hidden text-xs font-medium text-slate-600 lg:block">Giấy, nhựa, kim loại</span>
-              </button>
+            <div role="group" aria-label="Đáp án" className="head-tilt-answers">
+              {(['organic', 'recyclable'] as const).map(category => {
+                const selected = highlightedCategory === category;
+                return (
+                  <button ref={element => { if (element) binRefs.current[category] = element; else delete binRefs.current[category]; }} key={category} type="button" aria-label={CATEGORY_LABELS[category]} disabled={!canAnswer || phase !== 'playing'} onClick={() => submitChoice(category)} className={`head-tilt-bin head-tilt-bin--${category} ${selected ? 'head-tilt-bin--selected' : ''}`}>
+                    <span className="head-tilt-bin-art" aria-hidden="true">
+                      <span className="head-tilt-bin-opening" />
+                      <img className="head-tilt-bin-body" src={`./images/camera/thung_rac_${category === 'organic' ? 'huu_co' : 'vo_co'}.png`} alt="" />
+                      <img className="head-tilt-bin-lid" src={`./images/camera/thung_rac_${category === 'organic' ? 'huu_co' : 'vo_co'}.png`} alt="" />
+                    </span>
+                    {selected && phase === 'playing' && <span className="head-tilt-bin-status" aria-hidden="true">Đang chọn</span>}
+                  </button>
+                );
+              })}
             </div>
           </section>
         )}
 
+        {phase === 'feedback' && imageUrl && <img ref={flightRef} src={imageUrl} alt="" aria-hidden="true" className="head-tilt-flight" />}
+
         {phase === 'feedback' && currentItem && (
-          <section className="col-start-1 row-start-1 flex flex-col items-center gap-2 py-1 text-center sm:my-auto lg:gap-5 lg:py-8" aria-live="assertive">
+          <section className="head-tilt-feedback flex flex-col items-center gap-2 text-center" aria-live="assertive">
             <div ref={feedbackIconRef} aria-hidden="true" className={`relative grid size-12 place-items-center rounded-full lg:size-24 ${lastAnswerCorrect ? 'bg-emerald-100 text-emerald-800 motion-safe:animate-bounce motion-reduce:animate-none' : 'bg-sky-100 text-sky-800'}`}>
               {lastAnswerCorrect ? <Check className="size-7 lg:size-12" /> : <>
                 <Frown className="size-8 lg:size-14" />
@@ -538,36 +598,32 @@ export const HeadTiltSortingGame: React.FC<HeadTiltSortingGameProps> = ({
           </section>
         )}
         </div>
-        <aside aria-label="Camera" className={`col-start-1 row-start-2 min-h-0 min-w-0 flex-col gap-1 sm:col-start-2 sm:row-start-1 sm:h-full sm:border-l sm:border-slate-200 sm:pl-3 lg:gap-3 lg:pl-6 ${phase === 'complete' ? 'hidden sm:flex' : 'flex'}`}>
-          <div className="hidden min-h-10 shrink-0 flex-wrap items-center justify-between gap-2 lg:flex">
+        <aside aria-label="Camera" className={`head-tilt-camera col-start-1 row-start-2 min-h-0 min-w-0 flex-col gap-1 sm:col-start-2 sm:row-start-1 sm:h-full sm:border-l sm:border-slate-200 sm:pl-3 lg:gap-3 lg:pl-6 ${phase === 'complete' ? 'hidden sm:flex' : 'flex'}`}>
+          <div className="head-tilt-camera-heading hidden min-h-10 shrink-0 flex-wrap items-center justify-between gap-2 lg:flex">
             <h2 className="flex items-center gap-2 text-base font-black text-slate-800"><Camera className="h-5 w-5 text-sky-700" />Camera</h2>
             <span className={`inline-flex items-center gap-2 text-xs font-bold ${cameraState === 'off' || cameraState === 'error' ? 'text-slate-500' : 'text-emerald-800'}`}>
               <span aria-hidden="true" className={`size-2 rounded-full ${cameraState === 'off' || cameraState === 'error' ? 'bg-slate-400' : 'bg-emerald-600'}`} />
               {cameraState === 'off' ? 'Đã tắt' : cameraState === 'error' ? 'Chưa kết nối' : cameraState === 'requesting' ? 'Đang kết nối' : 'Đang bật'}
             </span>
           </div>
-          <div className={`relative min-h-0 w-full flex-1 overflow-hidden rounded-lg ${cameraState === 'off' || cameraState === 'error' || !previewVisible ? 'bg-sky-50' : 'bg-slate-950'}`} style={cameraState === 'off' || cameraState === 'error' || !previewVisible ? { backgroundImage: 'radial-gradient(#bae6fd 1px, transparent 1px)', backgroundSize: '20px 20px' } : undefined}>
+          <div className={`head-tilt-video relative min-h-0 w-full flex-1 overflow-hidden rounded-lg ${cameraState === 'off' || cameraState === 'error' || !previewVisible ? 'bg-sky-50' : 'bg-slate-950'}`} style={cameraState === 'off' || cameraState === 'error' || !previewVisible ? { backgroundImage: 'radial-gradient(#bae6fd 1px, transparent 1px)', backgroundSize: '20px 20px' } : undefined}>
             <video ref={videoRef} muted playsInline aria-label="Xem trước camera, hình ảnh chỉ xử lý trên thiết bị" className={`absolute inset-0 h-full w-full scale-x-[-1] object-contain ${previewVisible && cameraState !== 'off' && cameraState !== 'error' ? '' : 'opacity-0'}`} />
             {(cameraState === 'off' || cameraState === 'error' || !previewVisible) && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-2 text-center lg:gap-4 lg:p-5">
-                <img src={customMascotUrl || './images/kien-sang-main.png'} alt="Kiến Sáng" className="size-16 object-contain lg:size-40" />
+                <CameraOff className="size-10 text-sky-700" aria-hidden="true" />
                 <p className="text-xs font-bold text-sky-950 lg:text-sm">{cameraState === 'error' ? 'Camera chưa sẵn sàng' : cameraState === 'off' ? 'Camera đã tắt' : 'Đã ẩn hình xem trước'}</p>
               </div>
             )}
           </div>
-          <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(40px,auto)_20px] items-center gap-x-2 gap-y-1 lg:min-h-28 lg:grid-rows-[minmax(40px,auto)_56px] lg:gap-3">
+          <div className="head-tilt-camera-controls grid shrink-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(40px,auto)_20px] items-center gap-x-2 gap-y-1 lg:min-h-28 lg:grid-rows-[minmax(40px,auto)_56px] lg:gap-3">
           <div className="col-start-1 row-start-1 flex min-h-10 min-w-0 items-center justify-between gap-2 lg:gap-3">
             <p role={cameraState === 'error' ? 'alert' : 'status'} className="min-w-0 text-xs font-semibold leading-4 text-slate-600 lg:text-sm">
-              {cameraState === 'off' ? 'Cần bật camera để chơi' : cameraState === 'error' ? cameraError : cameraState === 'requesting' ? 'Đang kết nối camera…' : cameraState === 'calibrating' ? !faceDetected ? 'Đang tìm khuôn mặt' : 'Giữ đầu thẳng và ổn định để hiệu chỉnh' : !faceDetected ? 'Đưa khuôn mặt vào khung hình' : phase === 'feedback' ? 'Đã chọn đáp án' : trackingStatus?.needsNeutral ? 'Đưa đầu thẳng về giữa' : !trackingStatus?.enabled ? 'Đang chuẩn bị câu hỏi' : cameraCandidate ? `Đang chọn: ${CATEGORY_LABELS[cameraCandidate]}` : 'Camera sẵn sàng'}
+              {cameraState === 'off' ? 'Cần bật camera để chơi' : cameraState === 'error' ? cameraError : cameraState === 'requesting' ? 'Đang kết nối camera…' : cameraState === 'calibrating' ? !faceDetected ? 'Đang tìm khuôn mặt' : 'Giữ đầu thẳng và ổn định để hiệu chỉnh' : !faceDetected ? 'Đưa khuôn mặt vào khung hình' : phase === 'feedback' ? 'Đã chọn đáp án' : trackingStatus?.needsNeutral ? 'Đưa đầu thẳng về giữa' : !trackingStatus?.enabled ? 'Đang chuẩn bị câu hỏi' : earlyCandidate ? `Đang chọn: ${CATEGORY_LABELS[earlyCandidate]}` : 'Camera sẵn sàng'}
             </p>
             {cameraState === 'calibrating' && <span className="shrink-0 text-sm font-bold text-sky-800">{calibrationProgress}/{HEAD_TILT_CALIBRATION_SAMPLE_COUNT}</span>}
           </div>
           {cameraState === 'ready' && (
             <div className="col-span-2 row-start-2 flex min-h-0 flex-col gap-1 lg:gap-2" aria-label="Tín hiệu nghiêng đầu">
-              <div className="hidden items-center justify-between gap-3 text-xs font-bold lg:flex">
-                <span className="flex items-center gap-1 text-emerald-800"><ArrowLeft className="size-4" />Hữu cơ</span>
-                <span className="flex items-center gap-1 text-sky-800">Vô cơ<ArrowRight className="size-4" /></span>
-              </div>
               <div role="meter" aria-label="Hướng nghiêng đầu" aria-valuemin={-1} aria-valuemax={1} aria-valuenow={cameraTiltValue} className="relative h-3 rounded-full bg-slate-100 lg:h-5">
                 <span className="absolute bottom-0 left-1/2 top-0 w-px bg-slate-400" aria-hidden="true" />
                 <span className={`absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full lg:size-3 ${faceDetected ? 'bg-emerald-700' : 'bg-slate-400'}`} style={{ left: `${50 + cameraTiltValue * 43}%` }} aria-hidden="true" />

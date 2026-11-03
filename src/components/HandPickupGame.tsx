@@ -5,7 +5,7 @@ import visionWasmBinaryUrl from '@mediapipe/tasks-vision/vision_wasm_internal.wa
 import visionWasmLoaderUrl from '@mediapipe/tasks-vision/vision_wasm_internal.js?url';
 import {
   canPickUp, createHandPickupRounds, getHandDropCategory, getHandOpenness, HAND_DROP_ZONES,
-  HAND_PICKUP_COUNT, HAND_PICKUP_MAX_COUNT, HandGestureDetector, isValidHandPickupCount, mapHandPoint, PICKUP_ORIGIN, stepHandPickup,
+  HAND_PICKUP_COUNT, HAND_PICKUP_MAX_COUNT, HandGestureDetector, isValidHandPickupCount, mapHandPoint, PICKUP_ORIGIN, smoothHandPoint, stepHandPickup,
   type HandGesture, type HandPickupRound, type HandPickupState, type HandPoint,
 } from '../utils/handPickup';
 import { playCountdownSfx, playErrorSfx, playPickSfx, playSuccessSfx, speakKienSang, stopKienSangSpeech } from '../utils/audio';
@@ -79,6 +79,7 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
   const detectorRef = useRef(new HandGestureDetector());
   const pickupRef = useRef<HandPickupState>({ ...EMPTY_PICKUP });
   const pointRef = useRef<HandPoint | null>(null);
+  const targetPointRef = useRef<HandPoint | null>(null);
   const phaseRef = useRef<Phase>('intro');
   const roundsRef = useRef<HandPickupRound[]>([]);
   const completedRef = useRef(0);
@@ -97,6 +98,7 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
     detectorRef.current.reset();
     pickupRef.current = { ...EMPTY_PICKUP };
     pointRef.current = null;
+    targetPointRef.current = null;
     resumeOpenRef.current = false;
     setPointer(null);
     setGesture(null);
@@ -237,9 +239,15 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
       let lastInference = -Infinity;
       let lastVideoTime = -1;
       let lastSeen = performance.now();
+      let lastRender = lastSeen;
       const processFrame = (now: number) => {
         if (session !== sessionRef.current) return;
-        if (now - lastInference >= 66 && phaseRef.current === 'playing' && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+        if (targetPointRef.current && phaseRef.current === 'playing') {
+          pointRef.current = smoothHandPoint(targetPointRef.current, pointRef.current, now - lastRender);
+          setPointer(pointRef.current);
+        }
+        lastRender = now;
+        if (now - lastInference >= 33 && phaseRef.current === 'playing' && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
           lastInference = now;
           lastVideoTime = video.currentTime;
           try {
@@ -250,9 +258,12 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
             } else {
               lastSeen = now;
               const palm = [0, 5, 9, 13, 17].reduce((sum, index) => ({ x: sum.x + landmarks[index].x / 5, y: sum.y + landmarks[index].y / 5 }), { x: 0, y: 0 });
-              const point = mapHandPoint(palm, pointRef.current);
-              pointRef.current = point;
-              setPointer(point);
+              targetPointRef.current = mapHandPoint(palm);
+              const point = pointRef.current ?? targetPointRef.current;
+              if (!pointRef.current) {
+                pointRef.current = point;
+                setPointer(point);
+              }
               const nextGesture = detectorRef.current.update(openness, now);
               setGesture(nextGesture);
               if (nextGesture === 'open') resumeOpenRef.current = true;

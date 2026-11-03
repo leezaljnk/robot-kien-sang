@@ -46,6 +46,21 @@ test('custom lengths exhaust the pool before repeating and avoid consecutive rep
   assert.equal(createHeadTiltRounds(smallPool.slice(0, 1), () => 0, 3).length, 3);
 });
 
+test('categories stay balanced when possible and never run longer than two across catalogue cycles', () => {
+  for (const random of [() => 0, () => 0.999, Math.random]) {
+    for (const count of [1, 7, 20, 70, 140]) {
+      const balanced = createHeadTiltRounds(undefined, random, count);
+      const organicCount = balanced.filter(round => round.item.category === 'organic').length;
+      assert(Math.abs(organicCount - (count - organicCount)) <= 1);
+    }
+    const rounds = createHeadTiltRounds(undefined, random, HEAD_TILT_TRASH_ITEMS.length * 3 + 7);
+    for (let index = 2; index < rounds.length; index++) {
+      assert(!(rounds[index].item.category === rounds[index - 1].item.category &&
+        rounds[index].item.category === rounds[index - 2].item.category));
+    }
+  }
+});
+
 test('question counts accept positive integers only', () => {
   for (const count of [0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
     assert.equal(isValidHeadTiltRoundCount(count), false);

@@ -1,6 +1,6 @@
 import { HEAD_TILT_TRASH_ITEMS, type HeadTiltTrashItem } from '../data/headTiltTrashItems';
 import type { TrashCategory } from '../types';
-import { shuffleItems } from './headTiltSorting';
+import { shuffleBalancedTrashItems, shuffleItems } from './headTiltSorting';
 
 export interface HandPoint { x: number; y: number }
 export type HandGesture = 'open' | 'closed';
@@ -26,7 +26,7 @@ export function createHandPickupRounds(random: () => number = Math.random, count
   const organic = shuffleItems(HEAD_TILT_TRASH_ITEMS.filter(item => item.category === 'organic'), random);
   const inorganic = shuffleItems(HEAD_TILT_TRASH_ITEMS.filter(item => item.category === 'recyclable'), random);
   const organicCount = Math.max(count - inorganic.length, Math.min(organic.length, Math.floor(count / 2) + (count % 2 && random() >= 0.5 ? 1 : 0)));
-  return shuffleItems([...organic.slice(0, organicCount), ...inorganic.slice(0, count - organicCount)], random)
+  return shuffleBalancedTrashItems([...organic.slice(0, organicCount), ...inorganic.slice(0, count - organicCount)], random)
     .map(item => ({ ...item, origin: createHandPickupPosition(random) }));
 }
 
@@ -34,6 +34,12 @@ export function mapHandPoint(point: HandPoint, previous: HandPoint | null = null
   const target = { x: Math.max(0, Math.min(1, 1 - point.x)), y: Math.max(0, Math.min(1, point.y)) };
   if (!previous) return target;
   return { x: previous.x + (target.x - previous.x) * 0.45, y: previous.y + (target.y - previous.y) * 0.45 };
+}
+
+export function smoothHandPoint(target: HandPoint, previous: HandPoint | null, elapsedMs: number): HandPoint {
+  if (!previous) return target;
+  const blend = 1 - Math.exp(-Math.max(0, elapsedMs) / 45);
+  return { x: previous.x + (target.x - previous.x) * blend, y: previous.y + (target.y - previous.y) * blend };
 }
 
 export function canPickUp(point: HandPoint, origin: HandPoint = PICKUP_ORIGIN): boolean {

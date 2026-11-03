@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
+import { HEAD_TILT_TRASH_ITEMS } from '../src/data/headTiltTrashItems';
 import { test } from 'node:test';
 import {
   canPickUp, createHandPickupRounds, getHandDropCategory, getHandOpenness,
   createHandPickupPosition, HAND_DROP_ZONES, HAND_PICKUP_MAX_COUNT, isValidHandPickupCount,
-  HandGestureDetector, mapHandPoint, PICKUP_ORIGIN, stepHandPickup,
+  HandGestureDetector, mapHandPoint, PICKUP_ORIGIN, smoothHandPoint, stepHandPickup,
 } from '../src/utils/handPickup';
 
 test('five unique camera items include both categories even at random extremes', () => {
@@ -30,6 +31,25 @@ test('custom counts preserve unique items and both categories up to the whole ca
   for (const count of [0, 1, -2, 2.5, NaN, Infinity, HAND_PICKUP_MAX_COUNT + 1]) {
     assert(!isValidHandPickupCount(count));
     assert.throws(() => createHandPickupRounds(Math.random, count));
+  }
+});
+
+test('hand rounds balance category pairs without long same-category streaks', () => {
+  for (const count of [2, 3, 5, 20, 70, HAND_PICKUP_MAX_COUNT]) {
+    for (const random of [() => 0, () => 0.999, Math.random]) {
+      const rounds = createHandPickupRounds(random, count);
+      const organicCount = rounds.filter(item => item.category === 'organic').length;
+      const organicCapacity = HEAD_TILT_TRASH_ITEMS.filter(item => item.category === 'organic').length;
+      if (count <= organicCapacity * 2) {
+        assert(Math.abs(organicCount - (count - organicCount)) <= 1);
+      } else {
+        assert.equal(organicCount, organicCapacity);
+      }
+      for (let index = 2; index < rounds.length; index++) {
+        assert(!(rounds[index].category === rounds[index - 1].category &&
+          rounds[index].category === rounds[index - 2].category));
+      }
+    }
   }
 });
 
@@ -64,6 +84,23 @@ test('mirrored hand mapping clamps and smooths without cropping the video frame'
   assert.deepEqual(smoothed, { x: 0.45, y: 0.45 });
   assert(canPickUp(PICKUP_ORIGIN));
   assert(!canPickUp({ x: 0, y: 0 }));
+});
+
+test('hand motion advances between detections without overshoot or frame-rate dependence', () => {
+  const start = { x: 0.1, y: 0.9 };
+  const target = { x: 0.9, y: 0.1 };
+  assert.deepEqual(smoothHandPoint(target, null, 16), target);
+  assert.deepEqual(smoothHandPoint(target, start, 0), start);
+  assert.deepEqual(smoothHandPoint(target, start, -1), start);
+  const first = smoothHandPoint(target, start, 1000 / 60);
+  const second = smoothHandPoint(target, first, 1000 / 60);
+  assert(first.x > start.x && second.x > first.x && second.x < target.x);
+  assert(first.y < start.y && second.y < first.y && second.y > target.y);
+  const single = smoothHandPoint(target, start, 1000 / 30);
+  assert(Math.abs(second.x - single.x) < 1e-12);
+  assert(Math.abs(second.y - single.y) < 1e-12);
+  const settled = smoothHandPoint(target, start, 200);
+  assert(Math.hypot(settled.x - target.x, settled.y - target.y) < 0.02);
 });
 
 test('drop buffers help near the rim without overlapping the two bins', () => {

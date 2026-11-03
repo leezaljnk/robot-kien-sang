@@ -40,6 +40,35 @@ export function shuffleItems<T>(items: readonly T[], random: () => number = Math
   return shuffled;
 }
 
+export function shuffleBalancedTrashItems<T extends { category: TrashCategory }>(
+  items: readonly T[],
+  random: () => number = Math.random,
+  previousCategories: readonly TrashCategory[] = [],
+  count = items.length,
+): T[] {
+  const organic = shuffleItems(items.filter(item => item.category === 'organic'), random);
+  const recyclable = shuffleItems(items.filter(item => item.category === 'recyclable'), random);
+  const organicCount = Math.max(count - recyclable.length, Math.min(organic.length,
+    Math.floor(count / 2) + (count % 2 && random() >= 0.5 ? 1 : 0)));
+  organic.length = organicCount;
+  recyclable.length = count - organicCount;
+  const balanced: T[] = [];
+  const categories = previousCategories.slice(-2);
+  const pairCount = Math.min(organic.length, recyclable.length);
+  const surplus = organic.length > recyclable.length ? organic.slice(pairCount) : recyclable.slice(pairCount);
+  if (pairCount === 0) return surplus;
+  for (let index = 0; index < pairCount; index++) {
+    const pair = random() < 0.5 ? [organic[index], recyclable[index]] : [recyclable[index], organic[index]];
+    if (categories.at(-1) === pair[0].category && categories.at(-2) === pair[0].category) pair.reverse();
+    balanced.push(...pair);
+    categories.push(...pair.map(item => item.category));
+    const extraItems = surplus.slice(Math.floor(index * surplus.length / pairCount), Math.floor((index + 1) * surplus.length / pairCount));
+    balanced.push(...extraItems);
+    categories.push(...extraItems.map(item => item.category));
+  }
+  return balanced;
+}
+
 export function createHeadTiltRounds(
   items: readonly HeadTiltRound['item'][] = HEAD_TILT_TRASH_ITEMS,
   random: () => number = Math.random,
@@ -49,7 +78,8 @@ export function createHeadTiltRounds(
   if (items.length === 0) throw new Error('Cần ít nhất một ảnh rác để bắt đầu trò chơi.');
   const rounds: HeadTiltRound[] = [];
   while (rounds.length < roundCount) {
-    const cycle = shuffleItems(items, random);
+    const cycle = shuffleBalancedTrashItems(items, random, rounds.slice(-2).map(round => round.item.category),
+      Math.min(items.length, roundCount - rounds.length));
     if (cycle.length > 1 && cycle[0].id === rounds.at(-1)?.item.id) {
       [cycle[0], cycle[1]] = [cycle[1], cycle[0]];
     }
