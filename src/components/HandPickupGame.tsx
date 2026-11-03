@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Camera, CameraOff, Check, Eye, EyeOff, Hand, Leaf, LoaderCircle, RotateCcw, Star, Trash2, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, CameraOff, Check, Eye, EyeOff, Leaf, LoaderCircle, RotateCcw, ShieldCheck, Star, Trash2, Volume2, VolumeX, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import visionWasmBinaryUrl from '@mediapipe/tasks-vision/vision_wasm_internal.wasm?url';
 import visionWasmLoaderUrl from '@mediapipe/tasks-vision/vision_wasm_internal.js?url';
@@ -7,9 +7,11 @@ import {
   canPickUp, createHandPickupRounds, getHandDropCategory, getHandOpenness, HAND_DROP_ZONES,
   HAND_PICKUP_COUNT, HAND_PICKUP_MAX_COUNT, HandGestureDetector, isValidHandPickupCount, mapHandPoint, PICKUP_ORIGIN, smoothHandPoint, stepHandPickup,
   type HandGesture, type HandPickupRound, type HandPickupState, type HandPoint,
+  advanceHandPickupTimer, HAND_PICKUP_TIME_MS, HAND_PICKUP_BONUS_MS,
 } from '../utils/handPickup';
 import { playCountdownSfx, playErrorSfx, playPickSfx, playSuccessSfx, speakKienSang, stopKienSangSpeech } from '../utils/audio';
 import type { TrashCategory, VoiceClips } from '../types';
+import { HandPickupTimer } from './HandPickupTimer';
 import './HandPickupGame.css';
 
 type Phase = 'intro' | 'playing' | 'feedback' | 'complete';
@@ -68,6 +70,16 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
   const [sound, setSound] = useState(true);
   const [preview, setPreview] = useState(true);
   const [confirmExit, setConfirmExit] = useState(false);
+  const [remainingMs, setRemainingMs] = useState(HAND_PICKUP_TIME_MS);
+  const [timeWindowMs, setTimeWindowMs] = useState(HAND_PICKUP_TIME_MS);
+  const [softTimeout, setSoftTimeout] = useState(false);
+  const [grabFlash, setGrabFlash] = useState<HandPoint | null>(null);
+  const [trail, setTrail] = useState<(HandPoint & { id: number })[]>([]);
+  const [dropPoint, setDropPoint] = useState<HandPoint | null>(null);
+  const [dropCategory, setDropCategory] = useState<TrashCategory | null>(null);
+  const remainingRef = useRef(HAND_PICKUP_TIME_MS);
+  const lastTrailRef = useRef(0);
+  const stageRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const celebrationRef = useRef<ReturnType<typeof confetti.create> | null>(null);
@@ -94,6 +106,68 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
     if (soundRef.current) speakKienSang(text, voiceClips[voiceId]);
   }
 
+  function resetQuestionClock() {
+    remainingRef.current = HAND_PICKUP_TIME_MS;
+    setRemainingMs(HAND_PICKUP_TIME_MS);
+    setTimeWindowMs(HAND_PICKUP_TIME_MS);
+    setSoftTimeout(false);
+    setDropPoint(null);
+    setDropCategory(null);
+  }
+
+  useEffect(resetQuestionClock, [completed, currentItem?.id]);
+
+  useEffect(() => {
+    if (phase !== 'playing' || cameraState !== 'ready' || confirmExit) return;
+    let last = performance.now();
+    const interval = window.setInterval(() => {
+      const now = performance.now();
+      const elapsed = now - last;
+      last = now;
+      const running = phaseRef.current === 'playing' && pointRef.current !== null && document.visibilityState === 'visible';
+      const timer = advanceHandPickupTimer(remainingRef.current, elapsed, running);
+      remainingRef.current = timer.remainingMs;
+      setRemainingMs(timer.remainingMs);
+      if (timer.warning && soundRef.current) playCountdownSfx();
+      if (timer.extended) {
+        if (!pickupRef.current.holding) {
+          const nextRounds = roundsRef.current.map((round, index) => index === completedRef.current ? { ...round, origin: { ...PICKUP_ORIGIN } } : round);
+          roundsRef.current = nextRounds;
+          setRounds(nextRounds);
+          resetTracking();
+        }
+        setTimeWindowMs(HAND_PICKUP_BONUS_MS);
+        setSoftTimeout(true);
+        setMessage('Thêm 10 giây! Bé cứ thử tiếp nhé!');
+        lastActionRef.current = now;
+      }
+    }, 100);
+    return () => window.clearInterval(interval);
+  }, [phase, cameraState, confirmExit]);
+
+  useEffect(() => {
+    if (!softTimeout) return;
+    const timeout = window.setTimeout(() => setSoftTimeout(false), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [softTimeout]);
+
+  useEffect(() => {
+    if (!grabFlash) return;
+    const timeout = window.setTimeout(() => setGrabFlash(null), 650);
+    return () => window.clearTimeout(timeout);
+  }, [grabFlash]);
+
+  function celebrateAt(point: HandPoint, small = false) {
+    if (!canvasRef.current || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    celebrationRef.current ??= confetti.create(canvasRef.current, { resize: true });
+    void celebrationRef.current({
+      particleCount: small ? 12 : 50, spread: small ? 50 : 80,
+      startVelocity: small ? 14 : 28, ticks: small ? 45 : 100,
+      colors: ['#34d399', '#38bdf8', '#facc15', '#fb7185', '#ffffff'],
+      origin: point, disableForReducedMotion: true,
+    });
+  }
+
   function resetTracking() {
     detectorRef.current.reset();
     pickupRef.current = { ...EMPTY_PICKUP };
@@ -103,6 +177,8 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
     setPointer(null);
     setGesture(null);
     setHolding(false);
+    setTrail(previous => previous.length ? [] : previous);
+    setGrabFlash(null);
   }
 
   function releaseResources() {
@@ -124,6 +200,7 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
     releaseResources();
     resetTracking();
     setCameraState('off');
+    setSoftTimeout(false);
     stopKienSangSpeech();
     if (phaseRef.current === 'feedback') {
       phaseRef.current = completedRef.current === roundsRef.current.length ? 'complete' : 'playing';
@@ -149,15 +226,18 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
     phaseRef.current = 'feedback';
     setPhase('feedback');
     setFeedback(result);
+    setDropPoint({ ...point });
+    const category = getHandDropCategory(point);
+    setDropCategory(category);
+    setTrail([]);
+    setGrabFlash(null);
     lastActionRef.current = performance.now();
     if (result === 'correct') {
       completedRef.current++;
       if (soundRef.current) playSuccessSfx();
       triggerSpeech('Tuyệt vời quá! Bé giỏi lắm!', 'correct_great');
-      if (canvasRef.current) {
-        celebrationRef.current ??= confetti.create(canvasRef.current, { resize: true });
-        void celebrationRef.current({ particleCount: 45, spread: 65, origin: point, disableForReducedMotion: true });
-      }
+      const zone = category ? HAND_DROP_ZONES[category] : null;
+      celebrateAt(zone ? { x: zone.x + zone.width / 2, y: zone.y + zone.height * 0.12 } : point);
     } else {
       if (soundRef.current) playErrorSfx();
       if (result === 'miss') triggerSpeech('Chưa tới thùng rồi, con thử lại nhé!', 'hand_pickup_miss');
@@ -169,6 +249,8 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
       timerRef.current = null;
       setCompleted(completedRef.current);
       setFeedback(null);
+      setDropPoint(null);
+      setDropCategory(null);
       resetTracking();
       if (completedRef.current === roundsRef.current.length) {
         releaseResources();
@@ -217,6 +299,7 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
       if (session !== sessionRef.current) { model.close(); return; }
       modelRef.current = model;
       if (newGame || phaseRef.current === 'intro' || phaseRef.current === 'complete') {
+        resetQuestionClock();
         roundsRef.current = createHandPickupRounds(Math.random, Number(itemCount));
         completedRef.current = 0;
         setRounds(roundsRef.current);
@@ -245,6 +328,11 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
         if (targetPointRef.current && phaseRef.current === 'playing') {
           pointRef.current = smoothHandPoint(targetPointRef.current, pointRef.current, now - lastRender);
           setPointer(pointRef.current);
+          if (pickupRef.current.holding && now - lastTrailRef.current >= 45) {
+            const point = pointRef.current;
+            lastTrailRef.current = now;
+            setTrail(previous => [...previous.slice(-8), { ...point, id: now }]);
+          }
         }
         lastRender = now;
         if (now - lastInference >= 33 && phaseRef.current === 'playing' && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
@@ -277,6 +365,8 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
                   lastActionRef.current = now;
                   setMessage('Đã nhặt được! Đưa tay tới thùng nào.');
                   if (soundRef.current) playPickSfx();
+                  setGrabFlash({ ...point });
+                  celebrateAt(point, true);
                 }
                 if (next.result) finishDrop(next.result, point);
               }
@@ -308,7 +398,17 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
 
   const activeBin = holding && pointer ? getHandDropCategory(pointer) : null;
   const nearby = pointer && currentItem && canPickUp(pointer, currentItem.origin) && !holding;
-  const itemPosition = feedback === 'correct' && pointer ? pointer : holding && pointer ? pointer : currentItem?.origin ?? PICKUP_ORIGIN;
+  const itemPosition = feedback && dropPoint ? dropPoint : holding && pointer ? pointer : currentItem?.origin ?? PICKUP_ORIGIN;
+  const dropZone = dropCategory ? HAND_DROP_ZONES[dropCategory] : null;
+  const stageWidth = stageRef.current?.clientWidth ?? 0;
+  const stageHeight = stageRef.current?.clientHeight ?? 0;
+  const itemFxStyle = {
+    left: `${itemPosition.x * 100}%`, top: `${itemPosition.y * 100}%`,
+    '--return-x': `${((currentItem?.origin.x ?? 0.5) - itemPosition.x) * stageWidth}px`,
+    '--return-y': `${((currentItem?.origin.y ?? 0.37) - itemPosition.y) * stageHeight}px`,
+    '--drop-x': `${(dropZone ? dropZone.x + dropZone.width / 2 - itemPosition.x : 0) * stageWidth}px`,
+    '--drop-y': `${(dropZone ? dropZone.y + dropZone.height * 0.12 - itemPosition.y : 0) * stageHeight}px`,
+  } as React.CSSProperties;
   const loading = cameraState === 'loading';
   const playing = phase === 'playing' || phase === 'feedback';
 
@@ -332,7 +432,7 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
         }}>{sound ? <Volume2 /> : <VolumeX />}</button>
       </header>
 
-      <div className="hand-stage" inert={confirmExit}>
+      <div ref={stageRef} className={`hand-stage ${phase === 'intro' ? 'hand-stage--intro' : ''}`} inert={confirmExit}>
         <div className={`hand-preview ${!preview ? 'preview-hidden' : ''}`} data-tracking={pointer ? 'found' : 'searching'}>
           <video ref={videoRef} muted playsInline autoPlay aria-label="Camera lật gương" />
           <span>{cameraState === 'ready' ? pointer ? 'Đã thấy tay' : 'Đang tìm bàn tay' : loading ? 'Đang mở camera' : 'Camera đã tắt'}</span>
@@ -343,9 +443,12 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
         </div>}
 
         {playing && currentItem && <>
-          <div className="hand-status" role="status" aria-live="polite">{cameraState !== 'ready' ? 'Ván chơi đang tạm dừng' : !pointer ? 'Đưa bàn tay mở vào trước camera' : message}</div>
-          <div key={currentItem.id} className={`hand-item ${nearby ? 'nearby' : ''} ${holding ? 'held' : ''} ${feedback === 'correct' ? 'sorted' : ''} ${feedback === 'wrong' || feedback === 'miss' ? 'retry' : ''}`}
-            style={{ left: `${itemPosition.x * 100}%`, top: `${itemPosition.y * 100}%` }}>
+          <div className="hand-status" role="status" aria-live="polite">{cameraState !== 'ready' ? 'Ván chơi đang tạm dừng' : softTimeout ? <span className="hand-soft-timeout"><GameImage src={customMascotUrl || `${import.meta.env.BASE_URL}images/kien-sang-main.png`} alt="Kiến Sáng" fallback={<Star />} /><span>Thêm 10 giây!<br />Bé cứ thử tiếp nhé!</span></span> : !pointer ? 'Đưa bàn tay mở vào trước camera' : message}</div>
+          <div className="hand-trail" aria-hidden="true">{holding && trail.map(point => <Star key={point.id} className="hand-trail-spark" style={{ left: `${point.x * 100}%`, top: `${point.y * 100}%` }} />)}</div>
+          {grabFlash && <span className="hand-grab-label" style={{ left: `${grabFlash.x * 100}%`, top: `${grabFlash.y * 100}%` }} aria-hidden="true">Đã nhặt!</span>}
+          <div key={currentItem.id} className={`hand-item ${nearby ? 'nearby' : ''} ${holding ? 'held' : ''} ${softTimeout && !holding ? 'soft-return' : ''} ${feedback === 'correct' ? 'sorted' : ''} ${feedback === 'wrong' || feedback === 'miss' ? 'retry' : ''}`}
+            style={itemFxStyle}>
+            {phase === 'playing' && <HandPickupTimer remainingMs={remainingMs} totalMs={timeWindowMs} running={cameraState === 'ready' && pointer !== null && !confirmExit} bonus={softTimeout} />}
             <GameImage key={currentItem.image} src={currentItem.image} alt="Món rác cần phân loại" fallback={<Trash2 size={58} />} />
           </div>
           {pointer && cameraState === 'ready' && <div className={`hand-cursor ${gesture === 'closed' ? 'closed' : ''}`} style={{ left: `${pointer.x * 100}%`, top: `${pointer.y * 100}%` }} aria-label={holding ? 'Đang giữ rác' : gesture === 'closed' ? 'Tay nắm' : 'Tay mở'}>
@@ -357,32 +460,52 @@ export function HandPickupGame({ onExit, customMascotUrl, voiceClips }: { onExit
         <div className="hand-ground" />
         {(['organic', 'recyclable'] as const).map(category => {
           const zone = HAND_DROP_ZONES[category];
-          return <div key={category} className={`hand-bin ${category} ${activeBin === category ? 'bin-active' : ''}`} style={{ left: `${zone.x * 100}%`, top: `${zone.y * 100}%`, width: `${zone.width * 100}%`, height: `${zone.height * 100}%` }}>
-            <span className="hand-bin-rim" />
-            <GameImage src={`${import.meta.env.BASE_URL}images/camera/thung_rac_${category === 'organic' ? 'huu_co' : 'vo_co'}.png`} alt={`Thùng ${LABELS[category]}`} fallback={<Trash2 size={90} />} />
+          return <div key={category} className={`hand-bin ${category} ${activeBin === category ? 'bin-active' : ''} ${dropCategory === category && feedback === 'correct' ? 'bin-correct' : ''} ${dropCategory === category && feedback === 'wrong' ? 'bin-wrong' : ''}`} style={{ left: `${zone.x * 100}%`, top: `${zone.y * 100}%`, width: `${zone.width * 100}%`, height: `${zone.height * 100}%` }}>
+            <span className="hand-bin-art">
+              <span className="hand-bin-rim" />
+              <GameImage className="hand-bin-body" src={`${import.meta.env.BASE_URL}images/camera/thung_rac_${category === 'organic' ? 'huu_co' : 'vo_co'}.png`} alt={`Thùng ${LABELS[category]}`} fallback={<Trash2 size={90} />} />
+              <GameImage className="hand-bin-lid" src={`${import.meta.env.BASE_URL}images/camera/thung_rac_${category === 'organic' ? 'huu_co' : 'vo_co'}.png`} alt="" fallback={null} />
+            </span>
           </div>;
         })}
+        {feedback && dropPoint && <span key={`${completed}-${feedback}`} className={`hand-drop-label ${feedback === 'correct' ? 'hand-drop-label--correct' : ''}`} aria-hidden="true" style={{ left: `${(dropZone ? dropZone.x + dropZone.width / 2 : Math.max(0.25, Math.min(0.75, dropPoint.x))) * 100}%`, top: `${(dropZone ? dropZone.y - 0.04 : Math.max(0.3, Math.min(0.6, dropPoint.y))) * 100}%` }}>{feedback === 'correct' ? 'CHÍNH XÁC!' : 'Thử lại nhé!'}</span>}
         <canvas ref={canvasRef} className="hand-confetti" />
 
-        {phase === 'intro' && <div className="hand-welcome">
-          <GameImage src={customMascotUrl || `${import.meta.env.BASE_URL}images/kien-sang-main.png`} alt="Robot Kiến Sáng" fallback={<Hand size={80} />} className="hand-mascot" />
-          <h2>Cùng Kiến Sáng dọn rác nào!</h2>
-          <div className="hand-gesture-demo" aria-label="Mở tay, nắm để nhặt, mở để thả"><HandIllustration /><span>→</span><HandIllustration closed /><span>→</span><HandIllustration /></div>
-          <label className="hand-count" htmlFor="hand-item-count">Số món rác
-            <input id="hand-item-count" type="number" inputMode="numeric" min={2} max={HAND_PICKUP_MAX_COUNT} step={1} value={itemCount} disabled={loading}
-              aria-invalid={!validItemCount} aria-describedby={!validItemCount ? 'hand-count-error' : undefined} onChange={event => setItemCount(event.target.value)} />
-          </label>
-          {!validItemCount && <span id="hand-count-error" className="hand-count-error" role="alert">Nhập số nguyên từ 2 đến {HAND_PICKUP_MAX_COUNT}.</span>}
-          <button className="hand-primary" disabled={loading || !validItemCount} onClick={() => void startCamera(true)}>{loading ? <LoaderCircle className="hand-loading" /> : <Camera />}{loading ? 'Đang chuẩn bị…' : 'Bật camera & Bắt đầu'}</button>
-          <p>Hình ảnh chỉ được xử lý trên thiết bị, không lưu hoặc gửi lên máy chủ.</p>
-        </div>}
+        {phase === 'intro' && <section className="hand-welcome hand-intro" aria-labelledby="hand-intro-title">
+          <div className="hand-intro-art" aria-hidden="true">
+            <span className="hand-intro-ground" />
+            <GameImage className="hand-intro-bin hand-intro-bin--left" src={`${import.meta.env.BASE_URL}images/camera/thung_rac_huu_co.png`} alt="" fallback={<Trash2 />} />
+            <GameImage className="hand-intro-bin hand-intro-bin--right" src={`${import.meta.env.BASE_URL}images/camera/thung_rac_vo_co.png`} alt="" fallback={<Trash2 />} />
+            <div className="hand-intro-pickup">
+              <GameImage className="hand-intro-trash" src={`${import.meta.env.BASE_URL}images/camera/vo_co/vo_co_01.png`} alt="" fallback={<Trash2 />} />
+              <HandIllustration closed />
+            </div>
+            <Star className="hand-intro-spark hand-intro-spark--left" />
+            <Star className="hand-intro-spark hand-intro-spark--right" />
+          </div>
+          <div className="hand-intro-copy">
+            <h2 id="hand-intro-title">Tự tay <span>nhặt rác</span></h2>
+            <p>Bàn tay nhỏ, việc tốt lớn!</p>
+          </div>
+          <div className="hand-gesture-demo hand-intro-gestures" role="img" aria-label="Mở tay, nắm để nhặt, mở để thả"><HandIllustration /><ArrowRight aria-hidden="true" /><HandIllustration closed /><ArrowRight aria-hidden="true" /><HandIllustration /></div>
+          <div className="hand-intro-controls">
+            <label className="hand-count" htmlFor="hand-item-count">Số món rác
+              <input id="hand-item-count" type="number" inputMode="numeric" min={2} max={HAND_PICKUP_MAX_COUNT} step={1} value={itemCount} disabled={loading}
+                aria-invalid={!validItemCount} aria-describedby={!validItemCount ? 'hand-count-error' : undefined} onChange={event => setItemCount(event.target.value)} />
+            </label>
+            <button className="hand-primary hand-intro-start" disabled={loading || !validItemCount} onClick={() => void startCamera(true)}>{loading ? <LoaderCircle className="hand-loading" /> : <Camera />}{loading ? 'Đang chuẩn bị…' : 'Bật camera & Bắt đầu'}</button>
+            {!validItemCount && <span id="hand-count-error" className="hand-count-error" role="alert">Nhập số nguyên từ 2 đến {HAND_PICKUP_MAX_COUNT}.</span>}
+            {error && <p className="hand-intro-error" role="alert">{error}</p>}
+          </div>
+          <p className="hand-intro-privacy"><ShieldCheck size={18} aria-hidden="true" /><span>Hình ảnh chỉ được xử lý trên thiết bị, không lưu hoặc gửi lên máy chủ.</span></p>
+        </section>}
 
         {playing && cameraState !== 'ready' && !confirmExit && <div className="hand-pause" role="status">
           {loading ? <LoaderCircle className="hand-loading" size={32} /> : <CameraOff size={32} />}
           <h2>{loading ? 'Đang chuẩn bị camera…' : 'Nghỉ một chút nhé!'}</h2>
           {!loading && <button className="hand-primary" onClick={() => void startCamera()}><Camera /> Bật camera để tiếp tục</button>}
         </div>}
-        {error && <div className="hand-error" role="alert">{error}</div>}
+        {error && phase !== 'intro' && <div className="hand-error" role="alert">{error}</div>}
 
         {phase === 'complete' && <div className="hand-welcome hand-complete">
           <GameImage src={customMascotUrl || `${import.meta.env.BASE_URL}images/kien-sang-main.png`} alt="Robot Kiến Sáng" fallback={<Star size={80} />} className="hand-mascot" />

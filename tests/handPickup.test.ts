@@ -1,11 +1,79 @@
 import assert from 'node:assert/strict';
 import { HEAD_TILT_TRASH_ITEMS } from '../src/data/headTiltTrashItems';
 import { test } from 'node:test';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { HandPickupTimer } from '../src/components/HandPickupTimer';
 import {
   canPickUp, createHandPickupRounds, getHandDropCategory, getHandOpenness,
   createHandPickupPosition, HAND_DROP_ZONES, HAND_PICKUP_MAX_COUNT, isValidHandPickupCount,
   HandGestureDetector, mapHandPoint, PICKUP_ORIGIN, smoothHandPoint, stepHandPickup,
+  advanceHandPickupTimer, HAND_PICKUP_TIME_MS, HAND_PICKUP_BONUS_MS,
 } from '../src/utils/handPickup';
+
+test('energy ring drains clockwise, exposes remaining time and has no detached time bar', () => {
+  const html = renderToStaticMarkup(createElement(HandPickupTimer, { remainingMs: 5000, totalMs: 20000, running: true, bonus: false }));
+  assert.match(html, /role="progressbar"/);
+  assert.match(html, /aria-valuemax="20"/);
+  assert.match(html, /aria-valuenow="5"/);
+  assert.equal([...html.matchAll(/class="hand-energy-tick"/g)].length, 15);
+  assert.match(html, /data-tick="45"/);
+  assert.doesNotMatch(html, /data-tick="44"/);
+  assert.doesNotMatch(html, /<circle/);
+  assert.match(html, /hand-energy-ring--low/);
+  assert.match(html, /hand-energy-sparks/);
+  assert.doesNotMatch(html, /hand-time-track/);
+});
+
+test('energy ring warns strictly below thirty percent, clamps and supports bonus and paused states', () => {
+  const full = renderToStaticMarkup(createElement(HandPickupTimer, { remainingMs: 25000, totalMs: 20000, running: false, bonus: false }));
+  assert.match(full, /aria-valuenow="20"/);
+  assert.match(full, /đang tạm dừng/);
+  const boundary = renderToStaticMarkup(createElement(HandPickupTimer, { remainingMs: 6000, totalMs: 20000, running: true, bonus: false }));
+  assert.doesNotMatch(boundary, /hand-energy-ring--low/);
+  const bonus = renderToStaticMarkup(createElement(HandPickupTimer, { remainingMs: 10000, totalMs: 10000, running: true, bonus: true }));
+  assert.match(bonus, /aria-valuemax="10"/);
+  assert.match(bonus, /\+10s/);
+  assert.doesNotMatch(bonus, /hand-energy-ring--low/);
+  const empty = renderToStaticMarkup(createElement(HandPickupTimer, { remainingMs: -1, totalMs: 20000, running: false, bonus: false }));
+  assert.match(empty, /aria-valuenow="0"/);
+  assert.doesNotMatch(empty, /class="hand-energy-tick"/);
+});
+
+test('energy ticks disappear monotonically and refill completely for bonus time', () => {
+  for (const [remainingMs, count] of [[20000, 60], [15000, 45], [10000, 30], [5000, 15], [1, 1], [0, 0]]) {
+    const html = renderToStaticMarkup(createElement(HandPickupTimer, { remainingMs, totalMs: 20000, running: true, bonus: false }));
+    assert.equal([...html.matchAll(/class="hand-energy-tick"/g)].length, count);
+  }
+  const bonus = renderToStaticMarkup(createElement(HandPickupTimer, { remainingMs: 10000, totalMs: 10000, running: true, bonus: true }));
+  assert.equal([...bonus.matchAll(/class="hand-energy-tick"/g)].length, 60);
+});
+
+test('energy rings have independent fuel gradient IDs', () => {
+  const html = renderToStaticMarkup(createElement('div', null,
+    createElement(HandPickupTimer, { remainingMs: 20000, totalMs: 20000, running: true, bonus: false }),
+    createElement(HandPickupTimer, { remainingMs: 1000, totalMs: 20000, running: true, bonus: false })));
+  const ids = [...html.matchAll(/linearGradient id="([^"]+)"/g)].map(match => match[1]);
+  assert.equal(ids.length, 2);
+  assert.equal(new Set(ids).size, 2);
+});
+
+test('soft timer pauses without consuming time and only ticks on the final four second boundaries', () => {
+  assert.deepEqual(advanceHandPickupTimer(HAND_PICKUP_TIME_MS, 5000, false), { remainingMs: HAND_PICKUP_TIME_MS, extended: false, warning: false });
+  assert.deepEqual(advanceHandPickupTimer(5100, 100, true), { remainingMs: 5000, extended: false, warning: false });
+  for (const seconds of [4, 3, 2, 1]) {
+    assert.deepEqual(advanceHandPickupTimer(seconds * 1000 + 100, 100, true), { remainingMs: seconds * 1000, extended: false, warning: true });
+    assert.equal(advanceHandPickupTimer(seconds * 1000, 100, true).warning, false);
+  }
+  assert.equal(advanceHandPickupTimer(5000, -100, true).remainingMs, 5000);
+});
+
+test('soft timeout repeatedly grants a fresh bonus instead of ending the round', () => {
+  for (const elapsed of [500, 1000, 60000]) {
+    assert.deepEqual(advanceHandPickupTimer(500, elapsed, true), { remainingMs: HAND_PICKUP_BONUS_MS, extended: true, warning: false });
+  }
+  assert.equal(advanceHandPickupTimer(HAND_PICKUP_BONUS_MS, HAND_PICKUP_BONUS_MS, true).extended, true);
+});
 
 test('five unique camera items include both categories even at random extremes', () => {
   for (const random of [() => 0, () => 0.999, Math.random]) {

@@ -6,6 +6,17 @@ export interface HandPoint { x: number; y: number }
 export type HandGesture = 'open' | 'closed';
 export const HAND_PICKUP_COUNT = 5;
 export const HAND_PICKUP_MAX_COUNT = HEAD_TILT_TRASH_ITEMS.length;
+export const HAND_PICKUP_TIME_MS = 20000;
+export const HAND_PICKUP_BONUS_MS = 10000;
+
+export function advanceHandPickupTimer(remainingMs: number, elapsedMs: number, running: boolean) {
+  if (!running) return { remainingMs, extended: false, warning: false };
+  const next = remainingMs - Math.max(0, elapsedMs);
+  if (next <= 0) return { remainingMs: HAND_PICKUP_BONUS_MS, extended: true, warning: false };
+  const seconds = Math.ceil(next / 1000);
+  return { remainingMs: next, extended: false, warning: seconds <= 4 && seconds < Math.ceil(remainingMs / 1000) };
+}
+
 export const PICKUP_ORIGIN: HandPoint = { x: 0.5, y: 0.37 };
 export interface HandPickupRound extends HeadTiltTrashItem { origin: HandPoint }
 export const HAND_DROP_ZONES = {
