@@ -1,0 +1,14 @@
+- main [ref=e640]:
+  - generic [ref=e642]:
+    - button "Về màn chơi chính" [ref=e643]
+    - button "Tắt âm thanh" [ref=e648]
+  - generic "Câu hỏi và đáp án" [ref=e654]:
+    - generic [ref=e655]:
+      - generic [ref=e664]:
+        - heading "Gật Gù Bỏ Rác" [level=2] [ref=e665]
+        - paragraph [ref=e666]: Cùng phân loại rác hữu cơ và vô cơ bằng cử động nghiêng đầu.
+      - generic [ref=e667]:
+        - generic [ref=e668]:
+          - text: Số câu hỏi
+          - spinbutton "Số câu hỏi" [ref=e669]: "20"
+        - button "Bật camera" [ref=e670]

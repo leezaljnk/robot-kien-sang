@@ -1,0 +1,17 @@
+- region "Tự tay nhặt rác" [ref=e408]:
+  - generic [ref=e409]:
+    - button "Thoát trò chơi" [ref=e410] [cursor=pointer]
+    - heading "Tự tay nhặt rác" [level=1] [ref=e413]
+    - button "Tắt âm thanh" [pressed] [ref=e414] [cursor=pointer]
+  - region [ref=e420]:
+    - generic [ref=e435]:
+      - heading "Tự tay nhặt rác" [level=2] [ref=e436]
+      - paragraph [ref=e437]: Bàn tay nhỏ, việc tốt lớn!
+    - img "Mở tay, nắm để nhặt, mở để thả" [ref=e438]
+    - generic [ref=e462]:
+      - generic [ref=e463]:
+        - text: Số món rác
+        - spinbutton "Số món rác" [ref=e464]: "5"
+      - button "Bật camera & Bắt đầu" [ref=e465] [cursor=pointer]
+    - paragraph [ref=e469]:
+      - generic [ref=e473]: Hình ảnh chỉ được xử lý trên thiết bị, không lưu hoặc gửi lên máy chủ.

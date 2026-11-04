@@ -1,0 +1,69 @@
+- generic [ref=e22]:
+  - generic [ref=e23]:
+    - generic:
+      - button "☀️ Khu vườn" [ref=e172]
+      - region "Hướng dẫn chơi trên bảng phấn" [ref=e26]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: ⭐
+          - generic [ref=e30]: Đời Đời Nhớ Ơn Bác Hồ Vĩ Đại
+          - generic [ref=e31]: ⭐
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - heading "LỚP 2A5 FPT SCHOOL • GIỮ GÌN VỆ SINH LỚP HỌC SẠCH ĐẸP" [level=2] [ref=e34]
+            - paragraph [ref=e35]: "\"Tuổi nhỏ làm việc nhỏ – Tùy theo sức của mình\""
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - generic [ref=e38]: 🍃
+              - generic [ref=e39]:
+                - paragraph [ref=e40]: Thùng Xanh Lá
+                - paragraph [ref=e41]: Rác thức ăn, hoa quả, cây cỏ
+            - generic [ref=e42]:
+              - generic [ref=e43]: ♻️
+              - generic [ref=e44]:
+                - paragraph [ref=e45]: Thùng Cam / Xanh Dương
+                - paragraph [ref=e46]: Hộp sữa, chai nhựa, lon, giấy
+            - paragraph [ref=e47]: "Cách chơi: Chạm kéo rác vào thùng hoặc chọn rác rồi chọn thùng để nhờ Kiến Sáng.Điện thoại: Ở chế độ Nhờ Kiến Sáng, dùng các nút mũi tên và nút ✋ để nhặt / thả rác.Bàn phím: Giữ phím mũi tên ⬆️⬇️➡️⬅️️ để di chuyển; Space / Enter để nhặt hoặc thả rác."
+          - generic [ref=e48]:
+            - generic [ref=e49]: 🖍️ Diệp Anh - Hải Quân - Phúc Hưng
+            - generic [ref=e50]: Bé ơi hãy giúp bạn Kiến Sáng nhé! 🤖
+    - button "Đi ra sân trường" [ref=e173]: 🌳 Ra sân
+    - button "Trang Phục Bạn Kiến 192/215" [ref=e52] [cursor=pointer]:
+      - generic [ref=e55]: Trang Phục Bạn Kiến
+      - generic [ref=e56]: 192/215
+    - button "Thùng Rác Xanh (Hữu Cơ)" [ref=e58] [cursor=pointer]:
+      - button "Bấm để tải ảnh cho Thùng Rác Xanh (Hữu Cơ)" [ref=e174]
+      - img "Thùng Rác Xanh (Hữu Cơ)" [ref=e65]
+      - generic [ref=e66]: 🍃 Thức ăn & Cây cỏ
+    - status "Gợi ý tái sử dụng"
+    - button "Thùng Rác Cam (Tái Chế)" [ref=e68] [cursor=pointer]:
+      - button "Bấm để tải ảnh cho Thùng Rác Cam (Tái Chế)" [ref=e175]
+      - img "Thùng Rác Cam (Tái Chế)" [ref=e75]
+      - generic [ref=e76]: ♻️ Hộp sữa, chai & lon
+    - generic:
+      - generic:
+        - generic:
+          - button "Mở Xưởng Trang Phục Scratch của Bạn Kiến Sáng" [ref=e77]
+          - generic:
+            - generic:
+              - img "Bạn Kiến Sáng - tim_rac_01"
+  - main [ref=e80]:
+    - generic [ref=e81]:
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - button "Quay lại màn chơi chính" [ref=e84] [cursor=pointer]
+          - heading "Góc sáng tạo xanh" [level=1] [ref=e88]
+        - button "Tắt âm thanh" [ref=e89] [cursor=pointer]
+      - region [ref=e176]:
+        - generic [ref=e184]:
+          - heading "Món đồ cũ, ý tưởng mới!" [level=2] [ref=e185]: Món đồ cũ,ý tưởng mới!
+          - paragraph [ref=e186]: Bé ơi, cùng tìm ba cách dùng lại đồ cũ nhé!
+        - img "Chạm vào ý tưởng hoặc kéo từ món đồ để nối. Kiểm tra rồi gỡ lựa chọn sai và thử lại; đáp án đúng được giữ lại." [ref=e187]:
+          - generic [ref=e188]: Chạm hoặc kéo
+          - generic [ref=e197]: Nối ý tưởng
+          - generic [ref=e204]: Kiểm tra, thử lại
+        - generic [ref=e208]:
+          - generic [ref=e209]:
+            - text: Số lượt
+            - spinbutton "Số lượt" [ref=e210]: "1"
+          - button "Bắt đầu" [ref=e211] [cursor=pointer]
+        - paragraph [ref=e214]: Mỗi lượt một món đồ, mỗi món một ý tưởng xanh!

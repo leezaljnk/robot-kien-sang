@@ -1,0 +1,94 @@
+- generic [ref=e22]:
+  - generic [ref=e23]:
+    - generic:
+      - generic:
+        - generic:
+          - generic: 🌿🌸
+          - generic: Sân trường
+        - button "Đi ra sân trường" [ref=e24] [cursor=pointer]
+      - generic:
+        - generic:
+          - generic: ☀️🌳
+          - generic: Nắng ấm
+        - button "Đến khu vườn Nắng Ấm" [ref=e25] [cursor=pointer]
+      - region "Hướng dẫn chơi trên bảng phấn" [ref=e26]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: ⭐
+          - generic [ref=e30]: Đời Đời Nhớ Ơn Bác Hồ Vĩ Đại
+          - generic [ref=e31]: ⭐
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - heading "LỚP 2A5 FPT SCHOOL • GIỮ GÌN VỆ SINH LỚP HỌC SẠCH ĐẸP" [level=2] [ref=e34]
+            - paragraph [ref=e35]: "\"Tuổi nhỏ làm việc nhỏ – Tùy theo sức của mình\""
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - generic [ref=e38]: 🍃
+              - generic [ref=e39]:
+                - paragraph [ref=e40]: Thùng Xanh Lá
+                - paragraph [ref=e41]: Rác thức ăn, hoa quả, cây cỏ
+            - generic [ref=e42]:
+              - generic [ref=e43]: ♻️
+              - generic [ref=e44]:
+                - paragraph [ref=e45]: Thùng Cam / Xanh Dương
+                - paragraph [ref=e46]: Hộp sữa, chai nhựa, lon, giấy
+            - paragraph [ref=e47]: "Cách chơi: Chạm kéo rác vào thùng hoặc chọn rác rồi chọn thùng để nhờ Kiến Sáng.Điện thoại: Ở chế độ Nhờ Kiến Sáng, dùng các nút mũi tên và nút ✋ để nhặt / thả rác.Bàn phím: Giữ phím mũi tên ⬆️⬇️➡️⬅️️ để di chuyển; Space / Enter để nhặt hoặc thả rác."
+          - generic [ref=e48]:
+            - generic [ref=e49]: 🖍️ Diệp Anh - Hải Quân - Phúc Hưng
+            - generic [ref=e50]: Bé ơi hãy giúp bạn Kiến Sáng nhé! 🤖
+    - button "Trang Phục Bạn Kiến 192/215" [ref=e52] [cursor=pointer]:
+      - generic [ref=e55]: Trang Phục Bạn Kiến
+      - generic [ref=e56]: 192/215
+    - button "Thùng Rác Xanh (Hữu Cơ)" [ref=e58] [cursor=pointer]:
+      - button "Đổi ảnh" [ref=e59]
+      - img "Thùng Rác Xanh (Hữu Cơ)" [ref=e65]
+      - generic [ref=e66]: 🍃 Thức ăn & Cây cỏ
+    - status "Gợi ý tái sử dụng"
+    - button "Thùng Rác Cam (Tái Chế)" [ref=e68] [cursor=pointer]:
+      - button "Đổi ảnh" [ref=e69]
+      - img "Thùng Rác Cam (Tái Chế)" [ref=e75]
+      - generic [ref=e76]: ♻️ Hộp sữa, chai & lon
+    - generic:
+      - generic:
+        - generic:
+          - button "Mở Xưởng Trang Phục Scratch của Bạn Kiến Sáng" [ref=e77]
+          - generic:
+            - generic:
+              - img "Bạn Kiến Sáng - tim_rac_01"
+  - main [ref=e80]:
+    - generic [ref=e81]:
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - button "Quay lại màn chơi chính" [ref=e84] [cursor=pointer]
+          - heading "Góc sáng tạo xanh" [level=1] [ref=e88]
+        - button "Tắt âm thanh" [ref=e89] [cursor=pointer]
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - generic [ref=e97]:
+              - generic [ref=e98]: Lượt 1/1
+              - strong [ref=e99]: 0 mầm xanh
+            - progressbar "Số lượt hoàn thành" [ref=e100]
+          - 'timer "Thời gian còn lại: 3 giây" [ref=e145]':
+            - generic [aria-hidden] [ref=e109]:
+              - strong [ref=e110]: "3"
+              - generic [ref=e111]: giây
+        - heading "Từ áo cũ, bé có thể tạo ra gì?" [level=2] [ref=e112]
+        - generic [ref=e113]:
+          - button "Chạm để chọn hoặc kéo Áo cũ đến một ý tưởng phù hợp" [ref=e114] [cursor=pointer]:
+            - img "Một chiếc áo phông cũ" [ref=e115]
+          - button "Khăn lau. Chưa nối" [ref=e116] [cursor=pointer]:
+            - img "Khăn lau cắt từ áo cũ" [ref=e117]
+          - button "Ô tô. Chưa phù hợp, bé có thể gỡ lựa chọn này" [pressed] [ref=e146] [cursor=pointer]:
+            - img "Ô tô" [ref=e119]
+          - button "Đồng hồ đeo tay. Chưa nối" [ref=e120] [cursor=pointer]:
+            - img "Đồng hồ đeo tay" [ref=e121]
+          - button "Ấm nước. Chưa nối" [ref=e122] [cursor=pointer]:
+            - img "Ấm nước" [ref=e123]
+          - button "Túi vải. Đáp án đúng đã xác nhận" [disabled] [pressed] [ref=e141]:
+            - img "Túi xách làm từ áo cũ" [ref=e125]
+          - button "Thảm vải. Chưa nối" [ref=e126] [cursor=pointer]:
+            - img "Thảm tròn đan từ những dải vải áo cũ" [ref=e127]
+        - generic [ref=e128]:
+          - status [ref=e129]: Bé thử gỡ đường nối có dấu X rồi kiểm tra lại nhé!
+          - button "Kiểm tra" [active] [ref=e130] [cursor=pointer]
+        - button "Nghe lời nhắc an toàn" [ref=e133] [cursor=pointer]: Nhờ người lớn hỗ trợ khi làm thủ công nhé!
