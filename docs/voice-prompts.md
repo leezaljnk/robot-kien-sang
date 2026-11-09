@@ -14,7 +14,7 @@ Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.
 - Thử tài phân loại tự đọc hướng dẫn, phản hồi nối/gỡ/kiểm tra, chuyển lượt và hoàn thành. Lời nhắc an toàn có nút bấm để nghe. Giữ phản hồi hoàn thành lượt 4,5 giây trước khi chuyển lượt để hạn chế ngắt câu.
 - `continue_sorting` và `play_area_small` là trạng thái lời nhắc thụ động ở màn chính: có ID lưu cùng lời thoại nhưng không tự phát. Bong bóng và nút nghe lại của robot màn chính hiện đang ẩn; callback nghe lại đã giữ ID tường minh, không thay đổi bố cục để bật lại nút. `selected_unknown` / `picked_unknown` là dự phòng khi thiếu định nghĩa món rác.
 - Danh mục là **lời nói/hướng dẫn/phản hồi**, không phải mọi nhãn nút, tên vật phẩm, văn bản mô tả ảnh, thẻ gợi ý tái sử dụng hoặc hiệu ứng âm thanh.
-- 60 ID câu đầy đủ đã được thay bằng sequence, không còn là ID bản thu và không cần thu/upload. Ứng dụng ghép ba đoạn theo thứ tự; nếu thiếu đoạn hoặc tải/giải mã lỗi, đọc nguyên câu bằng TTS.
+- 60 ID câu đầy đủ đã được thay bằng sequence, không còn là ID bản thu và không cần thu/upload. Ứng dụng ghép ba đoạn theo thứ tự; nếu thiếu hoặc không tải/giải mã được đoạn ghi âm nào, đoạn đó được đọc bằng TTS và các đoạn ghi âm còn lại vẫn phát bình thường.
 - Sáu câu Khu vườn không thuộc kế hoạch ghép, tiếp tục dùng bản ghi câu đầy đủ như hiện nay. Mười câu chọn trong Thử tài phân loại cũng ghép ba đoạn; 11 prompt còn lại tiếp tục dùng bản ghi riêng.
 
 ## Đoạn ghi âm ghép tuần tự (40 ID)

@@ -53,6 +53,16 @@ test('each new game selects five unique waste groups and shuffles six unique opt
   }
 });
 
+test('a game can choose a supported round count without repeating waste groups', () => {
+  for (const count of [1, 3, 7, 10]) {
+    const rounds = createSortingGameRounds(() => 0.42, count);
+    assert.equal(rounds.length, count);
+    assert.equal(new Set(rounds.map(({ waste }) => waste.id)).size, count);
+  }
+  assert.equal(createSortingGameRounds(() => 0.42, 0).length, 1);
+  assert.equal(createSortingGameRounds(() => 0.42, 20).length, SORTING_GAME_WASTES.length);
+});
+
 test('shuffling does not mutate the content source and offline asset URLs take priority', () => {
   const source = [1, 2, 3, 4];
   shuffleArray(source, () => 0.5);

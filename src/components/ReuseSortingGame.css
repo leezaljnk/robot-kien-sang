@@ -1,0 +1,364 @@
+.reuse-sorting-game {
+  isolation: isolate;
+}
+
+.reuse-sorting-decor {
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  font-size: clamp(1.75rem, 4vw, 3.5rem);
+  filter: drop-shadow(0 5px 5px rgb(15 23 42 / 12%));
+  animation: reuse-float 5s ease-in-out infinite;
+}
+
+.reuse-sorting-decor--one {
+  top: 12%;
+  left: 3%;
+}
+
+.reuse-sorting-decor--two {
+  top: 48%;
+  right: 3%;
+  animation-delay: -1.7s;
+}
+
+.reuse-sorting-decor--three {
+  bottom: 8%;
+  left: 8%;
+  animation-delay: -3.2s;
+}
+
+.reuse-step-card {
+  display: flex;
+  min-height: 9.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.25rem;
+  border: 2px solid white;
+  border-radius: 1.25rem;
+  padding: 0.85rem;
+  box-shadow: 0 5px 12px rgb(15 23 42 / 9%);
+  font-family: ui-rounded, "Trebuchet MS", sans-serif;
+}
+
+.reuse-step-card--blue {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe);
+  color: #1e3a8a;
+}
+
+.reuse-step-card--green {
+  background: linear-gradient(145deg, #f0fdf4, #dcfce7);
+  color: #14532d;
+}
+
+.reuse-step-card--orange {
+  background: linear-gradient(145deg, #fff7ed, #ffedd5);
+  color: #9a3412;
+}
+
+.reuse-step-icon {
+  display: flex;
+  width: 2.4rem;
+  height: 2.4rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 80%);
+}
+
+.reuse-step-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke-width: 3;
+}
+
+.reuse-step-number {
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+.reuse-step-card p {
+  font-size: 0.95rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.reuse-mascot {
+  display: flex;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #dbeafe, #bfdbfe);
+  box-shadow: 0 5px 12px rgb(15 23 42 / 16%);
+  font-size: 2.8rem;
+}
+
+.reuse-mascot--idle {
+  animation: reuse-mascot-wave 2.8s ease-in-out infinite;
+}
+
+.reuse-mascot--victory {
+  animation: reuse-mascot-dance 700ms ease-in-out infinite alternate;
+}
+
+.reuse-speech-bubble {
+  position: relative;
+  max-width: 15rem;
+  border: 2px solid #a7f3d0;
+  border-radius: 1.25rem;
+  background: white;
+  padding: 0.75rem 0.9rem;
+  color: #064e3b;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: left;
+  box-shadow: 0 4px 10px rgb(15 23 42 / 8%);
+}
+
+.reuse-speech-bubble::before {
+  position: absolute;
+  top: 1.25rem;
+  left: -0.5rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  transform: rotate(45deg);
+  border-bottom: 2px solid #a7f3d0;
+  border-left: 2px solid #a7f3d0;
+  background: white;
+  content: "";
+}
+
+.reuse-start-button {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(110deg, #f97316 0%, #fb923c 48%, #84cc16 100%);
+  box-shadow: 0 7px 0 #4d7c0f, 0 12px 22px rgb(22 101 52 / 22%);
+  animation: reuse-cta-pulse 2.8s ease-in-out infinite;
+}
+
+.reuse-start-button::after {
+  position: absolute;
+  top: -60%;
+  bottom: -60%;
+  left: -45%;
+  width: 30%;
+  transform: rotate(22deg);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 75%), transparent);
+  animation: reuse-cta-shine 3.6s ease-in-out infinite;
+  content: "";
+  pointer-events: none;
+}
+
+.reuse-start-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 4px 0 #4d7c0f, 0 7px 12px rgb(22 101 52 / 20%);
+}
+
+.reuse-source-card,
+.reuse-choice-card {
+  background: rgb(255 255 255 / 70%);
+  backdrop-filter: blur(2px);
+}
+
+.reuse-source-card {
+  border: 2px solid rgb(167 243 208 / 85%);
+  box-shadow: 0 7px 20px rgb(16 185 129 / 15%);
+}
+
+.reuse-choice-card {
+  position: relative;
+  animation: reuse-card-float 4s ease-in-out infinite;
+}
+
+.reuse-choice-card::after {
+  position: absolute;
+  right: 0.15rem;
+  bottom: 0.15rem;
+  transform: scale(0.5) rotate(-12deg);
+  opacity: 0;
+  font-size: clamp(0.8rem, 2vw, 1.4rem);
+  transition: opacity 180ms ease, transform 180ms ease;
+  content: "😊";
+  pointer-events: none;
+}
+
+.reuse-choice-card:focus-visible {
+  z-index: 30;
+  scale: 1.06;
+  animation-play-state: paused;
+}
+
+.reuse-choice-card:hover::after,
+.reuse-choice-card:focus-visible::after {
+  transform: scale(1) rotate(8deg);
+  opacity: 1;
+}
+
+.reuse-choice-card:nth-of-type(2n) {
+  animation-delay: -1.4s;
+}
+
+.reuse-choice-card:nth-of-type(3n) {
+  animation-delay: -2.6s;
+}
+
+.reuse-choice-card--selected {
+  border-color: #7dd3fc;
+  background: #f0f9ff;
+}
+
+.reuse-choice-card--correct {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.reuse-choice-card--wrong {
+  border-color: #fda4af;
+  background: #fff1f2;
+  animation: reuse-card-shake 330ms ease-in-out;
+}
+
+.reuse-connection--correct path {
+  filter: drop-shadow(0 0 4px rgb(34 197 94 / 70%));
+  animation: reuse-vine-pop 450ms cubic-bezier(0.2, 1.5, 0.5, 1) both;
+}
+
+.reuse-connection--wrong path {
+  animation: reuse-line-wiggle 330ms ease-in-out;
+}
+
+.reuse-trail-sparkle {
+  fill: #fbbf24;
+  filter: drop-shadow(0 0 3px rgb(251 191 36 / 85%));
+  animation: reuse-sparkle-twinkle 700ms ease-in-out infinite alternate;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.reuse-check-button--ready {
+  outline: 3px solid rgb(125 211 252 / 70%);
+  animation: reuse-check-glow 1.8s ease-in-out infinite;
+}
+
+.reuse-progress-current {
+  animation: reuse-progress-breathe 1.8s ease-in-out infinite;
+}
+
+@keyframes reuse-float {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-12px) rotate(6deg); }
+}
+
+@keyframes reuse-card-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -4px; }
+}
+
+@keyframes reuse-mascot-wave {
+  0%, 100% { rotate: -5deg; }
+  50% { rotate: 7deg; }
+}
+
+@keyframes reuse-mascot-dance {
+  from { transform: rotate(-9deg) translateY(0); }
+  to { transform: rotate(9deg) translateY(-8px); }
+}
+
+@keyframes reuse-cta-pulse {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.025; }
+}
+
+@keyframes reuse-cta-shine {
+  0%, 30% { left: -45%; }
+  58%, 100% { left: 130%; }
+}
+
+@keyframes reuse-check-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(56 189 248 / 45%), 0 8px 18px rgb(15 23 42 / 18%); }
+  50% { box-shadow: 0 0 0 7px rgb(56 189 248 / 0%), 0 8px 18px rgb(15 23 42 / 18%); }
+}
+
+@keyframes reuse-vine-pop {
+  0% { stroke-width: 1; }
+  65% { stroke-width: 7; }
+  100% { stroke-width: 2.5; }
+}
+
+@keyframes reuse-line-wiggle {
+  0%, 100% { translate: 0; }
+  25% { translate: -3px 1px; }
+  75% { translate: 3px -1px; }
+}
+
+@keyframes reuse-card-shake {
+  0%, 100% { translate: 0; }
+  25% { translate: -4px 0; }
+  75% { translate: 4px 0; }
+}
+
+@keyframes reuse-progress-breathe {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.12; }
+}
+
+@keyframes reuse-sparkle-twinkle {
+  from { opacity: 0.35; scale: 0.55; }
+  to { opacity: 1; scale: 1.35; }
+}
+
+@media (hover: hover) {
+  .reuse-choice-card:hover {
+    z-index: 30;
+    scale: 1.06;
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reuse-sorting-decor,
+  .reuse-mascot--idle,
+  .reuse-mascot--victory,
+  .reuse-start-button,
+  .reuse-start-button::after,
+  .reuse-choice-card,
+  .reuse-choice-card--wrong,
+  .reuse-connection--correct path,
+  .reuse-connection--wrong path,
+  .reuse-trail-sparkle,
+  .reuse-check-button--ready,
+  .reuse-progress-current {
+    animation: none;
+  }
+
+  .reuse-choice-card:hover {
+    scale: 1;
+  }
+
+  .reuse-sorting-game *,
+  .reuse-sorting-game *::before,
+  .reuse-sorting-game *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .reuse-step-card {
+    min-height: 7.5rem;
+    padding: 0.65rem;
+  }
+
+  .reuse-sorting-decor--two {
+    right: 1%;
+  }
+}

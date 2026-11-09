@@ -119,6 +119,10 @@ export const VOICE_PROMPTS = [
   ...VOICE_PIECE_PROMPTS,
 ];
 
+export const VOICE_PROMPT_TEXTS: Record<string, string> = Object.fromEntries(
+  VOICE_PROMPTS.map(prompt => [prompt.id, prompt.text])
+);
+
 export const VOICE_CLIP_IDS = new Set(VOICE_PROMPTS.map(prompt => prompt.id));
 
 export function currentVoiceClips(clips?: Record<string, string | null>): VoiceClips {

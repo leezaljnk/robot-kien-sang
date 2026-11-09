@@ -18,7 +18,7 @@ import { getBinApproachTarget, getCommandMoveDuration, getKeyboardMove } from '.
 import { createMascotPosition } from './utils/mascotPosition';
 import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from './utils/trashSpawn';
 import { drawClassroomTrashItems, drawTrashItems } from './utils/trashCycle';
-import { currentVoiceClips, VOICE_PROMPTS, VOICE_SEQUENCES, type TriggerSpeech } from './data/voicePrompts';
+import { currentVoiceClips, VOICE_PROMPT_TEXTS, VOICE_PROMPTS, VOICE_SEQUENCES, type TriggerSpeech } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
 import { loadProjectAssets } from './utils/preloadedAssets';
 import {
@@ -592,11 +592,8 @@ export default function App() {
       const sequence = VOICE_SEQUENCES[voiceId];
       if (sequence) {
         const sequenceClips = sequence.map(id => voiceClips[id]);
-        if (sequenceClips.every((url): url is string => Boolean(url))) {
-          void speakKienSangSequence(text, sequenceClips);
-        } else {
-          speakKienSang(text, null);
-        }
+        const sequenceTexts = sequence.map(id => VOICE_PROMPT_TEXTS[id]);
+        void speakKienSangSequence(text, sequenceClips, undefined, sequenceTexts);
       } else {
         speakKienSang(text, voiceClips[voiceId]);
       }

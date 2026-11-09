@@ -126,17 +126,31 @@ test('stopping speech pauses a recording, cancels TTS, and can be repeated', () 
   }
 });
 
-test('sequence playback schedules clips in order and stop cancels every segment', async () => {
-  const keys = ['window', 'fetch'] as const;
+test('sequence playback fills missing clips with TTS in order and stop cancels every segment', async () => {
+  const keys = ['window', 'fetch', 'SpeechSynthesisUtterance'] as const;
   const descriptors = keys.map(key => Object.getOwnPropertyDescriptor(globalThis, key));
   const starts: number[] = [];
+  const ranges: Array<[number | undefined, number | undefined]> = [];
   let stopped = 0;
+  const spoken: string[] = [];
   const sources: Array<{ onended: (() => void) | null }> = [];
+  class FakeUtterance {
+    onend: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    lang = '';
+    rate = 0;
+    pitch = 0;
+    voice: SpeechSynthesisVoice | null = null;
+    constructor(public text: string) {}
+  }
   class FakeSource {
     buffer: AudioBuffer | null = null;
     onended: (() => void) | null = null;
     connect() {}
-    start(when: number) { starts.push(when); }
+    start(when: number, offset?: number, duration?: number) {
+      starts.push(when);
+      ranges.push([offset, duration]);
+    }
     stop() { stopped++; }
     disconnect() {}
   }
@@ -146,7 +160,19 @@ test('sequence playback schedules clips in order and stop cancels every segment'
     destination = {};
     resume() { return Promise.resolve(); }
     async decodeAudioData(data: ArrayBuffer) {
-      return { duration: new Uint8Array(data)[0] } as AudioBuffer;
+      const duration = new Uint8Array(data)[0];
+      const length = duration * 1000;
+      const samples = new Float32Array(length);
+      samples.fill(0.2, 100, length - 100);
+      return {
+        duration,
+        length,
+        sampleRate: 1000,
+        numberOfChannels: 1,
+        getChannelData: () => samples,
+        copyFromChannel: (destination: Float32Array) => destination.set(samples),
+        copyToChannel: (source: Float32Array, _channel: number, start = 0) => samples.set(source, start),
+      } as AudioBuffer;
     }
     createBufferSource() {
       const source = new FakeSource();
@@ -155,7 +181,18 @@ test('sequence playback schedules clips in order and stop cancels every segment'
     }
   }
   Object.assign(globalThis, {
-    window: { AudioContext: FakeAudioContext, speechSynthesis: { cancel() {} } },
+    SpeechSynthesisUtterance: FakeUtterance,
+    window: {
+      AudioContext: FakeAudioContext,
+      speechSynthesis: {
+        cancel() {},
+        getVoices: () => [],
+        speak: (utterance: FakeUtterance) => {
+          spoken.push(utterance.text);
+          utterance.onend?.();
+        },
+      },
+    },
     fetch: async (url: string) => {
       const buffer = new ArrayBuffer(1);
       new Uint8Array(buffer)[0] = Number(url);
@@ -165,9 +202,22 @@ test('sequence playback schedules clips in order and stop cancels every segment'
   try {
     let ended = 0;
     await speakKienSangSequence('Câu ghép', ['1', '2', '3'], () => ended++);
-    assert.deepEqual(starts, [4.02, 5.02, 7.02]);
+    assert.deepEqual(starts, [4.02, 4.85, 6.68]);
+    assert.deepEqual(ranges, [[0.085, 0.83], [0.085, 1.83], [0.085, 2.83]]);
     sources[2].onended?.();
     assert.equal(ended, 1);
+
+    let mixedEnded = 0;
+    await speakKienSangSequence(
+      'Câu ghép có đoạn đọc',
+      ['1', '2', null],
+      () => mixedEnded++,
+      ['đầu câu', 'giữa câu', 'cuối câu']
+    );
+    assert.deepEqual(starts.slice(3), [4.02, 4.85]);
+    sources[4].onended?.();
+    assert.deepEqual(spoken, ['cuối câu']);
+    assert.equal(mixedEnded, 1);
 
     await speakKienSangSequence('Câu sẽ dừng', ['1', '2', '3']);
     stopKienSangSpeech();

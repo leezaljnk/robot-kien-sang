@@ -158,6 +158,53 @@ let currentAudio: HTMLAudioElement | null = null;
 let currentBufferSources: AudioBufferSourceNode[] = [];
 let speechPlaybackToken = 0;
 
+function getVoiceRange(buffer: AudioBuffer) {
+  const channelCount = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const frameCount = buffer.length;
+  let peak = 0;
+
+  for (let channel = 0; channel < channelCount; channel++) {
+    const samples = buffer.getChannelData(channel);
+    for (let frame = 0; frame < frameCount; frame++) {
+      peak = Math.max(peak, Math.abs(samples[frame]));
+    }
+  }
+
+  if (!peak) return { offset: 0, duration: buffer.duration };
+
+  const threshold = Math.max(0.002, peak * 0.02);
+  const windowSize = Math.max(1, Math.floor(sampleRate * 0.01));
+  let firstActiveFrame = frameCount;
+  let lastActiveFrame = -1;
+
+  for (let start = 0; start < frameCount; start += windowSize) {
+    const end = Math.min(start + windowSize, frameCount);
+    let energy = 0;
+    for (let channel = 0; channel < channelCount; channel++) {
+      const samples = buffer.getChannelData(channel);
+      for (let frame = start; frame < end; frame++) {
+        energy += samples[frame] ** 2;
+      }
+    }
+    const rms = Math.sqrt(energy / ((end - start) * channelCount));
+    if (rms >= threshold) {
+      firstActiveFrame = Math.min(firstActiveFrame, start);
+      lastActiveFrame = end;
+    }
+  }
+
+  if (lastActiveFrame < 0) return { offset: 0, duration: buffer.duration };
+
+  const padding = Math.floor(sampleRate * 0.015);
+  const offsetFrame = Math.max(0, firstActiveFrame - padding);
+  const endFrame = Math.min(frameCount, lastActiveFrame + padding);
+  return {
+    offset: offsetFrame / sampleRate,
+    duration: (endFrame - offsetFrame) / sampleRate,
+  };
+}
+
 export const stopKienSangSpeech = () => {
   speechPlaybackToken++;
   if (currentAudio) {
@@ -217,12 +264,13 @@ export const speakKienSang = (
 
 export const speakKienSangSequence = async (
   textVi: string,
-  clipUrls: string[],
-  onEnded?: () => void
+  clipUrls: Array<string | null | undefined>,
+  onEnded?: () => void,
+  fallbackTexts?: string[]
 ) => {
   stopKienSangSpeech();
   const playbackToken = speechPlaybackToken;
-  if (!clipUrls.length || clipUrls.some(url => !url)) {
+  if (!clipUrls.length || (!fallbackTexts && clipUrls.some(url => !url))) {
     speakFallbackTTS(textVi, onEnded);
     return;
   }
@@ -231,31 +279,64 @@ export const speakKienSangSequence = async (
     const context = getAudioContext();
     if (context.state === 'suspended') await context.resume();
     const buffers = await Promise.all(clipUrls.map(async url => {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Không tải được đoạn giọng nói: ${url}`);
-      return context.decodeAudioData(await response.arrayBuffer());
+      if (!url) return null;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Không tải được đoạn giọng nói: ${url}`);
+        return await context.decodeAudioData(await response.arrayBuffer());
+      } catch (error) {
+        if (playbackToken !== speechPlaybackToken) return null;
+        console.warn('Không phát được đoạn giọng thu âm, chuyển sang đọc văn bản:', error);
+        return null;
+      }
     }));
     if (playbackToken !== speechPlaybackToken) return;
 
-    const sources = buffers.map(buffer => {
-      const source = context.createBufferSource();
-      source.buffer = buffer;
-      source.connect(context.destination);
-      return source;
-    });
-    currentBufferSources = sources;
-    let startAt = context.currentTime + 0.02;
-    sources.forEach((source, index) => {
-      source.onended = () => {
-        source.disconnect();
-        if (index === sources.length - 1 && playbackToken === speechPlaybackToken) {
-          currentBufferSources = [];
-          onEnded?.();
-        }
-      };
-      source.start(startAt);
-      startAt += buffers[index].duration;
-    });
+    const playNext = (index: number) => {
+      if (playbackToken !== speechPlaybackToken) return;
+      if (index >= clipUrls.length) {
+        onEnded?.();
+        return;
+      }
+
+      const buffer = buffers[index];
+      if (buffer) {
+        let groupEnd = index + 1;
+        while (groupEnd < buffers.length && buffers[groupEnd]) groupEnd++;
+
+        const groupBuffers = buffers.slice(index, groupEnd)
+          .filter((groupBuffer): groupBuffer is AudioBuffer => groupBuffer !== null);
+        const ranges = groupBuffers.map(getVoiceRange);
+        const sources = groupBuffers.map(groupBuffer => {
+          const source = context.createBufferSource();
+          source.buffer = groupBuffer;
+          source.connect(context.destination);
+          return source;
+        });
+        currentBufferSources = sources;
+        let startAt = context.currentTime + 0.02;
+        sources.forEach((source, sourceIndex) => {
+          source.onended = () => {
+            source.disconnect();
+            if (sourceIndex === sources.length - 1 && playbackToken === speechPlaybackToken) {
+              currentBufferSources = [];
+              playNext(groupEnd);
+            }
+          };
+          source.start(startAt, ranges[sourceIndex].offset, ranges[sourceIndex].duration);
+          startAt += ranges[sourceIndex].duration;
+        });
+        return;
+      }
+
+      const fallbackText = fallbackTexts?.[index];
+      if (fallbackText) {
+        speakFallbackTTS(fallbackText, () => playNext(index + 1));
+      } else {
+        playNext(index + 1);
+      }
+    };
+    playNext(0);
   } catch (error) {
     if (playbackToken !== speechPlaybackToken) return;
     currentBufferSources.forEach(source => {
@@ -269,7 +350,19 @@ export const speakKienSangSequence = async (
     });
     currentBufferSources = [];
     console.warn('Không phát được chuỗi giọng thu âm, chuyển sang đọc văn bản:', error);
-    speakFallbackTTS(textVi, onEnded);
+    if (fallbackTexts?.length === clipUrls.length) {
+      const speakNext = (index: number) => {
+        if (playbackToken !== speechPlaybackToken) return;
+        if (index >= fallbackTexts.length) {
+          onEnded?.();
+          return;
+        }
+        speakFallbackTTS(fallbackTexts[index], () => speakNext(index + 1));
+      };
+      speakNext(0);
+    } else {
+      speakFallbackTTS(textVi, onEnded);
+    }
   }
 };
 

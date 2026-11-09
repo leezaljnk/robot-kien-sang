@@ -235,8 +235,15 @@ export function shuffleArray<T>(items: readonly T[], random: () => number = Math
   return shuffled;
 }
 
-export function createSortingGameRounds(random: () => number = Math.random): SortingGameRound[] {
-  return shuffleArray(SORTING_GAME_WASTES, random).slice(0, 5).map((waste) => {
+export function createSortingGameRounds(
+  random: () => number = Math.random,
+  count = 5
+): SortingGameRound[] {
+  const roundCount = Math.min(
+    SORTING_GAME_WASTES.length,
+    Math.max(1, Math.floor(count))
+  );
+  return shuffleArray(SORTING_GAME_WASTES, random).slice(0, roundCount).map((waste) => {
     const correctIds = waste.products.map(({ id }) => id);
     const shuffledOptions = shuffleArray([
       ...waste.products.map((item) => ({ ...item, isCorrect: true })),
