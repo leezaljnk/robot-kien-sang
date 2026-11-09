@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { ASSET_SLOTS, sharedAssetsToState, uploadSharedAsset } from '../src/utils/sharedAssets';
 
-test('catalog covers 215 costumes, 15 trash items, 3 base images and 97 recordings', () => {
-  assert.equal(ASSET_SLOTS.length, 330);
-  assert.equal(new Set(ASSET_SLOTS.map(s => s.id)).size, 330);
+test('catalog covers 215 costumes, 15 trash items, 3 base images and 94 recordings', () => {
+  assert.equal(ASSET_SLOTS.length, 327);
+  assert.equal(new Set(ASSET_SLOTS.map(s => s.id)).size, 327);
   const sql = readFileSync(new URL('../supabase/setup.sql', import.meta.url), 'utf8');
   const patterns = [...sql.matchAll(/asset_id ~ '([^']+)'/g)].map(m => new RegExp(m[1]));
   for (const slot of ASSET_SLOTS) {
@@ -17,6 +17,9 @@ test('catalog covers 215 costumes, 15 trash items, 3 base images and 97 recordin
   assert(!patterns.some(p => p.test('images/costumes/cam_gio_13')));
   assert(!ASSET_SLOTS.some(slot => slot.id === 'voice/selected_vo_dua_hau'));
   assert(!ASSET_SLOTS.some(slot => slot.id === 'voice/sorting_selected_cd'));
+  assert(!ASSET_SLOTS.some(slot => slot.id === 'voice/sorting_connected_short'));
+  assert(ASSET_SLOTS.some(slot => slot.id === 'voice/voice_piece_sorting_question_prefix'));
+  assert(ASSET_SLOTS.some(slot => slot.id === 'voice/voice_piece_sorting_name_cd'));
   assert(ASSET_SLOTS.some(slot => slot.id === 'voice/voice_piece_selected_prefix'));
 });
 

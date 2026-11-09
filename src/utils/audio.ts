@@ -36,6 +36,36 @@ export const playPickSfx = () => {
   }
 };
 
+export const playConnectSfx = () => {
+  try {
+    const ctx = getAudioContext();
+    const notes = [
+      { frequency: 880, start: 0, duration: 0.1 },
+      { frequency: 1174.66, start: 0.13, duration: 0.13 },
+    ];
+    notes.forEach(({ frequency, start, duration }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const startAt = ctx.currentTime + start;
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(frequency, startAt);
+      gain.gain.setValueAtTime(0, startAt);
+      gain.gain.linearRampToValueAtTime(0.18, startAt + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
+      osc.start(startAt);
+      osc.stop(startAt + duration);
+    });
+  } catch {
+    // Audio may be unavailable; the game remains playable.
+  }
+};
+
 export const playDropSfx = () => {
   try {
     const ctx = getAudioContext();
@@ -174,7 +204,7 @@ function getVoiceRange(buffer: AudioBuffer) {
   if (!peak) return { offset: 0, duration: buffer.duration };
 
   const threshold = Math.max(0.002, peak * 0.02);
-  const windowSize = Math.max(1, Math.floor(sampleRate * 0.01));
+  const windowSize = Math.max(1, Math.floor(sampleRate * 0.005));
   let firstActiveFrame = frameCount;
   let lastActiveFrame = -1;
 
@@ -196,7 +226,7 @@ function getVoiceRange(buffer: AudioBuffer) {
 
   if (lastActiveFrame < 0) return { offset: 0, duration: buffer.duration };
 
-  const padding = Math.floor(sampleRate * 0.015);
+  const padding = Math.floor(sampleRate * 0.005);
   const offsetFrame = Math.max(0, firstActiveFrame - padding);
   const endFrame = Math.min(frameCount, lastActiveFrame + padding);
   return {

@@ -15,11 +15,11 @@ import { embedOfflineAssets } from '../src/utils/offlineAssets';
 import { parseSettingsFile } from '../src/utils/settingsTransfer';
 import { speakKienSang, speakKienSangSequence, stopKienSangSpeech } from '../src/utils/audio';
 
-test('97 recording IDs and 90 sequence mappings cover the scenes and catalogue', () => {
+test('94 recording IDs and 70 sequence mappings cover the scenes and catalogue', () => {
   const catalog = readFileSync(new URL('../docs/voice-prompts.md', import.meta.url), 'utf8');
-  assert.equal(VOICE_PROMPTS.length, 97);
-  assert.equal(VOICE_PIECE_PROMPTS.length, 51);
-    assert.equal(Object.keys(VOICE_SEQUENCES).length, 90);
+  assert.equal(VOICE_PROMPTS.length, 94);
+  assert.equal(VOICE_PIECE_PROMPTS.length, 49);
+  assert.equal(Object.keys(VOICE_SEQUENCES).length, 70);
     assert.equal(voiceIdForText('Vỏ chai thủy tinh'), 'voice_piece_name_vo_chai');
     assert.equal(voiceIdForText('Chai thủy tinh'), 'voice_piece_sorting_name_vo_chai');
     assert(!catalog.includes('| `selected_vo_dua_hau` |'));
@@ -45,9 +45,7 @@ test('97 recording IDs and 90 sequence mappings cover the scenes and catalogue',
   for (const waste of SORTING_GAME_WASTES) {
     const namePieceId = voiceIdForText(waste.name);
     assert(namePieceId?.startsWith('voice_piece_'));
-    assert.deepEqual(VOICE_SEQUENCES[`sorting_selected_${waste.id}`], [
-      'voice_piece_sorting_prefix', namePieceId, 'voice_piece_sorting_suffix',
-    ]);
+    assert.equal(VOICE_SEQUENCES[`sorting_selected_${waste.id}`], undefined);
     assert.deepEqual(VOICE_SEQUENCES[`sorting_question_${waste.id}`], [
       'voice_piece_sorting_question_prefix', namePieceId, 'voice_piece_sorting_question_suffix',
     ]);
@@ -99,6 +97,25 @@ test('every speech/feedback call passes an explicit ID, and literal text matches
     }
     assert(!source.includes('voiceIdForText('), 'Playback must not infer recording IDs from text');
   }
+});
+
+test('sorting questions are spoken at round start; choosing and connecting use no extra voice clips', () => {
+  const source = readFileSync(new URL('../src/components/ReuseSortingGame.tsx', import.meta.url), 'utf8');
+  const audio = readFileSync(new URL('../src/utils/audio.ts', import.meta.url), 'utf8');
+  const sourceButton = source.indexOf('ref={sourceRef}');
+  const clickStart = source.indexOf('onClick={() => {', sourceButton);
+  const clickEnd = source.indexOf('aria-pressed={sourceSelected}', clickStart);
+  assert(sourceButton >= 0 && clickStart > sourceButton && clickEnd > clickStart, 'source item click handler');
+  const sourceClick = source.slice(clickStart, clickEnd);
+  assert.doesNotMatch(sourceClick, /triggerSpeech|showFeedback/);
+  assert.match(source, /showFeedback\(question, `sorting_question_\$\{currentRound\.waste\.id\}`\)/);
+  assert.doesNotMatch(source, /setFeedback\('Đã nối ý tưởng!'\)/);
+  assert.match(source, /playConnectSfx\(\)/);
+  assert.match(audio, /export const playConnectSfx = \(\) =>/);
+  assert.match(audio, /frequency: 880[\s\S]*frequency: 1174\.66/);
+  assert.doesNotMatch(source, /sorting_selected_|sorting_connected_short/);
+  assert(!VOICE_PROMPTS.some(({ id }) => id === 'sorting_connected_short'));
+  assert(!VOICE_PIECE_PROMPTS.some(({ id }) => id === 'voice_piece_sorting_prefix' || id === 'voice_piece_sorting_suffix'));
 });
 
 test('stopping speech pauses a recording, cancels TTS, and can be repeated', () => {
@@ -205,8 +222,8 @@ test('sequence playback fills missing clips with TTS in order and stop cancels e
   try {
     let ended = 0;
     await speakKienSangSequence('Câu ghép', ['1', '2', '3'], () => ended++);
-    assert.deepEqual(starts, [4.02, 4.85, 6.68]);
-    assert.deepEqual(ranges, [[0.085, 0.83], [0.085, 1.83], [0.085, 2.83]]);
+    assert.deepEqual(starts.map(time => Number(time.toFixed(3))), [4.02, 4.83, 6.64]);
+    assert.deepEqual(ranges, [[0.095, 0.81], [0.095, 1.81], [0.095, 2.81]]);
     sources[2].onended?.();
     assert.equal(ended, 1);
 
@@ -217,7 +234,7 @@ test('sequence playback fills missing clips with TTS in order and stop cancels e
       () => mixedEnded++,
       ['đầu câu', 'giữa câu', 'cuối câu']
     );
-    assert.deepEqual(starts.slice(3), [4.02, 4.85]);
+    assert.deepEqual(starts.slice(3).map(time => Number(time.toFixed(3))), [4.02, 4.83]);
     sources[4].onended?.();
     assert.deepEqual(spoken, ['cuối câu']);
     assert.equal(mixedEnded, 1);

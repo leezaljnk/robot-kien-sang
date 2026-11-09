@@ -33,11 +33,11 @@ Tạo lại danh sách bằng \`node --import tsx scripts/generate_voice_catalog
 - Ba câu khen đúng dùng ba ID riêng để bản thu khớp văn bản; không dùng chung \`correct.mp3\` cho câu khác nữa.
 - Khu vườn đọc kết quả cố định bằng \`garden_victory\`; số điểm biến thiên vẫn hiển thị riêng trên màn hình, không nằm trong bản thu.
 - Thu lại \`hand_pickup_victory.mp3\` nếu đã có bản cũ: câu mới nói "tất cả món rác" để phù hợp với số món tùy nhập.
-- Thử tài phân loại tự đọc hướng dẫn, phản hồi nối/gỡ/kiểm tra và lời chúc hoàn thành. Mỗi lượt bắt đầu bằng câu hỏi ghép ba đoạn “Từ → tên món → bé có thể tạo ra gì?”. Lời nhắc an toàn có nút bấm để nghe. Giữ phản hồi hoàn thành lượt 4,5 giây trước khi chuyển lượt để hạn chế ngắt câu.
+- Thử tài phân loại đọc câu hỏi ghép ba đoạn “Từ → tên món → bé có thể tạo ra gì?” khi bắt đầu mỗi lượt. Chọn món hoặc nối ý tưởng không phát câu thoại; nối ý tưởng phát hiệu ứng “ting ting”. Các phản hồi khác và lời chúc hoàn thành vẫn dùng ID riêng.
 - \`continue_sorting\` và \`play_area_small\` là trạng thái lời nhắc thụ động ở màn chính: có ID lưu cùng lời thoại nhưng không tự phát. Bong bóng và nút nghe lại của robot màn chính hiện đang ẩn; callback nghe lại đã giữ ID tường minh, không thay đổi bố cục để bật lại nút. \`selected_unknown\` / \`picked_unknown\` là dự phòng khi thiếu định nghĩa món rác.
 - Danh mục là **lời nói/hướng dẫn/phản hồi**, không phải mọi nhãn nút, tên vật phẩm, văn bản mô tả ảnh, thẻ gợi ý tái sử dụng hoặc hiệu ứng âm thanh.
-- ${Object.keys(VOICE_SEQUENCES).length} ID câu đầy đủ dùng sequence, không phải ID bản thu và không cần thu/upload. Ứng dụng ghép ba đoạn theo thứ tự; nếu thiếu đoạn hoặc tải/giải mã lỗi, đọc nguyên câu bằng TTS.
-- Sáu câu Khu vườn không thuộc kế hoạch ghép, tiếp tục dùng bản ghi câu đầy đủ như hiện nay. Thử tài phân loại có ${Object.keys(VOICE_SEQUENCES).filter(id => id.startsWith('sorting_selected_')).length} câu chọn và ${Object.keys(VOICE_SEQUENCES).filter(id => id.startsWith('sorting_question_')).length} câu hỏi cùng ghép ba đoạn; 11 prompt còn lại tiếp tục dùng bản ghi riêng.
+- ${Object.keys(VOICE_SEQUENCES).length} ID câu đầy đủ dùng sequence, không phải ID bản thu và không cần thu/upload. Ứng dụng ghép ba đoạn theo thứ tự; nếu thiếu hoặc tải/giải mã lỗi một đoạn, đoạn đó được đọc bằng TTS và các đoạn ghi âm khác vẫn phát bình thường.
+- Sáu câu Khu vườn không thuộc kế hoạch ghép, tiếp tục dùng bản ghi câu đầy đủ như hiện nay. Thử tài phân loại có ${Object.keys(VOICE_SEQUENCES).filter(id => id.startsWith('sorting_question_')).length} câu hỏi ghép ba đoạn mỗi lượt; chọn món và nối ý tưởng không phát câu thoại.
 
 `;
 
@@ -71,19 +71,18 @@ ${pieceRows(VOICE_YARD_NAME_PIECES)}
 | ID | Tên file | Lời thoại cần thu |
 |---|---|---|
 ${pieceRows(VOICE_SORTING_NAME_PIECES)}
-${REUSED_SORTING_NAME_PIECES.map(({ waste, piece }) => `\nTên “${waste.name}” trong \`sorting_selected_${waste.id}\` trùng chính xác, dùng chung \`${piece.id}.mp3\`.`).join('\n')}
+${REUSED_SORTING_NAME_PIECES.map(({ waste, piece }) => `\nTên “${waste.name}” trong câu hỏi của lượt \`${waste.id}\` trùng chính xác, dùng chung \`${piece.id}.mp3\`.`).join('\n')}
 
 ### Ánh xạ các ID câu hiện tại sang đoạn
 
 - \`selected_<itemId>\`: \`voice_piece_selected_prefix.mp3\` → \`voice_piece_name_<itemId>.mp3\` → \`voice_piece_selected_suffix.mp3\`.
 - \`picked_<itemId>\`: \`voice_piece_picked_prefix.mp3\` → \`voice_piece_name_<itemId>.mp3\` → \`voice_piece_picked_suffix.mp3\`.
 - Với sân trường, \`selected_yard_<yardItemId>\` và \`picked_yard_<yardItemId>\` dùng chung các đoạn đầu/cuối tương ứng và \`voice_piece_name_yard_<yardItemId>.mp3\`.
-- \`sorting_selected_<wasteId>\`: \`voice_piece_sorting_prefix.mp3\` → file tên món tương ứng trong bảng trên → \`voice_piece_sorting_suffix.mp3\`.
 - \`sorting_question_<wasteId>\`: \`voice_piece_sorting_question_prefix.mp3\` → file tên món tương ứng trong bảng trên → \`voice_piece_sorting_question_suffix.mp3\`.
 - Ví dụ: \`selected_vo_dua_hau\` dùng \`voice_piece_selected_prefix.mp3\` → \`voice_piece_name_vo_dua_hau.mp3\` → \`voice_piece_selected_suffix.mp3\`.
 - Ví dụ sân trường: \`picked_yard_flower_petals\` dùng \`voice_piece_picked_prefix.mp3\` → \`voice_piece_name_yard_flower_petals.mp3\` → \`voice_piece_picked_suffix.mp3\`.
 
-Tổng cộng cần thu **${voicePieceCount} file đoạn**. Các khóa logic \`selected_*\`, \`picked_*\`, \`sorting_selected_*\` và \`sorting_question_*\` không phải ID bản thu; mỗi khóa ánh xạ sang đúng ba đoạn.
+Tổng cộng cần thu **${voicePieceCount} file đoạn**. Các khóa logic \`selected_*\`, \`picked_*\` và \`sorting_question_*\` không phải ID bản thu; mỗi khóa ánh xạ sang đúng ba đoạn.
 
 `;
 
@@ -94,8 +93,8 @@ const sections = groups.map(group => {
   return `## ${group.title} (${prompts.length} ID)\n\n| ID | Tên file | Lời thoại cần thu |\n|---|---|---|\n${rows}\n`;
 }).filter(Boolean);
 
-const sortedVoiceSection = `## Câu chọn món và câu hỏi trong Thử tài phân loại — ghép tuần tự (${Object.keys(VOICE_SEQUENCES).filter(id => id.startsWith('sorting_selected_') || id.startsWith('sorting_question_')).length} ID logic)\n\nCác ID logic sau không có file ghi âm riêng; mỗi câu dùng ba đoạn trong mục trên theo thứ tự đã mô tả.\n\n` +
-  Object.keys(VOICE_SEQUENCES).filter(id => id.startsWith('sorting_selected_') || id.startsWith('sorting_question_')).map(id => `- \`${id}\``).join('\n') + '\n\n';
+const sortedVoiceSection = `## Câu hỏi mỗi lượt trong Thử tài phân loại — ghép tuần tự (${Object.keys(VOICE_SEQUENCES).filter(id => id.startsWith('sorting_question_')).length} ID logic)\n\nCác ID logic sau không có file ghi âm riêng; mỗi câu dùng ba đoạn trong mục trên theo thứ tự đã mô tả.\n\n` +
+  Object.keys(VOICE_SEQUENCES).filter(id => id.startsWith('sorting_question_')).map(id => `- \`${id}\``).join('\n') + '\n\n';
 
 writeFileSync(new URL('../docs/voice-prompts.md', import.meta.url), introduction + sequentialVoiceSection + sortedVoiceSection + sections.join('\n'));
 console.log(`Đã ghi ${fullSentenceCount} ID câu đầy đủ, ${voicePieceCount} ID đoạn và các khóa sequence vào docs/voice-prompts.md`);

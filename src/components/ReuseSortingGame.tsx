@@ -8,7 +8,7 @@ import {
   sortingGameImageUrl,
   type SortingGameRound,
 } from '../data/sortingGame';
-import { playCountdownSfx, playErrorSfx, playSuccessSfx, playVictoryFanfare, stopKienSangSpeech } from '../utils/audio';
+import { playConnectSfx, playCountdownSfx, playErrorSfx, playSuccessSfx, playVictoryFanfare, stopKienSangSpeech } from '../utils/audio';
 import { type TriggerSpeech } from '../data/voicePrompts';
 import './ReuseSortingGame.css';
 
@@ -247,7 +247,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
     }
     setSelectedIds([...selectedIds, id]);
     setWrongIds(wrongIds.filter((wrongId) => wrongId !== id));
-    showFeedback('Đã nối hình. Bé có thể chọn thêm rồi bấm Kiểm tra.', 'sorting_connected');
+    if (!mutedRef.current) playConnectSfx();
   }, [roundComplete, confirmedCorrectIds, selectedIds, wrongIds, showFeedback]);
 
   const toggleChoiceRef = useRef(toggleChoice);
@@ -620,7 +620,6 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
                 onClick={() => {
                   if (suppressClickRef.current || roundComplete) return;
                   setSourceSelected(true);
-                  showFeedback(`Đã chọn ${currentRound.waste.name}. Bé chạm vào những ý tưởng phù hợp nhé!`, `sorting_selected_${currentRound.waste.id}`);
                 }}
                 aria-pressed={sourceSelected}
                 disabled={roundComplete}

@@ -1,8 +1,8 @@
 # Kế hoạch ghép tuần tự lời thoại từ các đoạn ghi âm
 
 **Trạng thái:** Đã triển khai  
-**Phạm vi:** Lớp học — chọn và nhặt 15 món rác; Sân trường — chọn và nhặt 10 món rác; Thử tài phân loại  
-**Mục tiêu:** Thay 60 bản ghi câu đầy đủ bằng các đoạn ghi âm dùng lại, được code phát nối tiếp thành câu hoàn chỉnh. Không dùng công cụ xử lý âm thanh bên ngoài; ghép và phát bằng Web Audio API có sẵn trong trình duyệt.
+**Phạm vi hiện hành:** Lớp học — chọn và nhặt 15 món rác; Sân trường — chọn và nhặt 10 món rác; câu hỏi đầu mỗi lượt trong Thử tài phân loại. Voice khi chọn món ở Thử tài đã được thay bằng hiệu ứng âm thanh.
+**Mục tiêu:** Thay các bản ghi câu đầy đủ bằng các đoạn ghi âm dùng lại, được code phát nối tiếp thành câu hoàn chỉnh. Không dùng công cụ xử lý âm thanh bên ngoài; ghép và phát bằng Web Audio API có sẵn trong trình duyệt.
 
 ## 1. Mục tiêu và nguyên tắc
 
@@ -26,13 +26,13 @@ Chuyển 15 câu `selected_<itemId>` và 15 câu `picked_<itemId>` sang ghép ba
 
 Chuyển 10 câu `selected_yard_<itemId>` và 10 câu `picked_yard_<itemId>` theo cùng mẫu câu chọn/nhặt ở trên.
 
-### Thử tài phân loại — 21 ID
+### Thử tài phân loại — 20 câu hỏi theo lượt
 
-Chuyển 10 câu `sorting_selected_<wasteId>` sang ghép ba đoạn:
+Ghép câu hỏi mỗi lượt `sorting_question_<wasteId>` theo ba đoạn:
 
-- `Đã chọn` → tên món → `Bé chạm vào những ý tưởng phù hợp nhé!`
+- `Từ` → tên món → `bé có thể tạo ra gì?`
 
-Giữ nguyên 11 prompt còn lại của trò chơi này.
+Chạm chọn món chỉ cập nhật trạng thái hiển thị. Chạm hoặc kéo nối ý tưởng phát hiệu ứng “ting ting”, không phát câu voice.
 
 ## 3. Danh mục đoạn ghi âm
 
@@ -42,14 +42,14 @@ Giữ nguyên 11 prompt còn lại của trò chơi này.
 - `voice_piece_picked_prefix`: “Kiến Sáng đã nhặt”
 - `voice_piece_selected_suffix`: “Hãy bấm vào thùng rác muốn bỏ nhé!”
 - `voice_piece_picked_suffix`: “Hãy đưa tới thùng rác thích hợp nhé!”
-- `voice_piece_sorting_prefix`: “Đã chọn”
-- `voice_piece_sorting_suffix`: “Bé chạm vào những ý tưởng phù hợp nhé!”
+- `voice_piece_sorting_question_prefix`: “Từ”
+- `voice_piece_sorting_question_suffix`: “bé có thể tạo ra gì?”
 - `voice_piece_name_<itemId>`: tên món cho lớp học/sân trường
-- `voice_piece_sorting_name_<wasteId>`: tên món cho Thử tài phân loại
+- `voice_piece_sorting_name_<wasteId>`: tên món cho câu hỏi Thử tài phân loại
 
 Nếu hai ngữ cảnh có cùng chính xác câu tên món, dùng chung một ID đoạn để tránh thu lặp. Không ghép theo tên file suy đoán tại callsite; khai báo rõ từng chuỗi trong một bảng sequence có kiểu dữ liệu, ánh xạ từ ID prompt câu đầy đủ sang danh sách ID đoạn theo thứ tự.
 
-Tối đa cần khoảng 41 đoạn: 6 câu mở/kết thúc dùng chung và 35 tên món (25 món rác cùng 10 món của Thử tài phân loại). Nếu có tên món trùng khớp hoàn toàn giữa hai danh sách, dùng một bản ghi tên chung và giảm tổng số tương ứng. Các ID `selected_unknown` / `picked_unknown` tiếp tục dùng bản đầy đủ cũ làm dự phòng, trừ khi có quyết định bổ sung đoạn tên “món rác”.
+Danh mục hiện hành gồm 49 đoạn dùng chung/tên món; các tên món trùng khớp hoàn toàn dùng chung bản ghi. Các ID `selected_unknown` / `picked_unknown` tiếp tục dùng bản đầy đủ cũ làm dự phòng.
 
 ## 4. Hành vi phát và tương thích
 
@@ -64,10 +64,10 @@ Tối đa cần khoảng 41 đoạn: 6 câu mở/kết thúc dùng chung và 35 
 ## 5. Tác động theo module
 
 - `src/data/voicePrompts.ts`: đăng ký các clip đoạn làm ID bản thu; giữ các ID câu đã chuyển chỉ trong bảng ánh xạ logic, không đưa chúng vào danh sách bản ghi.
-- Một module dữ liệu mới hoặc cùng module dữ liệu: khai báo bảng sequence cho 60 prompt chọn/nhặt và 10 prompt `sorting_selected_*`; không thêm logic ánh xạ vào component giao diện.
+- Một module dữ liệu mới hoặc cùng module dữ liệu: khai báo bảng sequence cho 60 prompt chọn/nhặt và 20 câu hỏi `sorting_question_*`; không thêm logic ánh xạ vào component giao diện.
 - `src/utils/audio.ts`: hỗ trợ nhận và phát danh sách nguồn tuần tự bằng Web Audio; quản lý hủy, lỗi tải/giải mã, cache và callback kết thúc.
 - `src/App.tsx`: tại luồng phát câu chọn/nhặt, chuyển ID câu sang sequence khi có đủ clip; giữ nguyên nội dung hiển thị và ID logic.
-- `src/components/ReuseSortingGame.tsx`: áp dụng sequence cho 10 câu chọn món; các lời thoại còn lại giữ nguyên.
+- `src/components/ReuseSortingGame.tsx`: phát sequence câu hỏi khi bắt đầu mỗi lượt; dùng hiệu ứng âm thanh khi nối ý tưởng.
 - `src/components/VoiceStudioModal.tsx`: nhóm các đoạn thành câu mở đầu, câu kết thúc và tên món; cho thu/nghe thử từng đoạn và nghe thử cả câu đã ghép. Không yêu cầu thu lại 71 câu đầy đủ để bật tính năng.
 - `src/utils/sharedAssets.ts`, `supabase/setup.sql` và editor tài nguyên chia sẻ: cho phép upload/phát hành các ID đoạn mới theo hợp đồng ID hiện hành.
 - Lưu trữ cục bộ, JSON và xuất HTML offline: xác nhận `voiceClips` chứa đủ các đoạn, được roundtrip và nhúng offline. Khi nhập JSON cũ, bỏ qua clip full-sentence đã nghỉ.

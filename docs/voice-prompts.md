@@ -1,6 +1,6 @@
 # Danh sách ID và lời thoại cho các màn chơi
 
-Có **97 ID bản thu**, gồm 46 câu đầy đủ và 51 đoạn. Nguồn chuẩn: [voicePrompts.ts](../src/data/voicePrompts.ts).
+Có **94 ID bản thu**, gồm 45 câu đầy đủ và 49 đoạn. Nguồn chuẩn: [voicePrompts.ts](../src/data/voicePrompts.ts).
 Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.ts`.
 
 - Mỗi lệnh gọi `triggerSpeech(text, voiceId)` truyền ID tường minh; không dò ID theo nội dung khi phát hoặc nghe lại.
@@ -11,17 +11,17 @@ Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.
 - Ba câu khen đúng dùng ba ID riêng để bản thu khớp văn bản; không dùng chung `correct.mp3` cho câu khác nữa.
 - Khu vườn đọc kết quả cố định bằng `garden_victory`; số điểm biến thiên vẫn hiển thị riêng trên màn hình, không nằm trong bản thu.
 - Thu lại `hand_pickup_victory.mp3` nếu đã có bản cũ: câu mới nói "tất cả món rác" để phù hợp với số món tùy nhập.
-- Thử tài phân loại tự đọc hướng dẫn, phản hồi nối/gỡ/kiểm tra và lời chúc hoàn thành. Mỗi lượt bắt đầu bằng câu hỏi ghép ba đoạn “Từ → tên món → bé có thể tạo ra gì?”. Lời nhắc an toàn có nút bấm để nghe. Giữ phản hồi hoàn thành lượt 4,5 giây trước khi chuyển lượt để hạn chế ngắt câu.
+- Thử tài phân loại đọc câu hỏi ghép ba đoạn “Từ → tên món → bé có thể tạo ra gì?” khi bắt đầu mỗi lượt. Chọn món hoặc nối ý tưởng không phát câu thoại; nối ý tưởng phát hiệu ứng “ting ting”. Các phản hồi khác và lời chúc hoàn thành vẫn dùng ID riêng.
 - `continue_sorting` và `play_area_small` là trạng thái lời nhắc thụ động ở màn chính: có ID lưu cùng lời thoại nhưng không tự phát. Bong bóng và nút nghe lại của robot màn chính hiện đang ẩn; callback nghe lại đã giữ ID tường minh, không thay đổi bố cục để bật lại nút. `selected_unknown` / `picked_unknown` là dự phòng khi thiếu định nghĩa món rác.
 - Danh mục là **lời nói/hướng dẫn/phản hồi**, không phải mọi nhãn nút, tên vật phẩm, văn bản mô tả ảnh, thẻ gợi ý tái sử dụng hoặc hiệu ứng âm thanh.
-- 90 ID câu đầy đủ dùng sequence, không phải ID bản thu và không cần thu/upload. Ứng dụng ghép ba đoạn theo thứ tự; nếu thiếu hoặc tải/giải mã lỗi một đoạn, đoạn đó được đọc bằng TTS và các đoạn ghi âm còn lại vẫn phát bình thường.
-- Sáu câu Khu vườn không thuộc kế hoạch ghép, tiếp tục dùng bản ghi câu đầy đủ như hiện nay. Thử tài phân loại có 20 câu chọn và 20 câu hỏi cùng ghép ba đoạn; 11 prompt còn lại tiếp tục dùng bản ghi riêng.
+- 70 ID câu đầy đủ dùng sequence, không phải ID bản thu và không cần thu/upload. Ứng dụng ghép ba đoạn theo thứ tự; nếu thiếu hoặc tải/giải mã lỗi một đoạn, đoạn đó được đọc bằng TTS và các đoạn ghi âm khác vẫn phát bình thường.
+- Sáu câu Khu vườn không thuộc kế hoạch ghép, tiếp tục dùng bản ghi câu đầy đủ như hiện nay. Thử tài phân loại có 20 câu hỏi ghép ba đoạn mỗi lượt; chọn món và nối ý tưởng không phát câu thoại.
 
-## Đoạn ghi âm ghép tuần tự (51 ID)
+## Đoạn ghi âm ghép tuần tự (49 ID)
 
 Ứng dụng phát ba đoạn theo thứ tự **câu mở đầu → tên món → câu kết thúc**. Chỉ thu phần chữ trong cột lời thoại; không đọc dấu ngoặc kép quanh tên món. Các đoạn được phát nối tiếp, không phát chồng tiếng.
 
-### Câu mở đầu và kết thúc dùng chung (8 ID)
+### Câu mở đầu và kết thúc dùng chung (6 ID)
 
 | ID | Tên file | Lời thoại cần thu |
 |---|---|---|
@@ -29,8 +29,6 @@ Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.
 | `voice_piece_selected_suffix` | `voice_piece_selected_suffix.mp3` | Hãy bấm vào thùng rác muốn bỏ nhé! |
 | `voice_piece_picked_prefix` | `voice_piece_picked_prefix.mp3` | Kiến Sáng đã nhặt |
 | `voice_piece_picked_suffix` | `voice_piece_picked_suffix.mp3` | Hãy đưa tới thùng rác thích hợp nhé! |
-| `voice_piece_sorting_prefix` | `voice_piece_sorting_prefix.mp3` | Đã chọn |
-| `voice_piece_sorting_suffix` | `voice_piece_sorting_suffix.mp3` | Bé chạm vào những ý tưởng phù hợp nhé! |
 | `voice_piece_sorting_question_prefix` | `voice_piece_sorting_question_prefix.mp3` | Từ |
 | `voice_piece_sorting_question_suffix` | `voice_piece_sorting_question_suffix.mp3` | bé có thể tạo ra gì? |
 
@@ -92,46 +90,25 @@ Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.
 | `voice_piece_sorting_name_giay_bao` | `voice_piece_sorting_name_giay_bao.mp3` | Giấy báo cũ |
 | `voice_piece_sorting_name_mu_cu` | `voice_piece_sorting_name_mu_cu.mp3` | Mũ cũ |
 
-Tên “Vỏ hộp giấy” trong `sorting_selected_vo_hop` trùng chính xác, dùng chung `voice_piece_name_vo_hop_giay.mp3`.
+Tên “Vỏ hộp giấy” trong câu hỏi của lượt `vo_hop` trùng chính xác, dùng chung `voice_piece_name_vo_hop_giay.mp3`.
 
-Tên “Thìa nhựa” trong `sorting_selected_thia_nhua` trùng chính xác, dùng chung `voice_piece_name_yard_plastic_spoon.mp3`.
+Tên “Thìa nhựa” trong câu hỏi của lượt `thia_nhua` trùng chính xác, dùng chung `voice_piece_name_yard_plastic_spoon.mp3`.
 
 ### Ánh xạ các ID câu hiện tại sang đoạn
 
 - `selected_<itemId>`: `voice_piece_selected_prefix.mp3` → `voice_piece_name_<itemId>.mp3` → `voice_piece_selected_suffix.mp3`.
 - `picked_<itemId>`: `voice_piece_picked_prefix.mp3` → `voice_piece_name_<itemId>.mp3` → `voice_piece_picked_suffix.mp3`.
 - Với sân trường, `selected_yard_<yardItemId>` và `picked_yard_<yardItemId>` dùng chung các đoạn đầu/cuối tương ứng và `voice_piece_name_yard_<yardItemId>.mp3`.
-- `sorting_selected_<wasteId>`: `voice_piece_sorting_prefix.mp3` → file tên món tương ứng trong bảng trên → `voice_piece_sorting_suffix.mp3`.
 - `sorting_question_<wasteId>`: `voice_piece_sorting_question_prefix.mp3` → file tên món tương ứng trong bảng trên → `voice_piece_sorting_question_suffix.mp3`.
 - Ví dụ: `selected_vo_dua_hau` dùng `voice_piece_selected_prefix.mp3` → `voice_piece_name_vo_dua_hau.mp3` → `voice_piece_selected_suffix.mp3`.
 - Ví dụ sân trường: `picked_yard_flower_petals` dùng `voice_piece_picked_prefix.mp3` → `voice_piece_name_yard_flower_petals.mp3` → `voice_piece_picked_suffix.mp3`.
 
-Tổng cộng cần thu **51 file đoạn**. Các khóa logic `selected_*`, `picked_*`, `sorting_selected_*` và `sorting_question_*` không phải ID bản thu; mỗi khóa ánh xạ sang đúng ba đoạn.
+Tổng cộng cần thu **49 file đoạn**. Các khóa logic `selected_*`, `picked_*` và `sorting_question_*` không phải ID bản thu; mỗi khóa ánh xạ sang đúng ba đoạn.
 
-## Câu chọn món và câu hỏi trong Thử tài phân loại — ghép tuần tự (40 ID logic)
+## Câu hỏi mỗi lượt trong Thử tài phân loại — ghép tuần tự (20 ID logic)
 
 Các ID logic sau không có file ghi âm riêng; mỗi câu dùng ba đoạn trong mục trên theo thứ tự đã mô tả.
 
-- `sorting_selected_cd`
-- `sorting_selected_chai_nhua`
-- `sorting_selected_cuon_giay`
-- `sorting_selected_giay_vun`
-- `sorting_selected_hop_giay`
-- `sorting_selected_tat_cu`
-- `sorting_selected_vo_chai`
-- `sorting_selected_vo_hop`
-- `sorting_selected_vo_lon`
-- `sorting_selected_vo_lop`
-- `sorting_selected_ao_cu`
-- `sorting_selected_quan_jean`
-- `sorting_selected_but_chi`
-- `sorting_selected_hop_trung`
-- `sorting_selected_canh_cay`
-- `sorting_selected_khay_go`
-- `sorting_selected_thia_nhua`
-- `sorting_selected_coc_giay`
-- `sorting_selected_giay_bao`
-- `sorting_selected_mu_cu`
 - `sorting_question_cd`
 - `sorting_question_chai_nhua`
 - `sorting_question_cuon_giay`
@@ -190,14 +167,13 @@ Các ID logic sau không có file ghi âm riêng; mỗi câu dùng ba đoạn tr
 | `garden_game_over` | `garden_game_over.mp3` | Nghỉ một chút nhé! Lần sau mình nhớ né gạch, đá và cành cây nhé! |
 | `garden_victory` | `garden_victory.mp3` | Tuyệt vời, bạn nhỏ! Bạn đã đón đủ món ngon. Tuyệt lắm! |
 
-## Thử tài phân loại — câu đầy đủ thông thường (11 ID)
+## Thử tài phân loại — câu đầy đủ thông thường (10 ID)
 
 | ID | Tên file | Lời thoại cần thu |
 |---|---|---|
 | `sorting_intro` | `sorting_intro.mp3` | Mỗi lượt có một món đồ có thể tái sử dụng. Bé hãy tìm các ý tưởng phù hợp nhé. |
 | `sorting_start` | `sorting_start.mp3` | Kéo từ món rác đến hình phù hợp, hoặc chạm vào hình để nối. |
 | `sorting_removed` | `sorting_removed.mp3` | Đã gỡ lựa chọn. Bé có thể nối hình khác rồi kiểm tra nhé! |
-| `sorting_connected` | `sorting_connected.mp3` | Đã nối hình. Bé có thể chọn thêm rồi bấm Kiểm tra. |
 | `sorting_select` | `sorting_select.mp3` | Bé hãy nối một hay nhiều hình phù hợp trước nhé! |
 | `sorting_retry` | `sorting_retry.mp3` | Bé thử gỡ đường nối có dấu X rồi kiểm tra lại nhé! |
 | `sorting_round_complete` | `sorting_round_complete.mp3` | Chúc mừng bé! |

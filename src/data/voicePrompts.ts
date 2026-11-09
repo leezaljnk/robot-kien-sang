@@ -12,8 +12,6 @@ export const VOICE_SHARED_PIECES: VoicePrompt[] = [
   { id: 'voice_piece_selected_suffix', text: 'Hãy bấm vào thùng rác muốn bỏ nhé!' },
   { id: 'voice_piece_picked_prefix', text: 'Kiến Sáng đã nhặt' },
   { id: 'voice_piece_picked_suffix', text: 'Hãy đưa tới thùng rác thích hợp nhé!' },
-  { id: 'voice_piece_sorting_prefix', text: 'Đã chọn' },
-  { id: 'voice_piece_sorting_suffix', text: 'Bé chạm vào những ý tưởng phù hợp nhé!' },
   { id: 'voice_piece_sorting_question_prefix', text: 'Từ' },
   { id: 'voice_piece_sorting_question_suffix', text: 'bé có thể tạo ra gì?' },
 ];
@@ -61,10 +59,6 @@ const itemVoiceSequences = [...TRASH_ITEMS, ...YARD_TRASH_ITEMS].flatMap(item =>
   ];
 });
 
-const sortingVoiceSequences = sortingNamePieces.map(({ waste, piece }) => [
-  `sorting_selected_${waste.id}`,
-  ['voice_piece_sorting_prefix', piece.id, 'voice_piece_sorting_suffix'],
-]);
 const sortingQuestionVoiceSequences = sortingNamePieces.map(({ waste, piece }) => [
   `sorting_question_${waste.id}`,
   ['voice_piece_sorting_question_prefix', piece.id, 'voice_piece_sorting_question_suffix'],
@@ -72,7 +66,6 @@ const sortingQuestionVoiceSequences = sortingNamePieces.map(({ waste, piece }) =
 
 export const VOICE_SEQUENCES: Record<string, string[]> = Object.fromEntries([
   ...itemVoiceSequences,
-  ...sortingVoiceSequences,
   ...sortingQuestionVoiceSequences,
 ]);
 
@@ -107,7 +100,6 @@ export const VOICE_PROMPTS = [
   { id: 'sorting_intro', text: 'Mỗi lượt có một món đồ có thể tái sử dụng. Bé hãy tìm các ý tưởng phù hợp nhé.' },
   { id: 'sorting_start', text: 'Kéo từ món rác đến hình phù hợp, hoặc chạm vào hình để nối.' },
   { id: 'sorting_removed', text: 'Đã gỡ lựa chọn. Bé có thể nối hình khác rồi kiểm tra nhé!' },
-  { id: 'sorting_connected', text: 'Đã nối hình. Bé có thể chọn thêm rồi bấm Kiểm tra.' },
   { id: 'sorting_select', text: 'Bé hãy nối một hay nhiều hình phù hợp trước nhé!' },
   { id: 'sorting_retry', text: 'Bé thử gỡ đường nối có dấu X rồi kiểm tra lại nhé!' },
   { id: 'sorting_round_complete', text: 'Chúc mừng bé!' },
