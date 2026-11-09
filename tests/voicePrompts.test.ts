@@ -15,11 +15,11 @@ import { embedOfflineAssets } from '../src/utils/offlineAssets';
 import { parseSettingsFile } from '../src/utils/settingsTransfer';
 import { speakKienSang, speakKienSangSequence, stopKienSangSpeech } from '../src/utils/audio';
 
-test('86 recording IDs and 60 sequence mappings cover the scenes and catalogue', () => {
+test('97 recording IDs and 90 sequence mappings cover the scenes and catalogue', () => {
   const catalog = readFileSync(new URL('../docs/voice-prompts.md', import.meta.url), 'utf8');
-  assert.equal(VOICE_PROMPTS.length, 86);
-  assert.equal(VOICE_PIECE_PROMPTS.length, 40);
-    assert.equal(Object.keys(VOICE_SEQUENCES).length, 60);
+  assert.equal(VOICE_PROMPTS.length, 97);
+  assert.equal(VOICE_PIECE_PROMPTS.length, 51);
+    assert.equal(Object.keys(VOICE_SEQUENCES).length, 90);
     assert.equal(voiceIdForText('Vỏ chai thủy tinh'), 'voice_piece_name_vo_chai');
     assert.equal(voiceIdForText('Chai thủy tinh'), 'voice_piece_sorting_name_vo_chai');
     assert(!catalog.includes('| `selected_vo_dua_hau` |'));
@@ -47,6 +47,9 @@ test('86 recording IDs and 60 sequence mappings cover the scenes and catalogue',
     assert(namePieceId?.startsWith('voice_piece_'));
     assert.deepEqual(VOICE_SEQUENCES[`sorting_selected_${waste.id}`], [
       'voice_piece_sorting_prefix', namePieceId, 'voice_piece_sorting_suffix',
+    ]);
+    assert.deepEqual(VOICE_SEQUENCES[`sorting_question_${waste.id}`], [
+      'voice_piece_sorting_question_prefix', namePieceId, 'voice_piece_sorting_question_suffix',
     ]);
     assert(!VOICE_PROMPTS.some(prompt => prompt.id === `sorting_selected_${waste.id}`));
   }

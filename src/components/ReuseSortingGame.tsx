@@ -1,21 +1,21 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, Check, Flower2, Hand, Link2, Play, RotateCcw, Settings2, ShieldCheck, Sparkles, Sprout, Volume2, VolumeX } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { ArrowLeft, ArrowRight, Check, Hand, Leaf, PartyPopper, RotateCcw, Sparkles, Timer } from 'lucide-react';
 import {
   createSortingGameRounds,
   evaluateSortingGameChoices,
+  SORTING_GAME_WASTES,
   sortingGameImageUrl,
   type SortingGameRound,
 } from '../data/sortingGame';
-import { playCountdownSfx, playErrorSfx, playSuccessSfx, playVictoryFanfare } from '../utils/audio';
+import { playCountdownSfx, playErrorSfx, playSuccessSfx, playVictoryFanfare, stopKienSangSpeech } from '../utils/audio';
 import { type TriggerSpeech } from '../data/voicePrompts';
 import './ReuseSortingGame.css';
-
-const ROUND_DURATION_SECONDS = 60;
 
 interface ReuseSortingGameProps {
   onExit: () => void;
   triggerSpeech: TriggerSpeech;
+  customMascotUrl?: string | null;
 }
 
 interface Point {
@@ -35,6 +35,7 @@ interface BoardGeometry {
 interface ActiveArrow {
   pointerId: number;
   point: Point;
+  trail: Point[];
 }
 
 const getContainedImageBounds = (image: HTMLImageElement) => {
@@ -54,8 +55,48 @@ const getContainedImageBounds = (image: HTMLImageElement) => {
 
 type GamePhase = 'intro' | 'playing' | 'complete';
 
-export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, triggerSpeech }) => {
+const ReuseCountdown: React.FC<{ running: boolean; muted: boolean }> = ({ running, muted }) => {
+  const [seconds, setSeconds] = useState(10);
+  const soundEnabledRef = useRef(!muted);
+
+  useLayoutEffect(() => { soundEnabledRef.current = !muted; }, [muted]);
+
+  useEffect(() => {
+    if (!running) return;
+    let remaining = seconds;
+    let interval: number | undefined;
+    const start = () => {
+      window.clearInterval(interval);
+      if (document.hidden) return;
+      interval = window.setInterval(() => {
+        remaining = remaining <= 1 ? 10 : remaining - 1;
+        setSeconds(remaining);
+        if (remaining <= 3 && soundEnabledRef.current) playCountdownSfx(0.035);
+      }, 1000);
+    };
+    start();
+    document.addEventListener('visibilitychange', start);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', start);
+    };
+  }, [running]);
+
+  return (
+    <div role="timer" aria-live="off" aria-label={`Thời gian còn lại: ${seconds} giây`} className={`reuse-timer ${seconds <= 3 && running ? 'reuse-timer--warning' : ''}`}>
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="27" className="reuse-timer-track" />
+        <circle cx="32" cy="32" r="27" pathLength="10" strokeDasharray="10" strokeDashoffset={10 - seconds} className="reuse-timer-ring" />
+      </svg>
+      <span aria-hidden="true"><strong>{seconds}</strong><small>giây</small></span>
+    </div>
+  );
+};
+
+export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, triggerSpeech: onSpeech, customMascotUrl }) => {
   const [phase, setPhase] = useState<GamePhase>('intro');
+  const [roundCount, setRoundCount] = useState('5');
+  const [muted, setMuted] = useState(false);
   const [rounds, setRounds] = useState<SortingGameRound[]>([]);
   const [roundIndex, setRoundIndex] = useState(0);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -64,8 +105,6 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
   const [feedback, setFeedback] = useState('');
   const [roundComplete, setRoundComplete] = useState(false);
   const [sourceSelected, setSourceSelected] = useState(false);
-  const [roundCount, setRoundCount] = useState(5);
-  const [secondsRemaining, setSecondsRemaining] = useState(ROUND_DURATION_SECONDS);
   const [activeArrow, setActiveArrow] = useState<ActiveArrow | null>(null);
   const [geometry, setGeometry] = useState<BoardGeometry>({
     width: 0,
@@ -79,64 +118,67 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
   const sourceRef = useRef<HTMLButtonElement>(null);
   const choiceRefs = useRef(new Map<string, HTMLButtonElement>());
   const activeArrowRef = useRef<ActiveArrow | null>(null);
-  const lastInteractionAtRef = useRef(Date.now());
-  const idleHintShownRef = useRef(false);
+  const mutedRef = useRef(false);
+  const suppressClickRef = useRef(false);
+  const lastInteractionRef = useRef(0);
   const currentRound = rounds[roundIndex];
+  const validRoundCount = roundCount.trim() !== '' && Number.isInteger(Number(roundCount)) && Number(roundCount) >= 1 && Number(roundCount) <= 20;
+  const completedRounds = phase === 'complete' ? rounds.length : roundIndex + (roundComplete ? 1 : 0);
+  const hasUncheckedChoices = selectedIds.some(id => !confirmedCorrectIds.includes(id) && !wrongIds.includes(id));
+  const mascotUrl = customMascotUrl || `${import.meta.env.BASE_URL}images/kien-sang-main.png`;
+  const introWaste = SORTING_GAME_WASTES[1];
+
+  useLayoutEffect(() => { mutedRef.current = muted; }, [muted]);
+  const triggerSpeech = useCallback<TriggerSpeech>((text, voiceId) => {
+    if (!mutedRef.current) onSpeech(text, voiceId);
+  }, [onSpeech]);
+
+  useEffect(() => () => { stopKienSangSpeech(); }, []);
 
   const showFeedback = useCallback((text: string, voiceId: string) => {
     setFeedback(text);
     triggerSpeech(text, voiceId);
   }, [triggerSpeech]);
 
-  const registerActivity = useCallback(() => {
-    lastInteractionAtRef.current = Date.now();
-    idleHintShownRef.current = false;
-  }, []);
-
   useEffect(() => {
     if (phase === 'intro') {
-      triggerSpeech('Mỗi lượt có một món đồ và sáu bức tranh. Bé hãy tìm ba ý tưởng phù hợp nhé.', 'sorting_intro');
+      triggerSpeech('Mỗi lượt có một món đồ có thể tái sử dụng. Bé hãy tìm các ý tưởng phù hợp nhé.', 'sorting_intro');
     } else if (phase === 'complete') {
       triggerSpeech('Bé giỏi quá! Bé đã tìm được nhiều cách sáng tạo để dùng lại đồ cũ. Nhớ nhờ người lớn giúp với những ý tưởng cần làm thủ công nhé!', 'sorting_victory');
     }
   }, [phase, triggerSpeech]);
 
   useEffect(() => {
-    if (phase !== 'playing' || roundComplete) return;
-    const deadline = Date.now() + ROUND_DURATION_SECONDS * 1000;
-    let hasAlerted = false;
-    setSecondsRemaining(ROUND_DURATION_SECONDS);
-    const interval = window.setInterval(() => {
-      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-      setSecondsRemaining(remaining);
-      if (remaining === 0 && !hasAlerted) {
-        hasAlerted = true;
-        playCountdownSfx();
+    if (phase !== 'playing' || !currentRound || roundComplete) return;
+    const question = `Từ ${currentRound.waste.name.toLocaleLowerCase('vi')}, bé có thể tạo ra gì?`;
+    showFeedback(question, `sorting_question_${currentRound.waste.id}`);
+  }, [phase, currentRound, roundComplete, showFeedback]);
+
+  useEffect(() => {
+    if (roundComplete || phase === 'complete') {
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        void confetti({ particleCount: phase === 'complete' ? 160 : 65, spread: 90, origin: { y: 0.6 }, colors: ['#208a67', '#f292a7', '#efc64a', '#4aa9c2'], disableForReducedMotion: true });
       }
-    }, 250);
-    return () => window.clearInterval(interval);
-  }, [phase, roundComplete, roundIndex]);
+      if (phase === 'complete' && !mutedRef.current) playVictoryFanfare();
+    }
+    return () => { confetti.reset(); };
+  }, [roundComplete, phase]);
 
   useEffect(() => {
-    if (phase !== 'complete') return;
-    playVictoryFanfare();
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const bursts = [
-      window.setTimeout(() => confetti({ particleCount: 90, spread: 75, origin: { y: 0.62 } }), 0),
-      window.setTimeout(() => confetti({ particleCount: 65, spread: 110, origin: { y: 0.55 } }), 350),
-    ];
-    return () => bursts.forEach(window.clearTimeout);
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase !== 'playing' || roundComplete) return;
+    if (phase === 'complete' || roundComplete) return;
+    lastInteractionRef.current = Date.now();
+    let reminded = false;
     const interval = window.setInterval(() => {
-      if (idleHintShownRef.current || Date.now() - lastInteractionAtRef.current < 25000) return;
-      idleHintShownRef.current = true;
-      showFeedback('Bé hãy nối một hay nhiều hình rồi kiểm tra nhé!', 'sorting_continue');
-    }, 2000);
+      if (document.hidden || reminded || activeArrowRef.current || Date.now() - lastInteractionRef.current < 15000) return;
+      reminded = true;
+      if (phase === 'intro') {
+        triggerSpeech('Mỗi lượt có một món đồ có thể tái sử dụng. Bé hãy tìm các ý tưởng phù hợp nhé.', 'sorting_intro');
+      } else {
+        showFeedback('Bé hãy nối một hay nhiều hình phù hợp trước nhé!', 'sorting_select');
+      }
+    }, 1000);
     return () => window.clearInterval(interval);
-  }, [phase, roundComplete, showFeedback]);
+  }, [phase, roundIndex, roundComplete, showFeedback, triggerSpeech]);
 
   const measureConnections = useCallback(() => {
     const board = boardRef.current;
@@ -195,7 +237,6 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
 
   const toggleChoice = useCallback((id: string) => {
     if (roundComplete || confirmedCorrectIds.includes(id)) return;
-    registerActivity();
     if (selectedIds.includes(id)) {
       const nextSelected = selectedIds.filter((selectedId) => selectedId !== id);
       const nextWrong = wrongIds.filter((wrongId) => wrongId !== id);
@@ -207,7 +248,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
     setSelectedIds([...selectedIds, id]);
     setWrongIds(wrongIds.filter((wrongId) => wrongId !== id));
     showFeedback('Đã nối hình. Bé có thể chọn thêm rồi bấm Kiểm tra.', 'sorting_connected');
-  }, [roundComplete, confirmedCorrectIds, selectedIds, wrongIds, showFeedback, registerActivity]);
+  }, [roundComplete, confirmedCorrectIds, selectedIds, wrongIds, showFeedback]);
 
   const toggleChoiceRef = useRef(toggleChoice);
 
@@ -235,13 +276,14 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
     const onPointerMove = (event: PointerEvent) => {
       const active = activeArrowRef.current;
       if (!active || event.pointerId !== active.pointerId) return;
-      registerActivity();
       const bounds = boardRef.current?.getBoundingClientRect();
       if (!bounds) return;
       const nextArrow = {
         pointerId: event.pointerId,
         point: { x: event.clientX - bounds.left, y: event.clientY - bounds.top },
+        trail: [...active.trail, active.point].slice(-7),
       };
+      lastInteractionRef.current = Date.now();
       activeArrowRef.current = nextArrow;
       setActiveArrow(nextArrow);
     };
@@ -250,7 +292,11 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
       if (!active || event.pointerId !== active.pointerId) return;
       const choice = document.elementFromPoint(event.clientX, event.clientY)
         ?.closest<HTMLElement>('[data-choice-id]');
-      if (choice?.dataset.choiceId) toggleChoiceRef.current(choice.dataset.choiceId);
+      if (choice?.dataset.choiceId) {
+        toggleChoiceRef.current(choice.dataset.choiceId);
+        suppressClickRef.current = true;
+        window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+      }
       activeArrowRef.current = null;
       setActiveArrow(null);
     };
@@ -266,8 +312,9 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerCancel);
+      activeArrowRef.current = null;
     };
-  }, [phase, registerActivity]);
+  }, [phase]);
 
   useEffect(() => {
     if (!roundComplete) return;
@@ -290,7 +337,9 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
   }, [roundComplete, roundIndex, rounds.length, showFeedback]);
 
   const startGame = () => {
-    setRounds(createSortingGameRounds(Math.random, roundCount));
+    if (!validRoundCount) return;
+    stopKienSangSpeech();
+    setRounds(createSortingGameRounds(Math.random, Number(roundCount)));
     setRoundIndex(0);
     setSelectedIds([]);
     setConfirmedCorrectIds([]);
@@ -299,14 +348,11 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
     setSourceSelected(false);
     activeArrowRef.current = null;
     setActiveArrow(null);
-    registerActivity();
-    showFeedback('Kéo từ món rác đến hình phù hợp, hoặc chạm vào hình để nối.', 'sorting_start');
     setPhase('playing');
   };
 
   const checkAnswers = () => {
     if (!currentRound || roundComplete) return;
-    registerActivity();
     if (selectedIds.length === 0) {
       showFeedback('Bé hãy nối một hay nhiều hình phù hợp trước nhé!', 'sorting_select');
       return;
@@ -317,14 +363,14 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
     setWrongIds(nextWrongIds);
 
     if (nextWrongIds.length > 0) {
-      playErrorSfx();
+      if (!mutedRef.current) playErrorSfx();
       showFeedback('Bé thử gỡ đường nối có dấu X rồi kiểm tra lại nhé!', 'sorting_retry');
       return;
     }
-    playSuccessSfx();
+    if (!mutedRef.current) playSuccessSfx();
     if (isComplete) {
       setRoundComplete(true);
-      showFeedback('Bé giỏi lắm! Cả ba ý tưởng phù hợp đã được tìm thấy.', 'sorting_round_complete');
+      showFeedback('Chúc mừng bé!', 'sorting_round_complete');
       return;
     }
     showFeedback('Tốt lắm! Còn ý tưởng phù hợp nữa, bé tìm tiếp nhé!', 'sorting_more');
@@ -338,158 +384,78 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
   };
 
   return (
-    <main className="reuse-sorting-game fixed inset-0 z-[70] overflow-y-auto bg-[radial-gradient(ellipse_at_top,_#fff7d6_0%,_#e0f2fe_55%,_#dcfce7_100%)] text-slate-900">
-      <div className="reuse-sorting-decor reuse-sorting-decor--one" aria-hidden="true">🌼</div>
-      <div className="reuse-sorting-decor reuse-sorting-decor--two" aria-hidden="true">🍃</div>
-      <div className="reuse-sorting-decor reuse-sorting-decor--three" aria-hidden="true">🐞</div>
-      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-3 py-3 sm:px-6 sm:py-5">
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/80 bg-white/85 px-3 py-2.5 shadow-lg backdrop-blur sm:px-5">
-          <div className="flex items-center gap-3">
+    <main className={`reuse-game reuse-game--${phase}`} onPointerDownCapture={() => { lastInteractionRef.current = Date.now(); }} onKeyDownCapture={() => { lastInteractionRef.current = Date.now(); }}>
+      <div className="reuse-layout">
+        <header className="reuse-header">
+          <div className="reuse-header-title">
             <button
               type="button"
-              onClick={onExit}
-              className="flex min-h-11 items-center gap-1.5 rounded-xl border-2 border-sky-200 bg-white px-3 text-sm font-black text-sky-900 shadow-sm transition hover:bg-sky-50 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+              onClick={() => { stopKienSangSpeech(); onExit(); }}
+              className="reuse-icon-button"
               aria-label="Quay lại màn chơi chính"
+              title="Quay lại màn chơi chính"
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Màn chơi chính</span>
-              <span className="sm:hidden">Quay lại</span>
+              <ArrowLeft />
             </button>
             <div>
-              <p className="flex items-center gap-1 text-xs font-extrabold uppercase tracking-wide text-emerald-700">
-                <Leaf className="h-3.5 w-3.5" />
-                Góc sáng tạo xanh
-              </p>
-              <h1 className="text-base font-black leading-tight text-slate-900 sm:text-xl">
-                Thử tài phân loại rác
-              </h1>
+              <h1>Góc sáng tạo xanh</h1>
             </div>
           </div>
-          {phase === 'playing' && (
-            <div className="flex items-center gap-2">
-              <div
-                className={`flex items-center gap-1.5 rounded-full border-2 px-3 py-2 text-sm font-black tabular-nums ${secondsRemaining === 0 ? 'border-sky-200 bg-sky-50 text-sky-900' : 'border-amber-200 bg-amber-50 text-amber-900'}`}
-                aria-label={secondsRemaining === 0 ? 'Đồng hồ đã hết, bé vẫn có thể chơi tiếp' : `Còn ${secondsRemaining} giây, không giới hạn lượt chơi`}
-              >
-                <Timer className="h-4 w-4" aria-hidden="true" />
-                {Math.floor(secondsRemaining / 60)}:{String(secondsRemaining % 60).padStart(2, '0')}
-              </div>
-              <span className="rounded-full border-2 border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-900" aria-label={`Lượt ${roundIndex + 1} trên ${rounds.length}`}>
-                Lượt {roundIndex + 1}/{rounds.length}
-              </span>
-            </div>
-          )}
+          <button type="button" className="reuse-icon-button" aria-label={muted ? 'Bật âm thanh' : 'Tắt âm thanh'} aria-pressed={muted} title={muted ? 'Bật âm thanh' : 'Tắt âm thanh'} onClick={() => { if (!muted) stopKienSangSpeech(); setMuted(!muted); }}>
+            {muted ? <VolumeX /> : <Volume2 />}
+          </button>
         </header>
 
         {phase === 'intro' && (
-          <section className="mx-auto my-auto grid w-full max-w-5xl gap-5 rounded-3xl border-4 border-white bg-white/90 p-5 shadow-2xl sm:gap-7 sm:p-8 md:grid-cols-[1.1fr_0.9fr]">
-            <div className="flex flex-col justify-center">
-              <p className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1.5 text-sm font-black text-emerald-900">
-                <Sparkles className="h-4 w-4" />
-                Cùng nghĩ cách dùng lại đồ cũ
-              </p>
-              <h2 className="mt-4 text-2xl font-black leading-tight text-slate-900 sm:text-4xl">
-                Món đồ cũ, ý tưởng mới!
-              </h2>
-              <p className="mt-3 text-base leading-relaxed text-slate-700">
-                Mỗi lượt có một món đồ và sáu bức tranh. Bé hãy tìm ba ý tưởng phù hợp nhé.
-              </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <article className="reuse-step-card reuse-step-card--blue">
-                  <span className="reuse-step-icon"><Hand aria-hidden="true" /></span>
-                  <span className="reuse-step-number">Bước 1</span>
-                  <p>Chọn món đồ cũ...</p>
-                </article>
-                <article className="reuse-step-card reuse-step-card--green">
-                  <span className="reuse-step-icon"><ArrowRight aria-hidden="true" /></span>
-                  <span className="reuse-step-number">Bước 2</span>
-                  <p>...nối cách dùng mới phù hợp!</p>
-                </article>
-                <article className="reuse-step-card reuse-step-card--orange">
-                  <span className="reuse-step-icon"><Check aria-hidden="true" /></span>
-                  <span className="reuse-step-number">Bước 3</span>
-                  <p>Kiểm tra và sửa nếu cần!</p>
-                </article>
-              </div>
+          <section className="reuse-welcome" aria-labelledby="reuse-welcome-title">
+            <div className="reuse-intro-art" aria-hidden="true">
+              <span className="reuse-art-ground" />
+              <img className="reuse-art-source" src={sortingGameImageUrl(introWaste.image)} alt="" />
+              <ArrowRight className="reuse-art-arrow" />
+              {introWaste.products.map((product, index) => <img key={product.id} className={`reuse-art-product reuse-art-product--${index}`} src={sortingGameImageUrl(product.image)} alt="" />)}
+              <Sparkles className="reuse-art-spark" />
+              <img className="reuse-intro-mascot" src={mascotUrl} alt="" />
             </div>
-            <div className="flex flex-col justify-center rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/80 p-5 text-center">
-              <div className="mb-3 flex items-center justify-center gap-3">
-                <div className="reuse-mascot reuse-mascot--idle" aria-hidden="true">🤖</div>
-                <div className="reuse-speech-bubble">
-                  Bé ơi, cùng nghĩ xem món đồ cũ này có thể dùng thành gì nhé!
-                </div>
-              </div>
-              <p className="text-sm font-bold leading-relaxed text-emerald-950">
-                Không bị trừ điểm khi thử lại. Đồng hồ chỉ nhắc vui; hết giờ bé vẫn tiếp tục chơi nhé!
-              </p>
-              <label htmlFor="reuse-round-count" className="mt-4 text-sm font-extrabold text-emerald-950">
-                Chọn số lượt chơi
+            <div className="reuse-intro-copy">
+              <h2 id="reuse-welcome-title">Món đồ cũ,<br /><span>ý tưởng mới!</span></h2>
+              <p className="reuse-mascot-greeting">Bé ơi, cùng tìm ba cách dùng lại đồ cũ nhé!</p>
+            </div>
+            <div className="reuse-visual-steps" role="img" aria-label="Chạm vào ý tưởng hoặc kéo từ món đồ để nối. Kiểm tra rồi gỡ lựa chọn sai và thử lại; đáp án đúng được giữ lại.">
+              <span><Hand /><small>Chạm hoặc kéo</small></span>
+              <ArrowRight className="reuse-step-arrow" />
+              <span><Link2 /><small>Nối ý tưởng</small></span>
+              <ArrowRight className="reuse-step-arrow" />
+              <span><Check /><small>Kiểm tra, thử lại</small></span>
+            </div>
+            <div className="reuse-intro-controls">
+              <label htmlFor="reuse-round-count">Số lượt
+                <input id="reuse-round-count" type="number" inputMode="numeric" min="1" max="20" step="1" value={roundCount} onChange={event => setRoundCount(event.target.value)} aria-invalid={!validRoundCount} aria-describedby={!validRoundCount ? 'reuse-count-error' : undefined} />
               </label>
-              <select
-                id="reuse-round-count"
-                value={roundCount}
-                onChange={(event) => setRoundCount(Number(event.target.value))}
-                className="mx-auto mt-1 min-h-11 w-full max-w-xs rounded-xl border-2 border-emerald-200 bg-white px-3 text-center font-black text-emerald-950 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
-              >
-                {[3, 5, 7, 10].map((count) => (
-                  <option key={count} value={count}>{count} lượt</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={startGame}
-                className="reuse-start-button mt-5 min-h-16 rounded-full px-7 py-3 text-xl font-black text-white shadow-lg focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
-              >
-                <Sparkles className="mr-2 inline h-5 w-5" aria-hidden="true" />
-                Bắt đầu thử tài
-              </button>
+              <button type="button" onClick={startGame} disabled={!validRoundCount} className="reuse-primary reuse-start"><Play fill="currentColor" />Bắt đầu</button>
+              {!validRoundCount && <p id="reuse-count-error" role="alert" className="reuse-count-error">Chọn số nguyên từ 1 đến 20 lượt nhé.</p>}
             </div>
+            <p className="reuse-intro-note"><Sprout />Đồng hồ 10 giây chỉ nhắc vui; bé vẫn tiếp tục chơi khi hết giờ nhé!</p>
           </section>
         )}
 
         {phase === 'playing' && currentRound && (
-          <section className="my-auto w-full py-4">
-            <div className="reuse-growth-progress mb-4 rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm" role="progressbar" aria-label="Hành trình nảy mầm" aria-valuemin={0} aria-valuemax={rounds.length} aria-valuenow={roundComplete ? roundIndex + 1 : roundIndex}>
-              <div className="mb-2 flex items-center justify-between gap-2 text-sm font-black text-emerald-900">
-                <span>Hành trình nảy mầm</span>
-                <span>{roundComplete ? roundIndex + 1 : roundIndex}/{rounds.length} lượt đã xong</span>
-              </div>
-              <div className="relative flex items-center justify-between">
-                <div className="absolute left-2 right-2 top-1/2 h-2 -translate-y-1/2 rounded-full bg-emerald-100" aria-hidden="true">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-lime-400 to-emerald-500 transition-[width] duration-700"
-                    style={{ width: `${((roundComplete ? roundIndex + 1 : roundIndex) / rounds.length) * 100}%` }}
-                  />
+          <section className="reuse-play">
+            <div className="reuse-play-top">
+              <div className="reuse-journey">
+                <div className="reuse-journey-label"><span>Lượt {roundIndex + 1}/{rounds.length}</span><strong>{completedRounds} mầm xanh</strong></div>
+                <div className="reuse-growth" role="progressbar" aria-label="Số lượt hoàn thành" aria-valuemin={0} aria-valuemax={rounds.length} aria-valuenow={completedRounds}>
+                  {rounds.map((round, index) => <span key={round.waste.id} className={`${index < completedRounds ? 'is-grown' : ''} ${index === roundIndex ? 'is-current' : ''}`} aria-hidden="true">{index < completedRounds ? <Flower2 /> : <Sprout />}</span>)}
                 </div>
-                {rounds.map((round, index) => {
-                  const done = index < roundIndex || (index === roundIndex && roundComplete);
-                  return (
-                    <span
-                      key={round.waste.id}
-                      className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 text-base ${done ? 'border-amber-300 bg-amber-100' : index === roundIndex ? 'reuse-progress-current border-emerald-400 bg-white' : 'border-emerald-100 bg-white'}`}
-                      aria-hidden="true"
-                    >
-                      {done ? '🌼' : index === roundIndex ? '🌱' : '·'}
-                    </span>
-                  );
-                })}
               </div>
+              <ReuseCountdown key={`${roundIndex}-${rounds.length}`} running={!roundComplete} muted={muted} />
             </div>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="text-lg font-black text-slate-900 sm:text-2xl">
-                  Từ món đồ này, bé có thể tạo ra gì?
-                </h2>
-                <p className="mt-1 text-sm font-semibold text-slate-700">
-                  Chọn những ý tưởng bé thấy phù hợp, rồi bấm Kiểm tra.
-                </p>
-              </div>
-            </div>
+            <h2 className="reuse-question">Từ <span>{currentRound.waste.name.toLocaleLowerCase('vi')}</span>, bé có thể tạo ra gì?</h2>
 
-            <div
-              ref={boardRef}
-              className="relative isolate mx-auto grid aspect-square w-full max-w-5xl grid-cols-3 grid-rows-3 overflow-hidden sm:aspect-[1.6/1]"
-            >
+            <div className="reuse-board-shell">
+              <div
+                ref={boardRef}
+                className="reuse-board"
+              >
               {(geometry.source || activeArrow) && (
                 <svg
                   className="pointer-events-none absolute inset-0 z-20 h-full w-full"
@@ -541,12 +507,12 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
                     const markerX = markerPoint.x - (tangent.y / tangentLength) * 14;
                     const markerY = markerPoint.y + (tangent.x / tangentLength) * 14;
                     return (
-                      <g key={id} className={`reuse-connection reuse-connection--${status}`}>
+                      <g key={id} className={`reuse-connection reuse-connection--${status}`} data-connection-status={status} data-connection-id={id}>
                         <path
                           d={`M ${start.x} ${start.y} C ${control1.x} ${control1.y}, ${control2.x} ${control2.y}, ${endpoint.x} ${endpoint.y}`}
                           fill="none"
                           stroke={color}
-                          strokeWidth={status === 'correct' ? 2.5 : status === 'wrong' ? 2 : 4}
+                          strokeWidth={status === 'correct' ? 5 : 3}
                           markerEnd={`url(#sorting-arrow-head-${status})`}
                           strokeDasharray={status === 'selected' ? '9 7' : undefined}
                           strokeLinecap="round"
@@ -555,7 +521,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
                         {status !== 'selected' && (
                           <g transform={`translate(${markerX} ${markerY})`}>
                             <circle
-                              r="8"
+                              r="11"
                               fill="white"
                               stroke={status === 'wrong' ? '#e11d48' : '#15803d'}
                               strokeWidth="2"
@@ -580,6 +546,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
                             )}
                           </g>
                         )}
+                        {status === 'correct' && <Flower2 x={endpoint.x - 10} y={endpoint.y - 10} width={20} height={20} fill="#f7d777" color="#187557" className="reuse-end-flower" />}
                       </g>
                     );
                   })}
@@ -616,27 +583,18 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
                   </defs>
                   {activeArrow && geometry.source && (
                     <g>
-                      <line
-                        x1={geometry.source.x}
-                        y1={geometry.source.y}
-                        x2={activeArrow.point.x}
-                        y2={activeArrow.point.y}
-                        stroke="#fb7c52"
-                        strokeWidth="4"
-                        strokeDasharray="8 6"
-                        strokeLinecap="round"
-                        markerEnd="url(#sorting-arrow-head-active)"
-                      />
-                      {[0, 1, 2].map((sparkle) => (
-                        <circle
-                          key={sparkle}
-                          className="reuse-trail-sparkle"
-                          cx={activeArrow.point.x + (sparkle - 1) * 10}
-                          cy={activeArrow.point.y - (sparkle % 2) * 8}
-                          r={sparkle === 1 ? 3.5 : 2.5}
-                          style={{ animationDelay: `${sparkle * 100}ms` }}
-                        />
-                      ))}
+                    <line
+                      x1={geometry.source.x}
+                      y1={geometry.source.y}
+                      x2={activeArrow.point.x}
+                      y2={activeArrow.point.y}
+                      stroke="#fb7c52"
+                      strokeWidth="4"
+                      strokeDasharray="8 6"
+                      strokeLinecap="round"
+                      markerEnd="url(#sorting-arrow-head-active)"
+                    />
+                    {activeArrow.trail.map((point, index) => <Sparkles key={index} x={point.x - 5} y={point.y - 5} width={8 + index} height={8 + index} color={index % 2 ? '#ec9b42' : '#258b70'} opacity={(index + 1) / 8} />)}
                     </g>
                   )}
                 </svg>
@@ -646,32 +604,33 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
                 ref={sourceRef}
                 type="button"
                 onPointerDown={(event) => {
-                  if (event.pointerType === 'touch' || event.button !== 0 || !geometry.source) return;
+                  if (!event.isPrimary || event.button !== 0 || !geometry.source || roundComplete) return;
                   event.preventDefault();
-                  registerActivity();
                   const bounds = boardRef.current?.getBoundingClientRect();
                   if (!bounds) return;
                   setSourceSelected(true);
                   const nextArrow = {
                     pointerId: event.pointerId,
                     point: { x: event.clientX - bounds.left, y: event.clientY - bounds.top },
+                    trail: [],
                   };
                   activeArrowRef.current = nextArrow;
                   setActiveArrow(nextArrow);
                 }}
                 onClick={() => {
-                  registerActivity();
+                  if (suppressClickRef.current || roundComplete) return;
                   setSourceSelected(true);
                   showFeedback(`Đã chọn ${currentRound.waste.name}. Bé chạm vào những ý tưởng phù hợp nhé!`, `sorting_selected_${currentRound.waste.id}`);
                 }}
                 aria-pressed={sourceSelected}
-                className={`reuse-source-card relative z-10 col-start-2 row-start-2 flex h-full w-full flex-col items-center justify-center rounded-3xl p-2 text-center focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 ${sourceSelected ? 'drop-shadow-[0_0_0.75rem_rgba(16,185,129,0.6)]' : ''}`}
+                disabled={roundComplete}
+                className={`reuse-source ${sourceSelected ? 'is-selected' : ''}`}
                 aria-label={`Chạm để chọn hoặc kéo ${currentRound.waste.name} đến một ý tưởng phù hợp`}
               >
+                <span className="reuse-source-halo" aria-hidden="true" />
                 <img
                   src={sortingGameImageUrl(currentRound.waste.image)}
                   alt={currentRound.waste.alt}
-                  className="h-[78%] w-[78%] object-contain drop-shadow-[0_0_0.9rem_rgba(16,185,129,0.8)] sm:h-[70%] sm:w-[70%]"
                   draggable={false}
                   onLoad={measureConnections}
                 />
@@ -695,33 +654,36 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
                       }}
                       type="button"
                       data-choice-id={option.id}
-                      onClick={() => toggleChoice(option.id)}
+                      onClick={() => { if (!suppressClickRef.current) toggleChoice(option.id); }}
                       disabled={roundComplete || status === 'correct'}
                       aria-pressed={selectedIds.includes(option.id)}
                       aria-label={`${option.name}. ${statusMessage}${option.safetyNote ? `. ${option.safetyNote}` : ''}`}
                       style={{ gridColumn: option.column, gridRow: option.row }}
-                      className={`reuse-choice-card reuse-choice-card--${status} relative z-10 col-span-1 row-span-1 flex h-full w-full items-center justify-center rounded-2xl border-2 border-white/90 p-2 shadow-md transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-1 focus-visible:outline-sky-400 disabled:cursor-default motion-safe:hover:scale-105 motion-reduce:transform-none ${status === 'selected' ? 'drop-shadow-[0_0_0.75rem_rgba(14,165,233,0.7)]' : ''}`}
+                      className={`reuse-choice reuse-choice--${status}`}
                     >
+                      <span className="reuse-choice-halo" aria-hidden="true" />
                       <img
                         src={sortingGameImageUrl(option.image)}
                         alt={option.alt}
-                        className="h-[78%] w-[78%] object-contain sm:h-[70%] sm:w-[70%]"
                         draggable={false}
                         onLoad={measureConnections}
                       />
                     </button>
                   );
                 })}
+              </div>
             </div>
 
-            <div className="mt-3 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p role="status" aria-live="polite" className="min-h-12 rounded-xl border border-white/80 bg-white/75 px-3 py-2 text-sm font-bold leading-relaxed text-slate-800 shadow-sm sm:flex-1">
+            <div className="reuse-feedback-row">
+              {roundComplete && <img src={mascotUrl} alt="Robot Kiến Sáng chúc mừng" className="reuse-cheering-mascot" />}
+              <p role="status" aria-live="polite" className="reuse-feedback">
                 {feedback || 'Bé hãy nối một hay nhiều hình rồi kiểm tra nhé!'}
               </p>
               <button
                 type="button"
                 onClick={checkAnswers}
-                className={`reuse-check-button flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-sky-700 px-7 py-3 text-lg font-black text-white shadow-lg transition hover:bg-sky-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${selectedIds.length >= 3 && !roundComplete ? 'reuse-check-button--ready' : ''}`}
+                disabled={!selectedIds.length || roundComplete}
+                className={`reuse-primary reuse-check ${hasUncheckedChoices && !roundComplete ? 'reuse-check--ready' : ''}`}
               >
                 <Check className="h-5 w-5" />
                 Kiểm tra
@@ -731,41 +693,41 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
               type="button"
               aria-label="Nghe lời nhắc an toàn"
               onClick={() => triggerSpeech('Một số ý tưởng cần người lớn hỗ trợ. Mình chỉ quan sát tranh và nhờ người lớn giúp nhé!', 'sorting_safety')}
-              className="mt-2 min-h-11 w-full text-center text-xs font-semibold text-slate-600"
+              className="reuse-safety"
             >
-              🔊 Một số ý tưởng cần người lớn hỗ trợ. Mình chỉ quan sát tranh và nhờ người lớn giúp nhé!
+              <ShieldCheck />Nhờ người lớn hỗ trợ khi làm thủ công nhé!
             </button>
           </section>
         )}
 
         {phase === 'complete' && (
-          <section className="mx-auto my-auto w-full max-w-xl rounded-3xl border-4 border-white bg-white/90 p-6 text-center shadow-2xl sm:p-10">
-            <div className="reuse-mascot reuse-mascot--victory mx-auto mb-2" aria-hidden="true">🤖</div>
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-100 text-4xl" aria-hidden="true">🌼</div>
-            <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1.5 text-sm font-black text-amber-950">
-              <PartyPopper className="h-4 w-4" />
+          <section className="reuse-complete" aria-labelledby="reuse-complete-title">
+            <img src={mascotUrl} alt="Robot Kiến Sáng chúc mừng" className="reuse-victory-mascot" />
+            <p className="reuse-final-count">
+              <Flower2 />
               Hoàn thành {rounds.length}/{rounds.length} lượt
+              <Flower2 />
             </p>
-            <h2 className="mt-4 text-3xl font-black text-emerald-900 sm:text-4xl">Bé giỏi quá!</h2>
-            <p className="mt-3 text-base leading-relaxed text-slate-700">
+            <h2 id="reuse-complete-title">Bé giỏi quá!</h2>
+            <p>
               Bé đã tìm được nhiều cách sáng tạo để dùng lại đồ cũ. Nhớ nhờ người lớn giúp với những ý tưởng cần làm thủ công nhé!
             </p>
-            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <div className="reuse-complete-actions">
               <button
                 type="button"
                 onClick={startGame}
-                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 font-black text-white shadow-md transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+                className="reuse-primary"
               >
                 <RotateCcw className="h-4 w-4" />
                 Chơi lại
               </button>
               <button
                 type="button"
-                onClick={onExit}
-                className="flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-sky-300 bg-white px-5 py-3 font-black text-sky-900 transition hover:bg-sky-50 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+                onClick={() => { stopKienSangSpeech(); setPhase('intro'); }}
+                className="reuse-secondary"
               >
-                <ArrowLeft className="h-4 w-4" />
-                Về màn chơi chính
+                <Settings2 className="h-4 w-4" />
+                Chọn số lượt
               </button>
             </div>
           </section>

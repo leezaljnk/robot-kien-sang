@@ -1996,7 +1996,7 @@ export default function App() {
         />
       </React.Suspense>}
       {isSortingGameOpen && <React.Suspense fallback={modalLoadingFallback}>
-        <ReuseSortingGame onExit={() => setIsSortingGameOpen(false)} triggerSpeech={triggerSpeech} />
+        <ReuseSortingGame onExit={() => setIsSortingGameOpen(false)} triggerSpeech={triggerSpeech} customMascotUrl={customMascotUrl} />
       </React.Suspense>}
     </div>
     </ErrorBoundary>

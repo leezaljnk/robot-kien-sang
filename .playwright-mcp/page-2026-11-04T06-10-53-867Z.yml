@@ -1,0 +1,15 @@
+- main [ref=e199]:
+  - generic [ref=e201]:
+    - button "Về màn chơi chính" [ref=e202]
+    - heading "Nghiêng đầu phân loại rác" [level=1] [ref=e206]
+    - button "Tắt âm thanh" [ref=e208]
+  - generic "Câu hỏi và đáp án" [ref=e214]:
+    - generic [ref=e215]:
+      - generic [ref=e224]:
+        - heading "Gật Gù Bỏ Rác" [level=2] [ref=e225]
+        - paragraph [ref=e226]: Cùng phân loại rác hữu cơ và vô cơ bằng cử động nghiêng đầu.
+      - generic [ref=e227]:
+        - generic [ref=e228]:
+          - text: Số câu hỏi
+          - spinbutton "Số câu hỏi" [ref=e229]: "20"
+        - button "Bật camera" [ref=e230]

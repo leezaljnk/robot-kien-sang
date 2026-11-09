@@ -41,6 +41,9 @@ const OPTION_SLOTS = [
 const mainImage = (id: string) => `thu-tai-phan-loai/rac-chinh/${id}_chinh.svg`;
 const reuseImage = (id: string, number: number) =>
   `thu-tai-phan-loai/rac-chinh/${id}_taisudung_0${number}.svg`;
+const sheetMainImage = (id: string) => `thu-tai-phan-loai/rac-chinh/${id}_chinh.png`;
+const sheetReuseImage = (id: string, number: number) =>
+  `thu-tai-phan-loai/rac-chinh/${id}_taisudung_0${number}.png`;
 const distractorImage = (number: number) =>
   `thu-tai-phan-loai/gay_nhieu/gay_nhieu_${String(number).padStart(2, '0')}.svg`;
 
@@ -59,6 +62,14 @@ const reuse = (
   alt: string,
   safetyNote?: string
 ) => product(`${wasteId}-reuse-${number}`, name, reuseImage(wasteId, number), alt, safetyNote);
+
+const sheetReuse = (
+  wasteId: string,
+  number: number,
+  name: string,
+  alt: string,
+  safetyNote?: string
+) => product(`${wasteId}-reuse-${number}`, name, sheetReuseImage(wasteId, number), alt, safetyNote);
 
 const distractor = (number: number, id: string, name: string) =>
   product(id, name, distractorImage(number), name);
@@ -224,6 +235,96 @@ export const SORTING_GAME_WASTES: SortingGameWaste[] = [
       distractor(11, 'clock', 'Đồng hồ báo thức'),
     ],
   },
+  {
+    id: 'ao_cu', name: 'Áo cũ', image: sheetMainImage('ao_cu'), alt: 'Một chiếc áo sơ mi cũ',
+    products: [
+      sheetReuse('ao_cu', 1, 'Gối áo', 'Chiếc gối may từ áo cũ'),
+      sheetReuse('ao_cu', 2, 'Bọc chai', 'Vỏ bọc chai nước làm từ áo cũ'),
+      sheetReuse('ao_cu', 3, 'Túi xách áo', 'Túi xách may từ áo cũ'),
+    ],
+    distractors: [distractor(2, 'kettle', 'Ấm nước'), distractor(3, 'car', 'Ô tô'), distractor(34, 'watch', 'Đồng hồ đeo tay')],
+  },
+  {
+    id: 'quan_jean', name: 'Quần jean cũ', image: sheetMainImage('quan_jean'), alt: 'Một chiếc quần jean cũ',
+    products: [
+      sheetReuse('quan_jean', 1, 'Túi treo đồ', 'Túi treo đựng đồ dùng làm từ quần jean'),
+      sheetReuse('quan_jean', 2, 'Chậu cây jean', 'Chậu cây bọc vải jean'),
+      sheetReuse('quan_jean', 3, 'Túi xách jean', 'Túi xách may từ quần jean'),
+    ],
+    distractors: [distractor(2, 'kettle', 'Ấm nước'), distractor(29, 'stones', 'Những viên sỏi'), distractor(61, 'helmet', 'Mũ bảo hiểm')],
+  },
+  {
+    id: 'but_chi', name: 'Bút chì cũ', image: sheetMainImage('but_chi'), alt: 'Một chiếc bút chì cũ',
+    products: [
+      sheetReuse('but_chi', 1, 'Thước đo', 'Thước đo có gắn bút chì'),
+      sheetReuse('but_chi', 2, 'Đũa thần', 'Đũa thần đồ chơi từ bút chì'),
+      sheetReuse('but_chi', 3, 'Cọc cây', 'Cọc buộc cây làm từ bút chì'),
+    ],
+    distractors: [distractor(3, 'car', 'Ô tô'), distractor(5, 'fan', 'Quạt điện'), distractor(34, 'watch', 'Đồng hồ đeo tay')],
+  },
+  {
+    id: 'hop_trung', name: 'Hộp trứng giấy', image: sheetMainImage('hop_trung'), alt: 'Một khay đựng trứng bằng giấy',
+    products: [
+      sheetReuse('hop_trung', 1, 'Khay ươm cây', 'Mầm cây trong các ô hộp trứng giấy'),
+      sheetReuse('hop_trung', 2, 'Khay nút áo', 'Khay phân loại các nút áo'),
+      sheetReuse('hop_trung', 3, 'Khay pha màu', 'Khay đựng màu vẽ'),
+    ],
+    distractors: [distractor(2, 'kettle', 'Ấm nước'), distractor(12, 'umbrella', 'Ô che mưa'), distractor(61, 'helmet', 'Mũ bảo hiểm')],
+  },
+  {
+    id: 'canh_cay', name: 'Cành cây khô', image: sheetMainImage('canh_cay'), alt: 'Một cành cây khô',
+    products: [
+      sheetReuse('canh_cay', 1, 'Móc treo chìa khóa', 'Giá treo chìa khóa làm từ cành cây'),
+      sheetReuse('canh_cay', 2, 'Giá treo trang sức', 'Giá treo vòng cổ làm từ cành cây'),
+      sheetReuse('canh_cay', 3, 'Đũa thần cành cây', 'Đũa thần đồ chơi trang trí từ cành cây'),
+    ],
+    distractors: [distractor(2, 'kettle', 'Ấm nước'), distractor(3, 'car', 'Ô tô'), distractor(10, 'book', 'Quyển sách')],
+  },
+  {
+    id: 'khay_go', name: 'Khay gỗ cũ', image: sheetMainImage('khay_go'), alt: 'Một chiếc khay gỗ cũ',
+    products: [
+      sheetReuse('khay_go', 1, 'Bảng ghi chú', 'Bảng treo ghi chú làm từ khay gỗ'),
+      sheetReuse('khay_go', 2, 'Khay trồng cây', 'Khay gỗ được dùng để trồng cây'),
+      sheetReuse('khay_go', 3, 'Khung tranh', 'Khung tranh làm từ khay gỗ'),
+    ],
+    distractors: [distractor(34, 'watch', 'Đồng hồ đeo tay'), distractor(5, 'fan', 'Quạt điện'), distractor(61, 'helmet', 'Mũ bảo hiểm')],
+  },
+  {
+    id: 'thia_nhua', name: 'Thìa nhựa', image: sheetMainImage('thia_nhua'), alt: 'Một chiếc thìa nhựa đã làm sạch',
+    products: [
+      sheetReuse('thia_nhua', 1, 'Móc treo', 'Móc treo làm từ thìa nhựa'),
+      sheetReuse('thia_nhua', 2, 'Cọc trồng cây', 'Cọc đánh dấu cây trồng từ thìa nhựa'),
+      sheetReuse('thia_nhua', 3, 'Búp bê thìa', 'Búp bê làm từ thìa nhựa'),
+    ],
+    distractors: [distractor(2, 'kettle', 'Ấm nước'), distractor(10, 'book', 'Quyển sách'), distractor(3, 'car', 'Ô tô')],
+  },
+  {
+    id: 'coc_giay', name: 'Cốc cũ', image: sheetMainImage('coc_giay'), alt: 'Một chiếc cốc cũ',
+    products: [
+      sheetReuse('coc_giay', 1, 'Chậu cây nhỏ', 'Cây nhỏ trồng trong cốc cũ'),
+      sheetReuse('coc_giay', 2, 'Nến cốc', 'Nến trang trí trong cốc cũ', 'Nhờ người lớn hỗ trợ khi làm nến.'),
+      sheetReuse('coc_giay', 3, 'Cốc cắm bút', 'Cốc cũ dùng lại để cắm bút'),
+    ],
+    distractors: [distractor(2, 'kettle', 'Ấm nước'), distractor(12, 'umbrella', 'Ô che mưa'), distractor(34, 'watch', 'Đồng hồ đeo tay')],
+  },
+  {
+    id: 'giay_bao', name: 'Giấy báo cũ', image: sheetMainImage('giay_bao'), alt: 'Một tờ báo cũ có các cột chữ',
+    products: [
+      sheetReuse('giay_bao', 1, 'Thuyền giấy báo', 'Thuyền gấp từ giấy báo'),
+      sheetReuse('giay_bao', 2, 'Túi giấy báo', 'Túi đựng đồ gấp từ giấy báo'),
+      sheetReuse('giay_bao', 3, 'Máy bay giấy', 'Máy bay gấp từ giấy báo'),
+    ],
+    distractors: [distractor(2, 'kettle', 'Ấm nước'), distractor(61, 'helmet', 'Mũ bảo hiểm'), distractor(34, 'watch', 'Đồng hồ đeo tay')],
+  },
+  {
+    id: 'mu_cu', name: 'Mũ cũ', image: sheetMainImage('mu_cu'), alt: 'Một chiếc mũ cũ',
+    products: [
+      sheetReuse('mu_cu', 1, 'Giỏ đựng đồ', 'Giỏ đựng đồ làm từ mũ cũ'),
+      sheetReuse('mu_cu', 2, 'Đèn mũ', 'Đèn trang trí làm từ mũ cũ', 'Nhờ người lớn hỗ trợ lắp đèn an toàn.'),
+      sheetReuse('mu_cu', 3, 'Chú chim mũ', 'Chú chim đồ chơi làm từ mũ cũ'),
+    ],
+    distractors: [distractor(2, 'kettle', 'Ấm nước'), distractor(3, 'car', 'Ô tô'), distractor(29, 'stones', 'Những viên sỏi')],
+  },
 ];
 
 export function shuffleArray<T>(items: readonly T[], random: () => number = Math.random): T[] {
@@ -235,15 +336,11 @@ export function shuffleArray<T>(items: readonly T[], random: () => number = Math
   return shuffled;
 }
 
-export function createSortingGameRounds(
-  random: () => number = Math.random,
-  count = 5
-): SortingGameRound[] {
-  const roundCount = Math.min(
-    SORTING_GAME_WASTES.length,
-    Math.max(1, Math.floor(count))
-  );
-  return shuffleArray(SORTING_GAME_WASTES, random).slice(0, roundCount).map((waste) => {
+export function createSortingGameRounds(random: () => number = Math.random, count = 5): SortingGameRound[] {
+  if (!Number.isInteger(count) || count < 1 || count > 20 || count > SORTING_GAME_WASTES.length) {
+    throw new RangeError('Invalid sorting game round count');
+  }
+  return shuffleArray(SORTING_GAME_WASTES, random).slice(0, count).map((waste) => {
     const correctIds = waste.products.map(({ id }) => id);
     const shuffledOptions = shuffleArray([
       ...waste.products.map((item) => ({ ...item, isCorrect: true })),
