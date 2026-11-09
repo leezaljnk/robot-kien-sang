@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { ASSET_SLOTS, sharedAssetsToState, uploadSharedAsset } from '../src/utils/sharedAssets';
 
-test('catalog covers 215 costumes, 15 trash items, 3 base images and 98 voices', () => {
-  assert.equal(ASSET_SLOTS.length, 331);
-  assert.equal(new Set(ASSET_SLOTS.map(s => s.id)).size, 331);
+test('catalog covers 215 costumes, 15 trash items, 3 base images and 94 recordings', () => {
+  assert.equal(ASSET_SLOTS.length, 327);
+  assert.equal(new Set(ASSET_SLOTS.map(s => s.id)).size, 327);
   const sql = readFileSync(new URL('../supabase/setup.sql', import.meta.url), 'utf8');
   const patterns = [...sql.matchAll(/asset_id ~ '([^']+)'/g)].map(m => new RegExp(m[1]));
   for (const slot of ASSET_SLOTS) {
@@ -15,6 +15,12 @@ test('catalog covers 215 costumes, 15 trash items, 3 base images and 98 voices',
   assert(!patterns.some(p => p.test('images/costumes/vui_05')));
   assert(!patterns.some(p => p.test('images/costumes/buon_05')));
   assert(!patterns.some(p => p.test('images/costumes/cam_gio_13')));
+  assert(!ASSET_SLOTS.some(slot => slot.id === 'voice/selected_vo_dua_hau'));
+  assert(!ASSET_SLOTS.some(slot => slot.id === 'voice/sorting_selected_cd'));
+  assert(!ASSET_SLOTS.some(slot => slot.id === 'voice/sorting_connected_short'));
+  assert(ASSET_SLOTS.some(slot => slot.id === 'voice/voice_piece_sorting_question_prefix'));
+  assert(ASSET_SLOTS.some(slot => slot.id === 'voice/voice_piece_sorting_name_cd'));
+  assert(ASSET_SLOTS.some(slot => slot.id === 'voice/voice_piece_selected_prefix'));
 });
 
 test('shared manifest maps each asset category and versions media URLs', () => {
@@ -26,6 +32,8 @@ test('shared manifest maps each asset category and versions media URLs', () => {
     { id: 'images/bins/recyclable', revision: 'r4' },
     { id: 'images/mascot/main', revision: 'r5' },
     { id: 'voice/correct', revision: 'r6' },
+    { id: 'voice/voice_piece_selected_prefix', revision: 'r7' },
+    { id: 'voice/selected_vo_dua_hau', revision: 'retired' },
   ]);
   assert.match(state.customCostumes?.tim_rac_01 || '', /tim_rac_01\?v=r1$/);
   assert.match(state.customCostumes?.cam_gio_01 || '', /cam_gio_01\?v=basket1$/);
@@ -34,6 +42,8 @@ test('shared manifest maps each asset category and versions media URLs', () => {
   assert.match(state.customRecyclableUrl || '', /recyclable\?v=r4$/);
   assert.match(state.customMascotUrl || '', /main\?v=r5$/);
   assert.match(state.voiceClips?.correct || '', /correct\?v=r6$/);
+    assert.match(state.voiceClips?.voice_piece_selected_prefix || '', /voice_piece_selected_prefix\?v=r7$/);
+    assert.equal(state.voiceClips?.selected_vo_dua_hau, undefined);
   assert.equal(state.voiceClips?.incorrect, null);
 });
 

@@ -9,8 +9,9 @@ import {
   sortingGameImageUrl,
 } from '../src/data/sortingGame';
 
-test('the content manifest has ten waste groups with three distinct answers and decoys each', () => {
-  assert.equal(SORTING_GAME_WASTES.length, 10);
+test('the content manifest has twenty waste groups with three distinct answers and decoys each', () => {
+  assert.equal(SORTING_GAME_WASTES.length, 20);
+  assert.equal(new Set(SORTING_GAME_WASTES.map(waste => waste.id)).size, 20);
   for (const waste of SORTING_GAME_WASTES) {
     assert.equal(waste.products.length, 3, `${waste.id} correct ideas`);
     assert.equal(waste.distractors.length, 3, `${waste.id} distractors`);
@@ -53,6 +54,16 @@ test('each new game selects five unique waste groups and shuffles six unique opt
   }
 });
 
+test('a game can choose a supported round count without repeating waste groups', () => {
+  for (const count of [1, 3, 7, 10]) {
+    const rounds = createSortingGameRounds(() => 0.42, count);
+    assert.equal(rounds.length, count);
+    assert.equal(new Set(rounds.map(({ waste }) => waste.id)).size, count);
+  }
+  assert.throws(() => createSortingGameRounds(() => 0.42, 0), RangeError);
+  assert.equal(createSortingGameRounds(() => 0.42, 20).length, SORTING_GAME_WASTES.length);
+});
+
 test('shuffling does not mutate the content source and offline asset URLs take priority', () => {
   const source = [1, 2, 3, 4];
   shuffleArray(source, () => 0.5);
@@ -67,6 +78,18 @@ test('shuffling does not mutate the content source and offline asset URLs take p
     sortingGameImageUrl('thu-tai-phan-loai/rac-chinh/cd_chinh.svg', {}),
     './images/thu-tai-phan-loai/rac-chinh/cd_chinh.svg'
   );
+});
+
+test('configured games contain exactly 1 to 20 unique waste groups and reject invalid counts', () => {
+  for (const count of [1, 5, 10, 11, 20]) {
+    const rounds = createSortingGameRounds(Math.random, count);
+    assert.equal(rounds.length, count);
+    assert.equal(new Set(rounds.map(round => round.waste.id)).size, count);
+    assert(rounds.every(round => round.options.length === 6 && round.correctIds.length === 3));
+  }
+  for (const count of [0, -1, 21, 1.5, NaN, Infinity]) {
+    assert.throws(() => createSortingGameRounds(Math.random, count), RangeError);
+  }
 });
 
 test('checking keeps selected correct answers, marks decoys, and completes only with all answers and no decoys', () => {

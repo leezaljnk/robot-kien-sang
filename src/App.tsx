@@ -18,7 +18,7 @@ import { getBinApproachTarget, getCommandMoveDuration, getKeyboardMove } from '.
 import { createMascotPosition } from './utils/mascotPosition';
 import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from './utils/trashSpawn';
 import { drawClassroomTrashItems, drawTrashItems } from './utils/trashCycle';
-import { VOICE_PROMPTS, type TriggerSpeech } from './data/voicePrompts';
+import { currentVoiceClips, VOICE_PROMPT_TEXTS, VOICE_PROMPTS, VOICE_SEQUENCES, type TriggerSpeech } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
 import { loadProjectAssets } from './utils/preloadedAssets';
 import {
@@ -28,6 +28,7 @@ import {
   playErrorSfx,
   playVictoryFanfare,
   speakKienSang,
+  speakKienSangSequence,
 } from './utils/audio';
 import {
   setPersistentItem,
@@ -65,6 +66,15 @@ const SunlitGardenGame = React.lazy(() =>
 const ReuseSortingGame = React.lazy(() =>
   import('./components/ReuseSortingGame').then(({ ReuseSortingGame: game }) => ({ default: game }))
 );
+const HeadTiltSortingGame = React.lazy(() =>
+  import('./components/HeadTiltSortingGame').then(({ HeadTiltSortingGame: game }) => ({ default: game }))
+);
+const HandPickupGame = React.lazy(() =>
+  import('./components/HandPickupGame').then(({ HandPickupGame: game }) => ({ default: game }))
+);
+const EnglishGameHub = React.lazy(() =>
+  import('./components/EnglishGameHub').then(({ EnglishGameHub: game }) => ({ default: game }))
+);
 const modalLoadingFallback = (
   <div role="status" className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4 text-sm font-bold text-white">
     Đang mở cửa sổ…
@@ -94,6 +104,9 @@ export default function App() {
   const [scene, setScene] = useState<GameScene>('classroom');
   const [isGardenOpen, setIsGardenOpen] = useState(false);
   const [isSortingGameOpen, setIsSortingGameOpen] = useState(false);
+  const [isHeadTiltGameOpen, setIsHeadTiltGameOpen] = useState(false);
+  const [isHandPickupGameOpen, setIsHandPickupGameOpen] = useState(false);
+  const [isEnglishGameOpen, setIsEnglishGameOpen] = useState(false);
   const [reuseSuggestion, setReuseSuggestion] = useState<{ instanceId: string; hint: ReuseHint } | null>(null);
   const sceneRef = useRef<GameScene>('classroom');
   const sceneItemsRef = useRef<Record<GameScene, ActiveTrashItem[] | null>>({
@@ -181,12 +194,9 @@ export default function App() {
   );
 
   // Child recorded voices
-  const [voiceClips, setVoiceClips] = useState<VoiceClips>(() => ({
-    ...preloaded?.voiceClips,
-    correct: preloaded?.voiceClips?.correct || null,
-    incorrect: preloaded?.voiceClips?.incorrect || null,
-    victory: preloaded?.voiceClips?.victory || null,
-  }));
+  const [voiceClips, setVoiceClips] = useState<VoiceClips>(() =>
+    currentVoiceClips(preloaded?.voiceClips)
+  );
 
   // Dragging state
   const [draggingItem, setDraggingItem] = useState<{
@@ -264,10 +274,10 @@ export default function App() {
           ...embeddedPreloaded,
           customCostumes: { ...serverAssets?.customCostumes, ...embeddedPreloaded?.customCostumes },
           customTrashImages: { ...serverAssets?.customTrashImages, ...embeddedPreloaded?.customTrashImages },
-          voiceClips: {
+          voiceClips: currentVoiceClips({
             correct: null, incorrect: null, victory: null,
             ...serverAssets?.voiceClips, ...embeddedPreloaded?.voiceClips,
-          },
+          }),
         };
 
         const [
@@ -292,11 +302,11 @@ export default function App() {
 
         if (!isMounted) return;
 
-        const mergedVoice: VoiceClips = {
+        const mergedVoice = currentVoiceClips({
           correct: null, incorrect: null, victory: null,
           ...inlinePreloaded?.voiceClips,
           ...savedVoice,
-        };
+        });
         if (Object.values(mergedVoice).some(Boolean)) {
           setVoiceClips(mergedVoice);
         }
@@ -439,7 +449,7 @@ export default function App() {
     setCustomOrganicUrl(settings.customOrganicUrl || null);
     setCustomRecyclableUrl(settings.customRecyclableUrl || null);
     setBinScale(settings.binScale ?? 0.85);
-    setVoiceClips(settings.voiceClips || { correct: null, incorrect: null, victory: null });
+    setVoiceClips(currentVoiceClips(settings.voiceClips));
   };
 
   // Save voice clips
@@ -579,7 +589,14 @@ export default function App() {
         clearTimeout(speechTimeoutRef.current);
       }
 
-      speakKienSang(text, voiceClips[voiceId]);
+      const sequence = VOICE_SEQUENCES[voiceId];
+      if (sequence) {
+        const sequenceClips = sequence.map(id => voiceClips[id]);
+        const sequenceTexts = sequence.map(id => VOICE_PROMPT_TEXTS[id]);
+        void speakKienSangSequence(text, sequenceClips, undefined, sequenceTexts);
+      } else {
+        speakKienSang(text, voiceClips[voiceId]);
+      }
 
       speechTimeoutRef.current = window.setTimeout(() => {
         // Return to idle message if not victory
@@ -1196,7 +1213,7 @@ export default function App() {
       isTrashItemsModalOpen ||
       isOfflineHtmlModalOpen;
 
-    if (!gameReady || !hasStartedGame || isAnyModalOpen || isGardenOpen) {
+    if (!gameReady || !hasStartedGame || isAnyModalOpen || isGardenOpen || isEnglishGameOpen) {
       stopAllMovement();
       return;
     }
@@ -1269,6 +1286,7 @@ export default function App() {
     isTrashItemsModalOpen,
     isOfflineHtmlModalOpen,
     isGardenOpen,
+    isEnglishGameOpen,
     startMovingDir,
     stopMovingDir,
     stopAllMovement,
@@ -1556,13 +1574,16 @@ export default function App() {
         </div>
       )}
       {/* Thanh công cụ trên cùng */}
-      {!isGardenOpen && !isSortingGameOpen && <TopBar
+      {!isGardenOpen && !isSortingGameOpen && !isHeadTiltGameOpen && !isHandPickupGameOpen && !isEnglishGameOpen && <TopBar
         readOnly={sharedAssetsEnabled}
         score={score}
         maxScore={MAX_SCORE}
         gameMode={gameMode}
         onSelectGameMode={handleSelectGameMode}
         onOpenSortingGame={() => setIsSortingGameOpen(true)}
+        onOpenHeadTiltGame={window.location.protocol === 'file:' ? undefined : () => setIsHeadTiltGameOpen(true)}
+        onOpenHandPickupGame={window.location.protocol === 'file:' ? undefined : () => setIsHandPickupGameOpen(true)}
+        onOpenEnglishGame={window.location.protocol === 'file:' ? undefined : () => setIsEnglishGameOpen(true)}
         onOpenVoiceStudio={() => setIsVoiceModalOpen(true)}
         onOpenScratchModal={() => setIsScratchModalOpen(true)}
         onOpenOfflineHtmlModal={() => setIsOfflineHtmlModalOpen(true)}
@@ -1591,7 +1612,23 @@ export default function App() {
 
       {/* KHUNG CẢNH LỚP HỌC CHÍNH */}
       <div ref={playAreaRef} className="relative flex-1 w-full h-full overflow-hidden">
-        {isGardenOpen ? (
+        {isEnglishGameOpen ? (
+          <React.Suspense fallback={modalLoadingFallback}>
+            <EnglishGameHub onExit={() => setIsEnglishGameOpen(false)} customMascotUrl={customMascotUrl} />
+          </React.Suspense>
+        ) : isHandPickupGameOpen ? (
+          <React.Suspense fallback={modalLoadingFallback}>
+            <HandPickupGame onExit={() => setIsHandPickupGameOpen(false)} customMascotUrl={customMascotUrl} voiceClips={voiceClips} />
+          </React.Suspense>
+        ) : isHeadTiltGameOpen ? (
+          <React.Suspense fallback={modalLoadingFallback}>
+            <HeadTiltSortingGame
+              onExit={() => setIsHeadTiltGameOpen(false)}
+              customMascotUrl={customMascotUrl}
+              customTrashImages={customTrashImages}
+            />
+          </React.Suspense>
+        ) : isGardenOpen ? (
           <React.Suspense fallback={<div role="status" className="absolute inset-0 z-40 flex items-center justify-center bg-sky-200 font-bold text-emerald-900">Đang mở khu vườn…</div>}>
             <SunlitGardenGame
               onReturnToClassroom={() => setIsGardenOpen(false)}
@@ -1959,7 +1996,7 @@ export default function App() {
         />
       </React.Suspense>}
       {isSortingGameOpen && <React.Suspense fallback={modalLoadingFallback}>
-        <ReuseSortingGame onExit={() => setIsSortingGameOpen(false)} triggerSpeech={triggerSpeech} />
+        <ReuseSortingGame onExit={() => setIsSortingGameOpen(false)} triggerSpeech={triggerSpeech} customMascotUrl={customMascotUrl} />
       </React.Suspense>}
     </div>
     </ErrorBoundary>

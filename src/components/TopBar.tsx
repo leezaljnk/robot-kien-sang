@@ -1,6 +1,6 @@
 import React from 'react';
 import { GameMode } from '../types';
-import { Star, Mic, FileCode, RotateCcw, Hand, Bot, Camera, Trash2, FolderUp, Shirt, Globe, Sparkles } from 'lucide-react';
+import { Star, Mic, FileCode, RotateCcw, Hand, HandGrab, ScanFace, Bot, Camera, Trash2, FolderUp, Shirt, Globe, Sparkles } from 'lucide-react';
 
 interface TopBarProps {
   readOnly?: boolean;
@@ -9,6 +9,9 @@ interface TopBarProps {
   gameMode: GameMode;
   onSelectGameMode: (mode: GameMode) => void;
   onOpenSortingGame: () => void;
+  onOpenHeadTiltGame?: () => void;
+  onOpenHandPickupGame?: () => void;
+  onOpenEnglishGame?: () => void;
   onOpenVoiceStudio: () => void;
   onOpenScratchModal: () => void;
   onOpenOfflineHtmlModal?: () => void;
@@ -33,6 +36,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   gameMode,
   onSelectGameMode,
   onOpenSortingGame,
+  onOpenHeadTiltGame,
+  onOpenHandPickupGame,
+  onOpenEnglishGame,
   onOpenVoiceStudio,
   onOpenScratchModal,
   onOpenOfflineHtmlModal,
@@ -127,6 +133,34 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Sparkles className="h-4 w-4 text-emerald-700" />
           <span>Thử tài phân loại rác</span>
         </button>
+        {onOpenHeadTiltGame && (
+          <button
+            type="button"
+            onClick={onOpenHeadTiltGame}
+            className="flex min-h-10 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black text-sky-800 transition hover:bg-white hover:text-sky-900 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+            title="Mở màn chơi: Nghiêng đầu phân loại rác"
+          >
+            <ScanFace className="h-4 w-4 -rotate-12 text-sky-700" />
+            <span>Gật Gù Bỏ Rác</span>
+          </button>
+        )}
+        {onOpenHandPickupGame && (
+          <button
+            type="button"
+            onClick={onOpenHandPickupGame}
+            className="flex min-h-10 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black text-emerald-800 transition hover:bg-white focus-visible:outline focus-visible:outline-4 focus-visible:outline-emerald-400"
+            title="Tự tay nhặt rác bằng cử chỉ tay qua camera"
+          >
+            <HandGrab className="h-4 w-4" />
+            <span>Tự tay nhặt rác</span>
+          </button>
+        )}
+        {onOpenEnglishGame && <button
+          type="button"
+          onClick={onOpenEnglishGame}
+          className="flex min-h-10 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black text-rose-800 transition hover:bg-white focus-visible:outline focus-visible:outline-4 focus-visible:outline-rose-400"
+          title="Vui học tiếng Anh cùng Kiến Sáng"
+        ><Globe className="h-4 w-4" /><span>Vui học tiếng Anh</span></button>}
       </div>
 
       {/* Bộ đếm sao: 10 sao chiến thắng */}

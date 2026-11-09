@@ -1,18 +1,29 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { VOICE_PROMPTS, voiceIdForText } from '../src/data/voicePrompts';
+import {
+  VOICE_PIECE_PROMPTS,
+  VOICE_PROMPTS,
+  VOICE_SEQUENCES,
+  voiceIdForText,
+} from '../src/data/voicePrompts';
 import { TRASH_ITEMS } from '../src/data/trashItems';
 import { YARD_TRASH_ITEMS } from '../src/data/yardTrashItems';
 import { SORTING_GAME_WASTES } from '../src/data/sortingGame';
 import { sharedAssetsToState } from '../src/utils/sharedAssets';
 import { embedOfflineAssets } from '../src/utils/offlineAssets';
 import { parseSettingsFile } from '../src/utils/settingsTransfer';
-import { speakKienSang } from '../src/utils/audio';
+import { speakKienSang, speakKienSangSequence, stopKienSangSpeech } from '../src/utils/audio';
 
-test('98 unique recording IDs cover all scenes and have exact scripts documented', () => {
+test('94 recording IDs and 70 sequence mappings cover the scenes and catalogue', () => {
   const catalog = readFileSync(new URL('../docs/voice-prompts.md', import.meta.url), 'utf8');
-  assert.equal(VOICE_PROMPTS.length, 98);
+  assert.equal(VOICE_PROMPTS.length, 94);
+  assert.equal(VOICE_PIECE_PROMPTS.length, 49);
+  assert.equal(Object.keys(VOICE_SEQUENCES).length, 70);
+    assert.equal(voiceIdForText('Vỏ chai thủy tinh'), 'voice_piece_name_vo_chai');
+    assert.equal(voiceIdForText('Chai thủy tinh'), 'voice_piece_sorting_name_vo_chai');
+    assert(!catalog.includes('| `selected_vo_dua_hau` |'));
+    assert(!catalog.includes('| `sorting_selected_cd` |'));
   assert.equal(new Set(VOICE_PROMPTS.map(p => p.id)).size, VOICE_PROMPTS.length);
   for (const prompt of VOICE_PROMPTS) {
     assert.match(prompt.id, /^[a-z0-9_]+$/);
@@ -20,18 +31,34 @@ test('98 unique recording IDs cover all scenes and have exact scripts documented
     assert(catalog.includes(`| \`${prompt.id}\` | \`${prompt.id}.mp3\` | ${prompt.text} |`), prompt.id);
   }
   for (const item of [...TRASH_ITEMS, ...YARD_TRASH_ITEMS]) {
-    assert.equal(voiceIdForText(`Bé đã chọn "${item.nameVi}"! Hãy bấm vào thùng rác muốn bỏ nhé!`), `selected_${item.id}`);
-    assert.equal(voiceIdForText(`Kiến Sáng đã nhặt "${item.nameVi}"! Hãy đưa tới thùng rác thích hợp nhé!`), `picked_${item.id}`);
+    const namePieceId = voiceIdForText(item.nameVi);
+    assert(namePieceId?.startsWith('voice_piece_name_'));
+    assert.deepEqual(VOICE_SEQUENCES[`selected_${item.id}`], [
+      'voice_piece_selected_prefix', namePieceId, 'voice_piece_selected_suffix',
+    ]);
+    assert.deepEqual(VOICE_SEQUENCES[`picked_${item.id}`], [
+      'voice_piece_picked_prefix', namePieceId, 'voice_piece_picked_suffix',
+    ]);
+    assert(!VOICE_PROMPTS.some(prompt => prompt.id === `selected_${item.id}`));
+    assert(!VOICE_PROMPTS.some(prompt => prompt.id === `picked_${item.id}`));
   }
   for (const waste of SORTING_GAME_WASTES) {
-    assert.equal(voiceIdForText(`Đã chọn ${waste.name}. Bé chạm vào những ý tưởng phù hợp nhé!`), `sorting_selected_${waste.id}`);
+    const namePieceId = voiceIdForText(waste.name);
+    assert(namePieceId?.startsWith('voice_piece_'));
+    assert.equal(VOICE_SEQUENCES[`sorting_selected_${waste.id}`], undefined);
+    assert.deepEqual(VOICE_SEQUENCES[`sorting_question_${waste.id}`], [
+      'voice_piece_sorting_question_prefix', namePieceId, 'voice_piece_sorting_question_suffix',
+    ]);
+    assert(!VOICE_PROMPTS.some(prompt => prompt.id === `sorting_selected_${waste.id}`));
   }
+  assert.equal(VOICE_SEQUENCES.selected_unknown, undefined);
+  assert.equal(voiceIdForText('Bé đã chọn "Vỏ dưa hấu"! Hãy bấm vào thùng rác muốn bỏ nhé!'), undefined);
   assert.equal(voiceIdForText('Tuyệt vời quá! Bé giỏi lắm!'), 'correct_great');
   assert.equal(voiceIdForText('unknown'), undefined);
 });
 
 test('every speech/feedback call passes an explicit ID, and literal text matches that ID', () => {
-  for (const path of ['App.tsx', 'components/SunlitGardenGame.tsx', 'components/ReuseSortingGame.tsx']) {
+  for (const path of ['App.tsx', 'components/SunlitGardenGame.tsx', 'components/ReuseSortingGame.tsx', 'components/HandPickupGame.tsx']) {
     const source = readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
     const calls = [...source.matchAll(/\b(?:triggerSpeech|showFeedback)\(/g)];
     assert(calls.length > 0, path);
@@ -72,6 +99,158 @@ test('every speech/feedback call passes an explicit ID, and literal text matches
   }
 });
 
+test('sorting questions are spoken at round start; choosing and connecting use no extra voice clips', () => {
+  const source = readFileSync(new URL('../src/components/ReuseSortingGame.tsx', import.meta.url), 'utf8');
+  const audio = readFileSync(new URL('../src/utils/audio.ts', import.meta.url), 'utf8');
+  const sourceButton = source.indexOf('ref={sourceRef}');
+  const clickStart = source.indexOf('onClick={() => {', sourceButton);
+  const clickEnd = source.indexOf('aria-pressed={sourceSelected}', clickStart);
+  assert(sourceButton >= 0 && clickStart > sourceButton && clickEnd > clickStart, 'source item click handler');
+  const sourceClick = source.slice(clickStart, clickEnd);
+  assert.doesNotMatch(sourceClick, /triggerSpeech|showFeedback/);
+  assert.match(source, /showFeedback\(question, `sorting_question_\$\{currentRound\.waste\.id\}`\)/);
+  assert.doesNotMatch(source, /setFeedback\('Đã nối ý tưởng!'\)/);
+  assert.match(source, /playConnectSfx\(\)/);
+  assert.match(audio, /export const playConnectSfx = \(\) =>/);
+  assert.match(audio, /frequency: 880[\s\S]*frequency: 1174\.66/);
+  assert.doesNotMatch(source, /sorting_selected_|sorting_connected_short/);
+  assert(!VOICE_PROMPTS.some(({ id }) => id === 'sorting_connected_short'));
+  assert(!VOICE_PIECE_PROMPTS.some(({ id }) => id === 'voice_piece_sorting_prefix' || id === 'voice_piece_sorting_suffix'));
+});
+
+test('stopping speech pauses a recording, cancels TTS, and can be repeated', () => {
+  const keys = ['window', 'Audio'] as const;
+  const descriptors = keys.map(key => Object.getOwnPropertyDescriptor(globalThis, key));
+  let paused = 0;
+  let cancelled = 0;
+  Object.assign(globalThis, {
+    window: { speechSynthesis: { cancel: () => { cancelled++; } } },
+    Audio: class {
+      pause() { paused++; }
+      play() { return Promise.resolve(); }
+    },
+  });
+  try {
+    speakKienSang('Test', 'recording.mp3');
+    const initial = cancelled;
+    stopKienSangSpeech();
+    stopKienSangSpeech();
+    assert.equal(paused, 1);
+    assert.equal(cancelled, initial + 2);
+  } finally {
+    keys.forEach((key, index) => {
+      const descriptor = descriptors[index];
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else Reflect.deleteProperty(globalThis, key);
+    });
+  }
+});
+
+test('sequence playback fills missing clips with TTS in order and stop cancels every segment', async () => {
+  const keys = ['window', 'fetch', 'SpeechSynthesisUtterance'] as const;
+  const descriptors = keys.map(key => Object.getOwnPropertyDescriptor(globalThis, key));
+  const starts: number[] = [];
+  const ranges: Array<[number | undefined, number | undefined]> = [];
+  let stopped = 0;
+  const spoken: string[] = [];
+  const sources: Array<{ onended: (() => void) | null }> = [];
+  class FakeUtterance {
+    onend: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    lang = '';
+    rate = 0;
+    pitch = 0;
+    voice: SpeechSynthesisVoice | null = null;
+    constructor(public text: string) {}
+  }
+  class FakeSource {
+    buffer: AudioBuffer | null = null;
+    onended: (() => void) | null = null;
+    connect() {}
+    start(when: number, offset?: number, duration?: number) {
+      starts.push(when);
+      ranges.push([offset, duration]);
+    }
+    stop() { stopped++; }
+    disconnect() {}
+  }
+  class FakeAudioContext {
+    currentTime = 4;
+    state = 'running';
+    destination = {};
+    resume() { return Promise.resolve(); }
+    async decodeAudioData(data: ArrayBuffer) {
+      const duration = new Uint8Array(data)[0];
+      const length = duration * 1000;
+      const samples = new Float32Array(length);
+      samples.fill(0.2, 100, length - 100);
+      return {
+        duration,
+        length,
+        sampleRate: 1000,
+        numberOfChannels: 1,
+        getChannelData: () => samples,
+        copyFromChannel: (destination: Float32Array) => destination.set(samples),
+        copyToChannel: (source: Float32Array, _channel: number, start = 0) => samples.set(source, start),
+      } as AudioBuffer;
+    }
+    createBufferSource() {
+      const source = new FakeSource();
+      sources.push(source);
+      return source as unknown as AudioBufferSourceNode;
+    }
+  }
+  Object.assign(globalThis, {
+    SpeechSynthesisUtterance: FakeUtterance,
+    window: {
+      AudioContext: FakeAudioContext,
+      speechSynthesis: {
+        cancel() {},
+        getVoices: () => [],
+        speak: (utterance: FakeUtterance) => {
+          spoken.push(utterance.text);
+          utterance.onend?.();
+        },
+      },
+    },
+    fetch: async (url: string) => {
+      const buffer = new ArrayBuffer(1);
+      new Uint8Array(buffer)[0] = Number(url);
+      return { ok: true, arrayBuffer: async () => buffer };
+    },
+  });
+  try {
+    let ended = 0;
+    await speakKienSangSequence('Câu ghép', ['1', '2', '3'], () => ended++);
+    assert.deepEqual(starts.map(time => Number(time.toFixed(3))), [4.02, 4.83, 6.64]);
+    assert.deepEqual(ranges, [[0.095, 0.81], [0.095, 1.81], [0.095, 2.81]]);
+    sources[2].onended?.();
+    assert.equal(ended, 1);
+
+    let mixedEnded = 0;
+    await speakKienSangSequence(
+      'Câu ghép có đoạn đọc',
+      ['1', '2', null],
+      () => mixedEnded++,
+      ['đầu câu', 'giữa câu', 'cuối câu']
+    );
+    assert.deepEqual(starts.slice(3).map(time => Number(time.toFixed(3))), [4.02, 4.83]);
+    sources[4].onended?.();
+    assert.deepEqual(spoken, ['cuối câu']);
+    assert.equal(mixedEnded, 1);
+
+    await speakKienSangSequence('Câu sẽ dừng', ['1', '2', '3']);
+    stopKienSangSpeech();
+    assert.equal(stopped, 3);
+  } finally {
+    keys.forEach((key, index) => {
+      const descriptor = descriptors[index];
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else Reflect.deleteProperty(globalThis, key);
+    });
+  }
+});
+
 test('Supabase upload policy allows every catalog ID, including dynamic scene IDs', () => {
   const sql = readFileSync(new URL('../supabase/setup.sql', import.meta.url), 'utf8');
   const patterns = [...sql.matchAll(/asset_id ~ '([^']+)'/g)].map(match => new RegExp(match[1]));
@@ -88,12 +267,12 @@ test('victory scripts follow the actual star goal', () => {
   assert.equal(voiceIdForText(`Yeah, ${goal} sao rồi, sân trường sạch quá!`), 'yard_victory');
 });
 
-test('recordings play for all IDs and missing/failed recordings fall back to Vietnamese TTS', async () => {
+test('recordings play for all IDs, missing files fall back, and autoplay blocks do not switch voices', async () => {
   const keys = ['window', 'Audio', 'SpeechSynthesisUtterance'] as const;
   const descriptors = keys.map(key => Object.getOwnPropertyDescriptor(globalThis, key));
   const played: string[] = [];
   const spoken: string[] = [];
-  let failPlayback = false;
+  let playbackError: Error | null = null;
   class FakeUtterance {
     lang = '';
     constructor(public text: string) {}
@@ -113,7 +292,7 @@ test('recordings play for all IDs and missing/failed recordings fall back to Vie
       constructor(private url: string) {}
       pause() {}
       play() {
-        if (failPlayback) return Promise.reject(new Error('Recording unavailable'));
+        if (playbackError) return Promise.reject(playbackError);
         played.push(this.url);
         return Promise.resolve();
       }
@@ -129,8 +308,12 @@ test('recordings play for all IDs and missing/failed recordings fall back to Vie
     assert.equal(spoken.length, 0);
     speakKienSang('Không có bản thu', null);
     assert.equal(spoken.at(-1), 'Không có bản thu');
-    failPlayback = true;
+    playbackError = new Error('Recording unavailable');
     speakKienSang('Bản thu bị lỗi', 'voice/missing.mp3');
+    await Promise.resolve();
+    assert.equal(spoken.at(-1), 'Bản thu bị lỗi');
+    playbackError = Object.assign(new Error('Playback not allowed'), { name: 'NotAllowedError' });
+    speakKienSang('Bản thu bị trình duyệt chặn', 'voice/blocked.mp3');
     await Promise.resolve();
     assert.equal(spoken.at(-1), 'Bản thu bị lỗi');
   } finally {
@@ -142,13 +325,16 @@ test('recordings play for all IDs and missing/failed recordings fall back to Vie
   }
 });
 
-test('shared voices, offline embedding and JSON roundtrip preserve all prompts and older files', async () => {
+test('shared voices, offline embedding and JSON roundtrip preserve recordings and discard retired full clips', async () => {
   const shared = sharedAssetsToState(VOICE_PROMPTS.map(p => ({ id: `voice/${p.id}`, revision: 'v1' })));
   for (const prompt of VOICE_PROMPTS) assert.match(shared.voiceClips![prompt.id] || '', new RegExp(`voice/${prompt.id}\\?v=v1$`));
   const clips = Object.fromEntries(VOICE_PROMPTS.map(p => [p.id, 'data:audio/mpeg;base64,YQ==']));
   const embedded = await embedOfflineAssets({
     customCostumes: {}, customTrashImages: {}, mascotScale: 1, binScale: 0.85,
-    voiceClips: { correct: null, incorrect: null, victory: null, ...clips },
+    voiceClips: {
+      correct: null, incorrect: null, victory: null, ...clips,
+      selected_vo_dua_hau: 'data:audio/mpeg;base64,YQ==',
+    },
   });
   const parsed = parseSettingsFile(JSON.stringify({ format: 'kien-sang-settings', version: 1, settings: embedded }));
   assert.deepEqual(parsed.voiceClips, clips);

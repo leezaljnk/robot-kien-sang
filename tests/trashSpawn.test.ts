@@ -51,12 +51,12 @@ test('yard trash has an independent cycle containing both sorting categories', (
   ));
 });
 
-test('game victory threshold and recorded victory prompt both use 10 stars', () => {
+test('game victory threshold and recorded victory prompt match at 20 stars', () => {
   const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
-  assert.match(app, /const MAX_SCORE = 10;/);
+  assert.match(app, /const MAX_SCORE = 20;/);
   assert.match(app, /maxScore=\{MAX_SCORE\}/);
   assert.match(app, /score >= MAX_SCORE/);
-  assert.equal(VOICE_PROMPTS.find(p => p.id === 'victory')?.text, 'Yeah, 10 sao rồi, lớp mình sạch quá!');
+  assert.equal(VOICE_PROMPTS.find(p => p.id === 'victory')?.text, 'Yeah, 20 sao rồi, lớp mình sạch quá!');
 });
 
 test('spawn slots clear bin hit areas using compact or desktop item spacing', () => {

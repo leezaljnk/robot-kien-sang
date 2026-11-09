@@ -157,6 +157,7 @@ export const VoiceStudioModal: React.FC<VoiceStudioModalProps> = ({
         {/* Thân modal */}
         <div className="p-6 space-y-5">
           {/* Tabs chọn 3 câu cần thu âm */}
+                    {/* Danh sách clip thu âm */}
           <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
             {PROMPT_ITEMS.map((item) => {
               const hasClip = Boolean(recordedClips[item.key]);

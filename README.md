@@ -4,37 +4,7 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 
 ## Bài thuyết trình giới thiệu dự án
 
-**Thời lượng gợi ý:** khoảng 3–4 phút. Ba bạn có thể thay tên mình vào phần lời dẫn bên dưới. Khi thuyết trình, một bạn có thể vừa nói vừa trình chiếu trò chơi.
-
-### Bạn thứ nhất – Giới thiệu dự án
-
-> Kính chào thầy cô và các bạn! Chúng em là ba bạn học sinh lớp 2A5, Trường Tiểu học và THCS FPT Cầu Giấy. Hôm nay, chúng em xin giới thiệu dự án **“Robot Kiến Sáng – Thử tài Phân loại Rác”**.
->
-> Chúng em làm trò chơi này để giúp các em nhỏ, đặc biệt là các bạn lớp 1, tập phân loại rác theo cách vui vẻ và dễ nhớ. Trong trò chơi, bạn Robot Kiến Sáng cùng các bạn dọn lớp học và đưa rác vào đúng thùng.
->
-> Trò chơi có hai nhóm rác. Rác hữu cơ như lá cây, vỏ chuối và thức ăn thừa được bỏ vào **Thùng Xanh**. Rác tái chế như giấy cũ, vỏ hộp giấy và vỏ chai được bỏ vào **Thùng Cam**. Trò chơi hiện có 15 món rác để các bạn thử sức.
-
-### Bạn thứ hai – Hướng dẫn cách chơi
-
-> Bây giờ, chúng em xin hướng dẫn cách chơi. Trên màn hình có các món rác, bạn Robot Kiến Sáng và hai thùng rác. Mỗi lần bỏ đúng một món, bạn sẽ nhận được một ngôi sao. Mục tiêu là đạt **10 ngôi sao MAX_SCORE=10** để chiến thắng.
->
-> Có hai cách chơi. Ở chế độ **kéo thả**, các bạn kéo món rác rồi thả vào thùng mà mình chọn. Ở chế độ **ra lệnh cho Robot**, các bạn chọn một món rác rồi chọn thùng; Robot sẽ đi nhặt và mang rác tới đó.
->
-> Nếu chọn đúng, Robot vui mừng và tặng một ngôi sao. Nếu chọn nhầm, Robot sẽ nhắc các bạn thử lại. Đừng lo nhé, mình có thể suy nghĩ và chọn lại!
-
-### Bạn thứ ba – Lợi ích và kết thúc
-
-> Qua trò chơi, chúng em mong các bạn nhỏ nhớ rằng rác cần được phân loại, chứ không nên bỏ lẫn tất cả vào cùng một thùng. Các bạn cũng được luyện quan sát, suy nghĩ trước khi lựa chọn và sử dụng máy tính để học tập.
->
-> Điều quan trọng nhất là những việc nhỏ mỗi ngày cũng có thể giúp lớp học sạch hơn và góp phần bảo vệ môi trường. Sau khi chơi, chúng ta có thể thực hành phân loại rác đúng cách ở lớp và ở nhà, theo hướng dẫn của thầy cô và gia đình.
->
-> Dự án của chúng em vẫn có thể được bổ sung thêm hình ảnh và nội dung để trò chơi ngày càng phong phú hơn. Cảm ơn thầy cô và các bạn đã lắng nghe! Các bạn có muốn cùng Robot Kiến Sáng thử phân loại rác không ạ?
-
-### Gợi ý trình chiếu
-
-1. Bạn thứ nhất giới thiệu tên dự án và mở màn hình trò chơi.
-2. Bạn thứ hai làm thử một lượt: chọn một món rác, đưa vào thùng và chỉ cho mọi người xem sao hoặc lời nhắc của Robot.
-3. Bạn thứ ba nói về điều đã học được, rồi mời cả lớp cùng chơi.
+Kịch bản thuyết trình theo mẫu cuộc thi, gồm phần giới thiệu nhóm và sản phẩm, quá trình thực hiện, demo và thông điệp kết thúc: [Kịch bản thuyết trình](docs/kich-ban-thuyet-trinh.md).
 
 ## Tính năng
 
@@ -46,6 +16,8 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 - Ở lớp học và sân trường, lời thoại của Kiến Sáng được phát bằng âm thanh mà không hiện bong bóng chữ.
 - Đạt **10 sao** để chiến thắng. Rác xuất hiện ngoài vùng thùng rác với khoảng cách an toàn để dễ chọn/nhặt.
 - Chơi bằng cách tự kéo thả rác hoặc chọn rác để Robot Kiến Sáng đi nhặt.
+- Màn **Tự tay nhặt rác** dùng camera nhận diện một bàn tay: mở tay tìm rác, nắm để nhặt, giữ tay nắm khi di chuyển và mở tay trên thùng **Hữu cơ / Vô cơ** để thả. Nhập từ 2–160 món ở màn bật camera (mặc định 5), không trùng và luôn có cả hai nhóm. Từng món hiện ở vị trí ngẫu nhiên trong vùng giữa, cách xa hai thùng. Thả sai hoặc ngoài thùng được thử lại tại vị trí ban đầu, không trừ điểm. Mất tay thì món rác trở về chỗ cũ; cần mở tay trước khi nhặt lại. Có gợi ý bằng giọng nói, ẩn preview, tắt tiếng và xác nhận thoát. Khi chuyển tab, camera dừng và có thể bật lại để tiếp tục ván.
+- Màn **Nghiêng đầu phân loại rác** dùng ảnh ngẫu nhiên từ `public/images/camera/huu_co` và `public/images/camera/vo_co`, với hai lựa chọn **Hữu cơ / Vô cơ**. Mặc định 20 câu, có thể nhập số nguyên dương tại màn bật camera. Ảnh không lặp cho đến khi dùng hết kho; ván dài sẽ xáo lại kho ảnh. Mỗi câu đếm ngược 10 giây sau khi camera hiệu chỉnh xong; từ 5 giây phát tiếng báo nhẹ mỗi giây, kể cả khi về 0, cho đến khi sang câu khác (nếu bật âm thanh). Hết giờ không tính sai hay tự chuyển câu; tạm dừng hoặc camera ngắt thì đồng hồ và âm báo dừng. Sau khi chọn chỉ hiện đúng/sai ngắn trong 1,2 giây, không giải thích đáp án.
 - Mở màn chơi riêng **Thử tài phân loại rác** để nối một món đồ cũ với các ý tưởng tái sử dụng. Mỗi ván có 5 lượt không lặp; mỗi lượt gồm 6 tranh, nút kiểm tra, cơ hội sửa đáp án và tiến độ riêng. Có thể chạm để chọn hoặc kéo trên máy tính; những ý tưởng cần gia công đều nhắc bé nhờ người lớn hỗ trợ.
 - Hướng dẫn nằm trên bảng phấn: giữ phím mũi tên / WASD để di chuyển Kiến Sáng, Space / Enter để nhặt hoặc thả rác. Không hiển thị D-pad trên sàn chơi hay mã trang phục dưới nhân vật.
 - Khi thiếu ảnh bước đi, Kiến dùng ảnh dự phòng trong nhóm `tim_rac_01`–`tim_rac_12` hoặc ảnh nhân vật chính; không lấy ảnh cầm rác (như `cam_banh_mi_*`) làm ảnh di chuyển tìm rác.
@@ -67,10 +39,20 @@ Trò chơi giáo dục dành cho học sinh lớp 1, giúp các em luyện phân
 
 Kiểm tra chuyển động: `node --import tsx --test tests/movement.test.ts tests/commandMovement.test.ts tests/mascotPosition.test.ts tests/mascotFrames.test.ts`.
 
+## Vui học tiếng Anh qua camera
+
+Chọn **Vui học tiếng Anh** trên thanh công cụ để mở hai chế độ: **Bàn Tay Bắt Chữ** (15 từ, mở tay rồi nắm để bắt bóng, mở tay trên giỏ để thả) và **Bé Cùng Vận Động** (5 động tác, giữ đúng tư thế 0,9 giây). Bắt sai được thử lại; hết 7 giây TPR sẽ làm mẫu và cho bé tiếp tục hoặc chuyển lượt, không trừ sao. Thoát, đổi chế độ hoặc ẩn tab đều dừng camera; bật lại tiếp tục ở lượt hiện tại.
+
+V1 dùng 28 tranh cục bộ thuộc ba chủ đề trường học, động vật và đồ ăn. Nguồn ảnh Twemoji/CC BY 4.0 được ghi trong [public/english/ATTRIBUTION.md](public/english/ATTRIBUTION.md). Tải lại tranh bằng `node scripts/download_english_illustrations.mjs`. Catalogue gốc được giữ nguyên. Mỗi ván có 15 từ mục tiêu không lặp, với các tranh gây nhiễu cùng chủ đề.
+
+Phát âm chỉ sử dụng giọng tiếng Anh **cục bộ** của thiết bị; nếu thiếu giọng, cần cài voice tiếng Anh trong hệ điều hành. Không dùng dịch vụ TTS online. Sleepy/Surprised được nhận diện bằng tư thế tay/đầu thay thế, không phân tích mắt nhắm hay khẩu hình. Độ chính xác với trẻ và hiệu năng máy tính bảng cần được nghiệm thu bằng webcam thực tế. Kiểm thử luật: `node --import tsx --test tests/englishGames.test.ts`.
+
 ## Yêu cầu
 
 - [Bun](https://bun.sh/) hoặc Node.js và npm.
 - Trình duyệt web hiện đại.
+
+Các màn camera cần **HTTPS hoặc localhost** và quyền truy cập camera; không xuất hiện trong bản HTML mở bằng `file:`. Hình ảnh camera và điểm mốc nhận diện chỉ được xử lý trên thiết bị, không lưu hoặc tải lên máy chủ. MediaPipe, WASM và model được phục vụ từ dự án; model tay chỉ tải khi bấm bắt đầu. Model Hand Landmarker float16 phiên bản 1 tại `public/models/hand_landmarker.task` lấy từ [kho model MediaPipe chính thức](https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task). Kiểm thử luật bàn tay: `node --import tsx --test tests/handPickup.test.ts`.
 
 Không cần API key nếu chỉ chơi bằng tài nguyên trong project. Chế độ dùng chung online cần cấu hình Supabase như bên dưới.
 
