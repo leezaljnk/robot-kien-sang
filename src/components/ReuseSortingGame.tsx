@@ -434,7 +434,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
               <button type="button" onClick={startGame} disabled={!validRoundCount} className="reuse-primary reuse-start"><Play fill="currentColor" />Bắt đầu</button>
               {!validRoundCount && <p id="reuse-count-error" role="alert" className="reuse-count-error">Chọn số nguyên từ 1 đến 20 lượt nhé.</p>}
             </div>
-            <p className="reuse-intro-note"><Sprout />Đồng hồ 10 giây chỉ nhắc vui; bé vẫn tiếp tục chơi khi hết giờ nhé!</p>
+            <p className="reuse-intro-note"><Sprout />Mỗi lượt một món đồ, mỗi món một ý tưởng xanh!</p>
           </section>
         )}
 
