@@ -194,7 +194,7 @@ Các ID logic sau không có file ghi âm riêng; mỗi câu dùng ba đoạn tr
 
 | ID | Tên file | Lời thoại cần thu |
 |---|---|---|
-| `sorting_intro` | `sorting_intro.mp3` | Mỗi lượt có một món đồ và sáu bức tranh. Bé hãy tìm ba ý tưởng phù hợp nhé. |
+| `sorting_intro` | `sorting_intro.mp3` | Mỗi lượt có một món đồ có thể tái sử dụng. Bé hãy tìm các ý tưởng phù hợp nhé. |
 | `sorting_start` | `sorting_start.mp3` | Kéo từ món rác đến hình phù hợp, hoặc chạm vào hình để nối. |
 | `sorting_removed` | `sorting_removed.mp3` | Đã gỡ lựa chọn. Bé có thể nối hình khác rồi kiểm tra nhé! |
 | `sorting_connected` | `sorting_connected.mp3` | Đã nối hình. Bé có thể chọn thêm rồi bấm Kiểm tra. |

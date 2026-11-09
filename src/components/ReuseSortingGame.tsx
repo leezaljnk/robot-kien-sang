@@ -142,7 +142,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
 
   useEffect(() => {
     if (phase === 'intro') {
-      triggerSpeech('Mỗi lượt có một món đồ và sáu bức tranh. Bé hãy tìm ba ý tưởng phù hợp nhé.', 'sorting_intro');
+      triggerSpeech('Mỗi lượt có một món đồ có thể tái sử dụng. Bé hãy tìm các ý tưởng phù hợp nhé.', 'sorting_intro');
     } else if (phase === 'complete') {
       triggerSpeech('Bé giỏi quá! Bé đã tìm được nhiều cách sáng tạo để dùng lại đồ cũ. Nhớ nhờ người lớn giúp với những ý tưởng cần làm thủ công nhé!', 'sorting_victory');
     }
@@ -172,7 +172,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
       if (document.hidden || reminded || activeArrowRef.current || Date.now() - lastInteractionRef.current < 15000) return;
       reminded = true;
       if (phase === 'intro') {
-        triggerSpeech('Mỗi lượt có một món đồ và sáu bức tranh. Bé hãy tìm ba ý tưởng phù hợp nhé.', 'sorting_intro');
+        triggerSpeech('Mỗi lượt có một món đồ có thể tái sử dụng. Bé hãy tìm các ý tưởng phù hợp nhé.', 'sorting_intro');
       } else {
         showFeedback('Bé hãy nối một hay nhiều hình phù hợp trước nhé!', 'sorting_select');
       }
