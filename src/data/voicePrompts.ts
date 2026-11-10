@@ -76,6 +76,7 @@ export const VOICE_PROMPTS = [
   { id: 'correct_thanks', text: 'Đúng rồi! Cảm ơn bé nhiều nhé!' },
   { id: 'victory', text: 'Yeah, 20 sao rồi, lớp mình sạch quá!' },
   { id: 'yard_welcome', text: 'Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch sân trường nhé!' },
+  { id: 'home_welcome', text: 'Kiến Sáng đã sẵn sàng rồi. Cùng chơi và học cách phân loại rác nhé!' },
   { id: 'yard_victory', text: 'Yeah, 20 sao rồi, sân trường sạch quá!' },
   { id: 'scene_busy', text: 'Kiến Sáng đang nhặt rác rồi. Hãy hoàn thành lượt này trước khi đổi cảnh nhé!' },
   { id: 'play_area_small', text: 'Vùng chơi quá nhỏ. Hãy phóng to cửa sổ hoặc giảm kích thước thùng rác rồi chơi lại nhé!' },
@@ -99,7 +100,7 @@ export const VOICE_PROMPTS = [
   { id: 'garden_victory', text: 'Tuyệt vời, bạn nhỏ! Bạn đã đón đủ món ngon. Tuyệt lắm!' },
   { id: 'sorting_intro', text: 'Mỗi lượt có một món đồ có thể tái sử dụng. Bé hãy tìm các ý tưởng phù hợp nhé.' },
   { id: 'sorting_start', text: 'Kéo từ món rác đến hình phù hợp, hoặc chạm vào hình để nối.' },
-  { id: 'sorting_removed', text: 'Đã gỡ lựa chọn. Bé có thể nối hình khác rồi kiểm tra nhé!' },
+  // { id: 'sorting_removed', text: 'Đã gỡ lựa chọn. Bé có thể nối hình khác rồi kiểm tra nhé!' },
   { id: 'sorting_select', text: 'Bé hãy nối một hay nhiều hình phù hợp trước nhé!' },
   { id: 'sorting_retry', text: 'Bé thử gỡ đường nối có dấu X rồi kiểm tra lại nhé!' },
   { id: 'sorting_round_complete', text: 'Chúc mừng bé!' },
@@ -133,6 +134,18 @@ export function currentVoiceClips(clips?: Record<string, string | null>): VoiceC
     incorrect: clips?.incorrect || null,
     victory: clips?.victory || null,
   };
+}
+
+export function getVoiceClipForPlayback(
+  id: string,
+  clips: VoiceClips,
+  baseUrl: string
+): string | null {
+  return clips[id] || (
+    id === 'home_welcome' || id === 'welcome'
+      ? `${baseUrl}voice/${id}.mp3`
+      : null
+  );
 }
 
 export function voiceIdForText(text: string): string | undefined {
