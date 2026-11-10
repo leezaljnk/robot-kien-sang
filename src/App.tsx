@@ -1551,7 +1551,7 @@ export default function App() {
                   <span className="mt-1 block text-xl text-amber-300 sm:text-2xl">Thử tài phân loại rác</span>
                 </h1>
                 <p id="welcome-description" className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-300 lg:mx-0">
-                  Cùng Kiến Sáng khám phá lớp học, chăm sóc sân trường và học cách phân loại rác.
+                  Cùng Kiến Sáng khám phá lớp học và học cách phân loại rác.
                   Mỗi hành động nhỏ, thêm một mầm xanh!
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2 lg:justify-start">
