@@ -1,6 +1,6 @@
 # Danh sách ID và lời thoại cho các màn chơi
 
-Có **94 ID bản thu**, gồm 45 câu đầy đủ và 49 đoạn. Nguồn chuẩn: [voicePrompts.ts](../src/data/voicePrompts.ts).
+Có **95 ID bản thu**, gồm 46 câu đầy đủ và 49 đoạn. Nguồn chuẩn: [voicePrompts.ts](../src/data/voicePrompts.ts).
 Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.ts`.
 
 - Mỗi lệnh gọi `triggerSpeech(text, voiceId)` truyền ID tường minh; không dò ID theo nội dung khi phát hoặc nghe lại.
@@ -12,6 +12,7 @@ Tạo lại danh sách bằng `node --import tsx scripts/generate_voice_catalog.
 - Khu vườn đọc kết quả cố định bằng `garden_victory`; số điểm biến thiên vẫn hiển thị riêng trên màn hình, không nằm trong bản thu.
 - Thu lại `hand_pickup_victory.mp3` nếu đã có bản cũ: câu mới nói "tất cả món rác" để phù hợp với số món tùy nhập.
 - Thử tài phân loại đọc câu hỏi ghép ba đoạn “Từ → tên món → bé có thể tạo ra gì?” khi bắt đầu mỗi lượt. Chọn món hoặc nối ý tưởng không phát câu thoại; nối ý tưởng phát hiệu ứng “ting ting”. Các phản hồi khác và lời chúc hoàn thành vẫn dùng ID riêng.
+- Với câu hỏi ghép của Thử tài phân loại, đoạn giữa dùng file `public/voice/sorting_question_<wasteId>.mp3`; ghép lần lượt với `voice_piece_sorting_question_prefix.mp3` và `voice_piece_sorting_question_suffix.mp3`. Bản thu tùy chỉnh của đoạn đã upload vẫn được ưu tiên.
 - `continue_sorting` và `play_area_small` là trạng thái lời nhắc thụ động ở màn chính: có ID lưu cùng lời thoại nhưng không tự phát. Bong bóng và nút nghe lại của robot màn chính hiện đang ẩn; callback nghe lại đã giữ ID tường minh, không thay đổi bố cục để bật lại nút. `selected_unknown` / `picked_unknown` là dự phòng khi thiếu định nghĩa món rác.
 - Danh mục là **lời nói/hướng dẫn/phản hồi**, không phải mọi nhãn nút, tên vật phẩm, văn bản mô tả ảnh, thẻ gợi ý tái sử dụng hoặc hiệu ứng âm thanh.
 - 70 ID câu đầy đủ dùng sequence, không phải ID bản thu và không cần thu/upload. Ứng dụng ghép ba đoạn theo thứ tự; nếu thiếu hoặc tải/giải mã lỗi một đoạn, đoạn đó được đọc bằng TTS và các đoạn ghi âm khác vẫn phát bình thường.
@@ -130,7 +131,7 @@ Các ID logic sau không có file ghi âm riêng; mỗi câu dùng ba đoạn tr
 - `sorting_question_giay_bao`
 - `sorting_question_mu_cu`
 
-## Câu chung cho lớp học / sân trường (21 ID)
+## Câu chung cho lớp học / sân trường (22 ID)
 
 | ID | Tên file | Lời thoại cần thu |
 |---|---|---|
@@ -140,6 +141,7 @@ Các ID logic sau không có file ghi âm riêng; mỗi câu dùng ba đoạn tr
 | `correct_thanks` | `correct_thanks.mp3` | Đúng rồi! Cảm ơn bé nhiều nhé! |
 | `victory` | `victory.mp3` | Yeah, 20 sao rồi, lớp mình sạch quá! |
 | `yard_welcome` | `yard_welcome.mp3` | Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch sân trường nhé! |
+| `home_welcome` | `home_welcome.mp3` | Kiến Sáng đã sẵn sàng rồi. Cùng chơi và học cách phân loại rác nhé! |
 | `yard_victory` | `yard_victory.mp3` | Yeah, 20 sao rồi, sân trường sạch quá! |
 | `scene_busy` | `scene_busy.mp3` | Kiến Sáng đang nhặt rác rồi. Hãy hoàn thành lượt này trước khi đổi cảnh nhé! |
 | `play_area_small` | `play_area_small.mp3` | Vùng chơi quá nhỏ. Hãy phóng to cửa sổ hoặc giảm kích thước thùng rác rồi chơi lại nhé! |

@@ -242,7 +242,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
       const nextWrong = wrongIds.filter((wrongId) => wrongId !== id);
       setSelectedIds(nextSelected);
       setWrongIds(nextWrong);
-      showFeedback('Đã gỡ lựa chọn. Bé có thể nối hình khác rồi kiểm tra nhé!', 'sorting_removed');
+      // showFeedback('Đã gỡ lựa chọn. Bé có thể nối hình khác rồi kiểm tra nhé!', 'sorting_removed');
       return;
     }
     setSelectedIds([...selectedIds, id]);

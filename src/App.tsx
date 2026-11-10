@@ -18,7 +18,7 @@ import { getBinApproachTarget, getCommandMoveDuration, getKeyboardMove } from '.
 import { createMascotPosition } from './utils/mascotPosition';
 import { getNonOverlappingTrashSpawnSlots, getTrashSpawnSlots } from './utils/trashSpawn';
 import { drawClassroomTrashItems, drawTrashItems } from './utils/trashCycle';
-import { currentVoiceClips, VOICE_PROMPT_TEXTS, VOICE_PROMPTS, VOICE_SEQUENCES, type TriggerSpeech } from './data/voicePrompts';
+import { currentVoiceClips, getVoiceClipForPlayback, VOICE_PROMPT_TEXTS, VOICE_PROMPTS, VOICE_SEQUENCES, type TriggerSpeech } from './data/voicePrompts';
 import { listSharedAssets, sharedAssetsEnabled, sharedAssetsToState } from './utils/sharedAssets';
 import { loadProjectAssets } from './utils/preloadedAssets';
 import {
@@ -221,6 +221,7 @@ export default function App() {
   const [isMobilePortrait, setIsMobilePortrait] = useState(false);
   const [dismissPortraitPrompt, setDismissPortraitPrompt] = useState(false);
   const welcomeSoundPlayedRef = useRef(false);
+  const homeWelcomePlayedRef = useRef(false);
 
   useEffect(() => {
     const portraitQuery = window.matchMedia(
@@ -591,11 +592,16 @@ export default function App() {
 
       const sequence = VOICE_SEQUENCES[voiceId];
       if (sequence) {
-        const sequenceClips = sequence.map(id => voiceClips[id]);
+        const sequenceClips = sequence.map((id, index) => {
+          const customClip = voiceClips[id];
+          if (customClip || !voiceId.startsWith('sorting_question_')) return customClip;
+          const clipId = index === 1 ? voiceId : id;
+          return `${import.meta.env.BASE_URL}voice/${clipId}.mp3`;
+        });
         const sequenceTexts = sequence.map(id => VOICE_PROMPT_TEXTS[id]);
         void speakKienSangSequence(text, sequenceClips, undefined, sequenceTexts);
       } else {
-        speakKienSang(text, voiceClips[voiceId]);
+        speakKienSang(text, getVoiceClipForPlayback(voiceId, voiceClips, import.meta.env.BASE_URL));
       }
 
       speechTimeoutRef.current = window.setTimeout(() => {
@@ -608,6 +614,12 @@ export default function App() {
     },
     [voiceClips, score]
   );
+
+  useEffect(() => {
+    if (!gameReady || hasStartedGame || homeWelcomePlayedRef.current) return;
+    homeWelcomePlayedRef.current = true;
+    triggerSpeech('Kiến Sáng đã sẵn sàng rồi. Cùng chơi và học cách phân loại rác nhé!', 'home_welcome');
+  }, [gameReady, hasStartedGame, triggerSpeech]);
 
   // Spawn five non-overlapping trash items.
   const spawnTrashBatch = useCallback(() => {
@@ -810,8 +822,8 @@ export default function App() {
   };
 
   const handleStartGame = () => {
-    triggerSpeech('Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!', 'welcome');
     setHasStartedGame(true);
+    triggerSpeech('Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!', 'welcome');
   };
 
   // Check victory condition

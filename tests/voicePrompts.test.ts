@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
   VOICE_PIECE_PROMPTS,
   VOICE_PROMPTS,
   VOICE_SEQUENCES,
+  getVoiceClipForPlayback,
   voiceIdForText,
 } from '../src/data/voicePrompts';
 import { TRASH_ITEMS } from '../src/data/trashItems';
@@ -15,9 +16,9 @@ import { embedOfflineAssets } from '../src/utils/offlineAssets';
 import { parseSettingsFile } from '../src/utils/settingsTransfer';
 import { speakKienSang, speakKienSangSequence, stopKienSangSpeech } from '../src/utils/audio';
 
-test('94 recording IDs and 70 sequence mappings cover the scenes and catalogue', () => {
+test('95 recording IDs and 70 sequence mappings cover the scenes and catalogue', () => {
   const catalog = readFileSync(new URL('../docs/voice-prompts.md', import.meta.url), 'utf8');
-  assert.equal(VOICE_PROMPTS.length, 94);
+  assert.equal(VOICE_PROMPTS.length, 95);
   assert.equal(VOICE_PIECE_PROMPTS.length, 49);
   assert.equal(Object.keys(VOICE_SEQUENCES).length, 70);
     assert.equal(voiceIdForText('Vỏ chai thủy tinh'), 'voice_piece_name_vo_chai');
@@ -99,6 +100,19 @@ test('every speech/feedback call passes an explicit ID, and literal text matches
   }
 });
 
+test('home and classroom welcome use their public recordings by default', () => {
+  const clips = { correct: null, incorrect: null, victory: null };
+  assert.equal(getVoiceClipForPlayback('home_welcome', clips, '/app/'), '/app/voice/home_welcome.mp3');
+  assert.equal(getVoiceClipForPlayback('welcome', clips, '/app/'), '/app/voice/welcome.mp3');
+  assert.equal(getVoiceClipForPlayback('welcome', { ...clips, welcome: 'custom.mp3' }, '/app/'), 'custom.mp3');
+  assert.equal(getVoiceClipForPlayback('continue_sorting', clips, '/app/'), null);
+  for (const id of ['home_welcome', 'welcome']) {
+    assert(existsSync(new URL(`../public/voice/${id}.mp3`, import.meta.url)), id);
+  }
+  const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /const handleStartGame = \(\) => \{\s*setHasStartedGame\(true\);\s*triggerSpeech\('[^']+', 'welcome'\);/);
+});
+
 test('sorting questions are spoken at round start; choosing and connecting use no extra voice clips', () => {
   const source = readFileSync(new URL('../src/components/ReuseSortingGame.tsx', import.meta.url), 'utf8');
   const audio = readFileSync(new URL('../src/utils/audio.ts', import.meta.url), 'utf8');
@@ -116,6 +130,23 @@ test('sorting questions are spoken at round start; choosing and connecting use n
   assert.doesNotMatch(source, /sorting_selected_|sorting_connected_short/);
   assert(!VOICE_PROMPTS.some(({ id }) => id === 'sorting_connected_short'));
   assert(!VOICE_PIECE_PROMPTS.some(({ id }) => id === 'voice_piece_sorting_prefix' || id === 'voice_piece_sorting_suffix'));
+});
+
+test('sorting question sequences have all three matching public audio segments', () => {
+  const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /index === 1 \? voiceId : id/);
+  assert.match(app, /BASE_URL\}voice\/\$\{clipId\}\.mp3/);
+  for (const id of ['voice_piece_sorting_question_prefix', 'voice_piece_sorting_question_suffix']) {
+    assert(existsSync(new URL(`../public/voice/${id}.mp3`, import.meta.url)), id);
+  }
+  for (const waste of SORTING_GAME_WASTES) {
+    assert(existsSync(new URL(`../public/voice/sorting_question_${waste.id}.mp3`, import.meta.url)), waste.id);
+    assert.deepEqual(VOICE_SEQUENCES[`sorting_question_${waste.id}`], [
+      'voice_piece_sorting_question_prefix',
+      voiceIdForText(waste.name),
+      'voice_piece_sorting_question_suffix',
+    ]);
+  }
 });
 
 test('stopping speech pauses a recording, cancels TTS, and can be repeated', () => {

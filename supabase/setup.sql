@@ -4,7 +4,7 @@ returns boolean language sql immutable set search_path = '' as $$
   select asset_id in (
     'images/mascot/main', 'images/bins/organic', 'images/bins/recyclable',
     'voice/correct', 'voice/incorrect', 'voice/victory'
-  ) or asset_id ~ '^voice/(welcome|continue_sorting|batch_complete|approach_bin|approach_trash|select_trash|bin_unavailable|mode_drag|mode_command|mascot_updated)$'
+  ) or asset_id ~ '^voice/(welcome|home_welcome|continue_sorting|batch_complete|approach_bin|approach_trash|select_trash|bin_unavailable|mode_drag|mode_command|mascot_updated)$'
     or asset_id in ('voice/selected_unknown', 'voice/picked_unknown')
     or asset_id ~ '^voice/(correct_great|correct_thanks|yard_welcome|yard_victory|scene_busy|play_area_small)$'
     or asset_id ~ '^voice/garden_(intro|free|challenge|hazard|game_over|victory)$'
