@@ -33,13 +33,13 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
           <div className="text-2xl animate-pulse">🌿🌸</div>
           <span className="text-[10px] font-bold text-sky-800 bg-white/70 px-1 rounded mt-1">Sân trường</span>
         </div>
-        <button
+        {/* <button
           type="button"
           aria-label="Đi ra sân trường"
           title="Bấm để ra sân trường"
           onClick={onVisitYard}
           className="pointer-events-auto absolute inset-0 z-10 cursor-pointer rounded-t-full bg-transparent focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
-        />
+        /> */}
         {/* Khung ô cửa sổ */}
         <div className="pointer-events-none absolute inset-0 z-20 border-r-2 border-b-2 border-amber-800" style={{ left: '50%', top: '50%' }} />
       </div>
@@ -50,13 +50,13 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
           <div className="text-2xl">☀️🌳</div>
           <span className="text-[10px] font-bold text-sky-800 bg-white/70 px-1 rounded mt-1">Nắng ấm</span>
         </div>
-        <button
+        {/* <button
           type="button"
           aria-label="Đến khu vườn Nắng Ấm"
           title="Bấm để cùng Kiến Sáng dọn rác trong khu vườn"
           onClick={onVisitGarden}
           className="pointer-events-auto absolute inset-0 z-10 cursor-pointer rounded-t-full bg-transparent focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-400"
-        />
+        /> */}
       </div>
 
       <div className="absolute right-3 top-3 z-30 md:hidden">
@@ -92,7 +92,7 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
         <div className="flex-1 shrink-0 px-4 py-1 text-center flex flex-col justify-between gap-1.5">
           <div>
             <h2 className="text-emerald-300 font-bold tracking-wider text-base sm:text-lg drop-shadow">
-              LỚP 2A5 FPT SCHOOL • GIỮ GÌN VỆ SINH LỚP HỌC SẠCH ĐẸP
+              LỚP 2A5 FPT CẦU GIẤY • GIỮ GÌN VỆ SINH LỚP HỌC SẠCH ĐẸP
             </h2>
             <p className="text-amber-200 text-xs sm:text-sm font-semibold italic mt-0.5">
               "Tuổi nhỏ làm việc nhỏ – Tùy theo sức của mình"
@@ -111,7 +111,7 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
             <div className="flex items-center gap-2 text-orange-400">
               <span className="text-base sm:text-lg">♻️</span>
               <div>
-                <p className="text-xs sm:text-sm font-bold text-orange-300 leading-tight">Thùng Cam / Xanh Dương</p>
+                <p className="text-xs sm:text-sm font-bold text-orange-300 leading-tight">Thùng Cam</p>
                 <p className="text-[10px] sm:text-xs text-slate-300">Hộp sữa, chai nhựa, lon, giấy</p>
               </div>
             </div>
