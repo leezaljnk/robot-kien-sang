@@ -332,7 +332,7 @@ export const ReuseSortingGame: React.FC<ReuseSortingGameProps> = ({ onExit, trig
       activeArrowRef.current = null;
       setActiveArrow(null);
       showFeedback('Bé hãy nối một hay nhiều hình rồi kiểm tra nhé!', 'sorting_continue');
-    }, 4500);
+    }, 2000);
     return () => window.clearTimeout(timeout);
   }, [roundComplete, roundIndex, rounds.length, showFeedback]);
 
