@@ -119,9 +119,6 @@ export const ClassroomBackground: React.FC<ClassroomBackgroundProps> = ({ onVisi
               <span className="font-bold text-amber-200">Cách chơi: </span>
               Chạm kéo rác vào thùng hoặc chọn rác rồi chọn thùng để nhờ Kiến Sáng.
               <br />
-              <span className="font-bold text-amber-200">Điện thoại: </span>
-              Ở chế độ Nhờ Kiến Sáng, dùng các nút mũi tên và nút ✋ để nhặt / thả rác.
-              <br />
               <span className="font-bold text-amber-200">Bàn phím: </span>
               Giữ phím mũi tên ⬆️⬇️➡️⬅️️ để di chuyển; Space / Enter để nhặt hoặc thả rác.
             </p>

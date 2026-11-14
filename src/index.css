@@ -54,10 +54,6 @@
   .mascot-pickup-previous { animation: none; opacity: 0; }
 }
 
-.mobile-classroom-controls {
-  display: none;
-}
-
 .reuse-hint-card {
   bottom: calc(35% + 0.75rem);
   right: 0.75rem;
@@ -119,51 +115,6 @@
   .mobile-game-trash-item {
     scale: 0.94;
   }
-
-  .mobile-classroom-controls {
-    position: absolute;
-    z-index: 45;
-    left: 50%;
-    bottom: 0.4rem;
-    display: grid;
-    grid-template: repeat(3, 2.65rem) / repeat(3, 2.65rem);
-    gap: 0.1rem;
-    padding: 0.25rem;
-    transform: translateX(-50%);
-    border: 1px solid rgb(255 255 255 / 75%);
-    border-radius: 1.25rem;
-    background: rgb(15 23 42 / 52%);
-    box-shadow: 0 4px 14px rgb(15 23 42 / 30%);
-    touch-action: none;
-  }
-
-  .mobile-classroom-control {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.65rem;
-    height: 2.65rem;
-    border: 2px solid #047857;
-    border-radius: 0.85rem;
-    background: rgb(255 255 255 / 96%);
-    color: #064e3b;
-    font-size: 1.5rem;
-    font-weight: 900;
-    box-shadow: 0 2px 5px rgb(15 23 42 / 22%);
-    touch-action: none;
-    user-select: none;
-  }
-
-  .mobile-classroom-control:active {
-    transform: scale(0.94);
-    background: #d1fae5;
-  }
-
-  .mobile-classroom-action {
-    border-color: #c2410c;
-    background: #ffedd5;
-    font-size: 1.2rem;
-  }
 }
 
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 560px) {
@@ -211,15 +162,6 @@
 
   .mobile-game-trash-item {
     scale: 1;
-  }
-
-  .mobile-classroom-controls {
-    grid-template: repeat(3, 2.3rem) / repeat(3, 2.3rem);
-  }
-
-  .mobile-classroom-control {
-    width: 2.3rem;
-    height: 2.3rem;
   }
 }
 

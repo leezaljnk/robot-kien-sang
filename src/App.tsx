@@ -1757,53 +1757,6 @@ export default function App() {
           onOpenMascotModal={sharedAssetsEnabled ? undefined : () => setIsCostumesModalOpen(true)}
         />
 
-        {hasStartedGame && scene === 'classroom' && gameMode === 'command' && (
-          <div className="mobile-classroom-controls" role="group" aria-label="Điều khiển Kiến Sáng">
-            {([
-              { direction: 'up', label: 'Di chuyển Kiến Sáng lên', icon: '↑', grid: 'col-start-2 row-start-1' },
-              { direction: 'left', label: 'Di chuyển Kiến Sáng sang trái', icon: '←', grid: 'col-start-1 row-start-2' },
-              { direction: 'right', label: 'Di chuyển Kiến Sáng sang phải', icon: '→', grid: 'col-start-3 row-start-2' },
-              { direction: 'down', label: 'Di chuyển Kiến Sáng xuống', icon: '↓', grid: 'col-start-2 row-start-3' },
-            ] as const).map(({ direction, label, icon, grid }) => (
-              <button
-                key={direction}
-                type="button"
-                aria-label={label}
-                className={`mobile-classroom-control ${grid}`}
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                  startMovingDir(direction);
-                }}
-                onPointerUp={() => stopMovingDir(direction)}
-                onPointerCancel={() => stopMovingDir(direction)}
-                onLostPointerCapture={() => stopMovingDir(direction)}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter' && event.key !== ' ') return;
-                  event.preventDefault();
-                  if (!event.repeat) startMovingDir(direction);
-                }}
-                onKeyUp={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    stopMovingDir(direction);
-                  }
-                }}
-                onBlur={() => stopMovingDir(direction)}
-              >
-                {icon}
-              </button>
-            ))}
-            <button
-              type="button"
-              aria-label="Nhặt hoặc thả rác"
-              className="mobile-classroom-control mobile-classroom-action col-start-2 row-start-2"
-              onClick={() => handleActionPickOrDropRef.current()}
-            >
-              ✋
-            </button>
-          </div>
-        )}
-
         {/* CÁC MÓN RÁC TRÊN SÀN (5 MÓN MỖI LẦN) */}
         {activeItems.map((item) => {
           const def = getItemDef(item.defId);
