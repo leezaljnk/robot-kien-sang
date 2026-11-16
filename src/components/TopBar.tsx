@@ -128,10 +128,10 @@ export const TopBar: React.FC<TopBarProps> = ({
           type="button"
           onClick={onOpenSortingGame}
           className="flex min-h-10 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black text-emerald-800 transition hover:bg-white hover:text-emerald-900 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
-          title="Mở màn chơi mới: Thử tài phân loại rác"
+          title="Mở màn chơi Sáng tạo từ đồ cũ"
         >
           <Sparkles className="h-4 w-4 text-emerald-700" />
-          <span>Thử tài phân loại rác</span>
+          <span>Đồ cũ, ý tưởng mới</span>
         </button>
         {onOpenHeadTiltGame && (
           <button
