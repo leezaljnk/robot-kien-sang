@@ -217,6 +217,7 @@ export default function App() {
   const speechTimeoutRef = useRef<number | null>(null);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [gameReady, setGameReady] = useState(false);
+  const binsReadyRef = useRef(false);
   const [hasStartedGame, setHasStartedGame] = useState(false);
   const [isMobilePortrait, setIsMobilePortrait] = useState(false);
   const [dismissPortraitPrompt, setDismissPortraitPrompt] = useState(false);
@@ -623,6 +624,7 @@ export default function App() {
 
   // Spawn five non-overlapping trash items.
   const spawnTrashBatch = useCallback(() => {
+    if (activeItemsRef.current.length > 0) return;
     const area = playAreaRef.current;
     const left = leftBinRef.current;
     const right = rightBinRef.current;
@@ -768,9 +770,11 @@ export default function App() {
     setKienMood('idle');
 
     const savedItems = sceneItemsRef.current[nextScene];
-    if (savedItems) {
+    if (savedItems?.length) {
+      activeItemsRef.current = savedItems;
       setActiveItems(savedItems);
     } else {
+      activeItemsRef.current = [];
       setActiveItems([]);
       window.setTimeout(() => {
         if (sceneRef.current === nextScene) spawnTrashBatch();
@@ -786,14 +790,34 @@ export default function App() {
   useEffect(() => {
     if (!gameReady) return;
     let cancelled = false;
+    let binsReady = false;
+    const trySpawnTrash = () => {
+      if (cancelled || !binsReady || activeItemsRef.current.length > 0) return;
+      spawnTrashBatch();
+    };
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(trySpawnTrash)
+      : null;
+    [playAreaRef.current, leftBinRef.current, rightBinRef.current].forEach(element => {
+      if (element) observer?.observe(element);
+    });
+    window.addEventListener('resize', trySpawnTrash);
     const images = [leftBinRef.current, rightBinRef.current]
       .flatMap(bin => Array.from(bin?.querySelectorAll('img') || []));
     Promise.all(images.map(image => image.decode().catch(err => {
       console.warn('Không tải được ảnh thùng rác khi chuẩn bị vùng đặt rác:', err);
     }))).then(() => {
-      if (!cancelled) spawnTrashBatch();
+      if (cancelled) return;
+      binsReady = true;
+      binsReadyRef.current = true;
+      trySpawnTrash();
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      binsReadyRef.current = false;
+      observer?.disconnect();
+      window.removeEventListener('resize', trySpawnTrash);
+    };
   }, [spawnTrashBatch, gameReady]);
 
   // Restart game
@@ -807,6 +831,8 @@ export default function App() {
     setScore(0);
     trashCycleRef.current = { classroom: [], yard: [] };
     sceneItemsRef.current = { classroom: null, yard: null };
+    activeItemsRef.current = [];
+    setActiveItems([]);
     setKienMood('idle');
     setKienX(50);
     setKienY(68);
@@ -822,6 +848,9 @@ export default function App() {
   };
 
   const handleStartGame = () => {
+    if (binsReadyRef.current && activeItemsRef.current.length === 0) {
+      spawnTrashBatch();
+    }
     setHasStartedGame(true);
     triggerSpeech('Chào bạn nhỏ! Cùng Kiến Sáng dọn sạch lớp học nhé!', 'welcome');
   };
